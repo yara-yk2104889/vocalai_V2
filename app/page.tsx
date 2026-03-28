@@ -111,6 +111,58 @@ const likertLabels = {
   ],
 };
 
+const likertLabelsAr = {
+  keywordRelevance: [
+    "١ – غير ملائمة إطلاقاً",
+    "٢ – ملائمة قليلاً",
+    "٣ – ملائمة بشكل متوسط",
+    "٤ – ملائمة جداً",
+    "٥ – ملائمة تماماً",
+  ],
+  sentenceHelpfulness: [
+    "١ – غير مفيدة إطلاقاً",
+    "٢ – مفيدة قليلاً",
+    "٣ – مفيدة بشكل متوسط",
+    "٤ – مفيدة جداً",
+    "٥ – مفيدة تماماً",
+  ],
+  ease: [
+    "١ – صعب جداً",
+    "٢ – صعب",
+    "٣ – محايد",
+    "٤ – سهل",
+    "٥ – سهل جداً",
+  ],
+  speed: [
+    "١ – بطيء جداً",
+    "٢ – بطيء",
+    "٣ – مقبول",
+    "٤ – سريع",
+    "٥ – سريع جداً",
+  ],
+  imageAccuracy: [
+    "١ – غير دقيقة إطلاقاً",
+    "٢ – دقيقة قليلاً",
+    "٣ – دقيقة بشكل متوسط",
+    "٤ – دقيقة جداً",
+    "٥ – دقيقة تماماً",
+  ],
+  helpfulness: [
+    "١ – غير مفيد إطلاقاً",
+    "٢ – مفيد قليلاً",
+    "٣ – مفيد بشكل متوسط",
+    "٤ – مفيد جداً",
+    "٥ – مفيد تماماً",
+  ],
+  likelihood: [
+    "١ – غير محتمل إطلاقاً",
+    "٢ – غير محتمل",
+    "٣ – محايد",
+    "٤ – محتمل",
+    "٥ – محتمل جداً",
+  ],
+};
+
 function toBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -262,12 +314,14 @@ const DEMO_PROFILES = [
   {
     id: "sara",
     emoji: "👧",
+    scenarioEmoji: "💊",
     name: "Sara",
     arName: "سارة",
-    tagline: "8 years old · Child with autism",
-    arTagline: "8 سنوات · توحد",
-    description: "Prefers very short AAC phrases. Her parent supports her in public settings like pharmacies and cafés.",
-    arDescription: "تفضل عبارات AAC القصيرة جداً. أحد والديها يدعمها في الأماكن العامة كالصيدليات والمقاهي.",
+    location: "pharmacy",
+    tagline: "12 years old · Autism · Pharmacy",
+    arTagline: "12 سنة · توحد · صيدلية",
+    description: "Uses very short AAC phrases. Visiting a pharmacy to ask about medication.",
+    arDescription: "تستخدم عبارات AAC قصيرة جداً. تزور صيدلية للسؤال عن الدواء.",
     partnerRole: "parent",
     simpleStyle: true,
     phrases: ["Hi, I use AAC. Please give me a moment.", "Can you help me?", "I need this medicine."],
@@ -275,41 +329,32 @@ const DEMO_PROFILES = [
   {
     id: "ahmad",
     emoji: "👦",
+    scenarioEmoji: "🏡",
     name: "Ahmad",
     arName: "أحمد",
-    tagline: "14 years old · Cerebral palsy",
-    arTagline: "14 سنة · شلل دماغي",
-    description: "Uses moderate-length phrases and needs support at family gatherings and social settings.",
-    arDescription: "يستخدم عبارات متوسطة الطول ويحتاج إلى دعم في التجمعات العائلية والمواقف الاجتماعية.",
+    location: "majlis",
+    tagline: "14 years old · Cerebral palsy · Family gathering",
+    arTagline: "14 سنة · شلل دماغي · تجمع عائلي",
+    description: "Uses moderate-length phrases. Needs AAC support at a family majlis gathering.",
+    arDescription: "يستخدم عبارات متوسطة الطول. يحتاج دعم AAC في تجمع عائلي بالمجلس.",
     partnerRole: "caregiver",
     simpleStyle: false,
-    phrases: ["Hi, I use AAC. Please give me a moment.", "I would like a coffee please.", "Can you help me?"],
+    phrases: ["Hi, I use AAC. Please give me a moment.", "I would like to join.", "Can you help me?"],
   },
   {
     id: "layla",
     emoji: "👩",
+    scenarioEmoji: "☕",
     name: "Layla",
     arName: "ليلى",
-    tagline: "32 years old · ALS",
-    arTagline: "32 سنة · التصلب الجانبي الضموري",
-    description: "Adult who recently lost speech. Prefers full sentences and uses AAC in both professional and family contexts.",
-    arDescription: "بالغة فقدت الكلام مؤخراً. تفضل الجمل الكاملة وتستخدم AAC في السياقات المهنية والعائلية.",
-    partnerRole: "caregiver",
+    location: "cafe",
+    tagline: "18 years old · Autism · Café",
+    arTagline: "18 سنة · توحد · مقهى",
+    description: "Would like to use AAC to order at a café independently.",
+    arDescription: "تودّ استخدام AAC للطلب باستقلالية في مقهى.",
+    partnerRole: "parent",
     simpleStyle: false,
-    phrases: ["Hi, I use AAC. Please give me a moment.", "I would like to ask you something.", "Thank you for your patience."],
-  },
-  {
-    id: "noor",
-    emoji: "🧑",
-    name: "Noor",
-    arName: "نور",
-    tagline: "19 years old · Aphasia",
-    arTagline: "19 سنة · حبسة كلامية",
-    description: "Young adult recovering from stroke. Uses short sentence starters and is often in café or social settings.",
-    arDescription: "شاب/ة يتعافى من السكتة الدماغية. يستخدم بوادئ الجمل القصيرة وغالباً في المقهى أو البيئات الاجتماعية.",
-    partnerRole: "teacher",
-    simpleStyle: true,
-    phrases: ["Hi, I use AAC. Please give me a moment.", "I want...", "Can I have..."],
+    phrases: ["Hi, I use AAC. Please give me a moment.", "I would like a coffee please.", "Can I have this?"],
   },
 ];
 
@@ -1026,7 +1071,7 @@ export default function QatarAACProbePrototype() {
               </div>
             </div>
             <CardContent className="pt-5">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-3">
                 {DEMO_PROFILES.map((profile) => {
                   const isSelected = selectedProfileId === profile.id;
                   return (
@@ -1039,6 +1084,8 @@ export default function QatarAACProbePrototype() {
                         setPartnerRole(profile.partnerRole);
                         setSimpleStyle(profile.simpleStyle);
                         setPhraseBank(profile.phrases.map((text) => ({ id: crypto.randomUUID(), text })));
+                        setSelectedLocationId(profile.location);
+                        setLocation(profile.location);
                       }}
                       className={`rounded-2xl border-2 p-5 text-left transition-all space-y-2 ${
                         isSelected
@@ -1046,12 +1093,12 @@ export default function QatarAACProbePrototype() {
                           : "border-transparent bg-slate-50 hover:border-blue-200 hover:bg-blue-50"
                       }`}
                     >
-                      <div className="text-4xl">{profile.emoji}</div>
+                      <div className="text-4xl flex gap-1">{profile.emoji}<span className="text-3xl">{profile.scenarioEmoji}</span></div>
                       <div>
-                        <div className="font-semibold text-base">{language === "ar" ? profile.arName : profile.name}</div>
-                        <div className="text-xs text-blue-700 font-medium mt-0.5">{language === "ar" ? profile.arTagline : profile.tagline}</div>
+                        <div className="font-semibold text-lg">{language === "ar" ? profile.arName : profile.name}</div>
+                        <div className="text-sm text-blue-700 font-medium mt-0.5">{language === "ar" ? profile.arTagline : profile.tagline}</div>
                       </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{language === "ar" ? profile.arDescription : profile.description}</p>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{language === "ar" ? profile.arDescription : profile.description}</p>
                       {isSelected && <div className="text-xs font-semibold text-blue-700 pt-1">{t.selectedCheck}</div>}
                     </button>
                   );
@@ -1060,59 +1107,21 @@ export default function QatarAACProbePrototype() {
             </CardContent>
           </Card>
 
-          {/* 2 — Location / scenario picker */}
-          <Card className="rounded-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-700 text-white font-bold text-sm">2</div>
-              <div>
-                <CardTitle className="text-lg">{language === "ar" ? "اختر السيناريو" : "Select a scenario"}</CardTitle>
-                <p className="text-sm text-muted-foreground mt-0.5">{language === "ar" ? "أين سيكون التفاعل؟" : "Where will the interaction take place?"}</p>
-              </div>
-            </div>
-            <CardContent className="grid gap-4 md:grid-cols-3 pt-5">
-              {[
-                { value: "pharmacy", emoji: "💊", label: t.pharmacyScenario, desc: t.pharmacyScenarioDesc, bg: "bg-blue-50 border-blue-100", sel: "border-blue-700 bg-blue-50 ring-2 ring-blue-700/20" },
-                { value: "cafe",     emoji: "☕", label: t.cafeScenario,     desc: t.cafeScenarioDesc,     bg: "bg-sky-50 border-sky-100",   sel: "border-blue-700 bg-sky-50 ring-2 ring-blue-700/20" },
-                { value: "majlis",   emoji: "🏡", label: t.majlisScenario,   desc: t.majlisScenarioDesc,   bg: "bg-slate-100 border-slate-200", sel: "border-blue-700 bg-slate-100 ring-2 ring-blue-700/20" },
-              ].map((loc) => {
-                const isSelected = selectedLocationId === loc.value;
-                return (
-                  <button
-                    key={loc.value}
-                    type="button"
-                    onClick={() => {
-                      setSelectedLocationId(loc.value);
-                      setLocation(loc.value);
-                    }}
-                    className={`rounded-xl border-2 p-5 text-left transition-all space-y-2 ${
-                      isSelected ? loc.sel : `border-transparent ${loc.bg} hover:border-blue-300`
-                    }`}
-                  >
-                    <div className="text-3xl">{loc.emoji}</div>
-                    <div className="font-semibold text-sm">{loc.label}</div>
-                    <p className="text-xs text-muted-foreground">{loc.desc}</p>
-                    {isSelected && <div className="text-xs font-semibold text-blue-700 pt-1">{t.selectedCheck}</div>}
-                  </button>
-                );
-              })}
-            </CardContent>
-          </Card>
-
           {/* Summary + next */}
-          {selectedProfileId && selectedLocationId && (
+          {selectedProfileId && (
             <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 flex flex-wrap gap-3 items-center text-xs text-blue-700">
               <span className="font-medium text-blue-800">{t.profileLoaded}:</span>
-              <span className="rounded-full bg-blue-100 px-3 py-1">{profileName}</span>
+              <span className="rounded-full bg-blue-100 px-3 py-1">{language === "ar" ? (DEMO_PROFILES.find(p => p.id === selectedProfileId)?.arName ?? profileName) : profileName}</span>
               <span className="rounded-full bg-blue-100 px-3 py-1">{t.partnerLabel}{language === "ar" ? (PARTNER_ROLE_AR[partnerRole] ?? partnerRole) : partnerRole}</span>
               <span className="rounded-full bg-blue-100 px-3 py-1">{simpleStyle ? t.simpleStyleLabel : t.standardStyleLabel}</span>
-              <span className="rounded-full bg-blue-100 px-3 py-1">📍 {SAMPLE_IMAGES[selectedLocationId] ? (language === "ar" ? { pharmacy: "صيدلية", cafe: "مقهى", majlis: "مجلس" }[selectedLocationId] : { pharmacy: "Pharmacy", cafe: "Café", majlis: "Majlis" }[selectedLocationId]) : selectedLocationId}</span>
+              <span className="rounded-full bg-blue-100 px-3 py-1">📍 {language === "ar" ? { pharmacy: "صيدلية", cafe: "مقهى", majlis: "مجلس" }[selectedLocationId ?? ""] : { pharmacy: "Pharmacy", cafe: "Café", majlis: "Majlis" }[selectedLocationId ?? ""]}</span>
             </div>
           )}
 
           <div className="flex justify-center gap-4 pt-2">
             <Button
               onClick={() => setStep(1)}
-              disabled={!selectedProfileId || !selectedLocationId}
+              disabled={!selectedProfileId}
               className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-10 py-6 text-base font-semibold disabled:opacity-40"
             >
               {t.nextGenerate}
@@ -1624,26 +1633,30 @@ export default function QatarAACProbePrototype() {
               <LikertItem
                 title={t.qa1}
                 value={likertA.keywordRelevance}
-                labels={likertLabels.keywordRelevance}
+                labels={language === "ar" ? likertLabelsAr.keywordRelevance : likertLabels.keywordRelevance}
                 onChange={(v) => setLikertA((x) => ({ ...x, keywordRelevance: v }))}
+                rtl={language === "ar"}
               />
               <LikertItem
                 title={t.qa2}
                 value={likertA.sentenceUsefulness}
-                labels={likertLabels.sentenceHelpfulness}
+                labels={language === "ar" ? likertLabelsAr.sentenceHelpfulness : likertLabels.sentenceHelpfulness}
                 onChange={(v) => setLikertA((x) => ({ ...x, sentenceUsefulness: v }))}
+                rtl={language === "ar"}
               />
               <LikertItem
                 title={t.qa3}
                 value={likertA.ease}
-                labels={likertLabels.ease}
+                labels={language === "ar" ? likertLabelsAr.ease : likertLabels.ease}
                 onChange={(v) => setLikertA((x) => ({ ...x, ease: v }))}
+                rtl={language === "ar"}
               />
               <LikertItem
                 title={t.qa4}
                 value={likertA.speed}
-                labels={likertLabels.speed}
+                labels={language === "ar" ? likertLabelsAr.speed : likertLabels.speed}
                 onChange={(v) => setLikertA((x) => ({ ...x, speed: v }))}
+                rtl={language === "ar"}
               />
 
               {!likertASubmitted ? (
@@ -1680,20 +1693,23 @@ export default function QatarAACProbePrototype() {
               <LikertItem
                 title={t.qb1}
                 value={likertB.imageAccuracy}
-                labels={likertLabels.imageAccuracy}
+                labels={language === "ar" ? likertLabelsAr.imageAccuracy : likertLabels.imageAccuracy}
                 onChange={(v) => setLikertB((x) => ({ ...x, imageAccuracy: v }))}
+                rtl={language === "ar"}
               />
               <LikertItem
                 title={t.qb2}
                 value={likertB.helpfulness}
-                labels={likertLabels.helpfulness}
+                labels={language === "ar" ? likertLabelsAr.helpfulness : likertLabels.helpfulness}
                 onChange={(v) => setLikertB((x) => ({ ...x, helpfulness: v }))}
+                rtl={language === "ar"}
               />
               <LikertItem
                 title={t.qb3}
                 value={likertB.likelihood}
-                labels={likertLabels.likelihood}
+                labels={language === "ar" ? likertLabelsAr.likelihood : likertLabels.likelihood}
                 onChange={(v) => setLikertB((x) => ({ ...x, likelihood: v }))}
+                rtl={language === "ar"}
               />
 
               <div className="space-y-1">
@@ -1739,6 +1755,7 @@ function LikertItem({
   onChange,
   min = 1,
   max = 5,
+  rtl = false,
 }: {
   title: string;
   value: number;
@@ -1746,12 +1763,16 @@ function LikertItem({
   onChange: (v: number) => void;
   min?: number;
   max?: number;
+  rtl?: boolean;
 }) {
   const ticks = Array.from({ length: max - min + 1 }, (_, i) => min + i);
   return (
-    <div className="space-y-2 rounded-2xl border p-4">
+    <div className="space-y-2 rounded-2xl border p-4" dir={rtl ? "rtl" : "ltr"}>
       <div className="text-sm font-medium">{title}</div>
       <div className="flex items-center gap-4">
+        <Badge className="rounded-xl" variant="secondary">
+          {value}
+        </Badge>
         <div className="flex-1 space-y-1">
           <Slider
             value={[value]}
@@ -1760,6 +1781,7 @@ function LikertItem({
             step={1}
             onValueChange={(v) => onChange(v?.[0] ?? min)}
             className="w-full"
+            dir={rtl ? "rtl" : "ltr"}
           />
           <div className="flex justify-between px-2.5 text-xs text-muted-foreground">
             {ticks.map((n) => (
@@ -1769,9 +1791,6 @@ function LikertItem({
             ))}
           </div>
         </div>
-        <Badge className="rounded-xl" variant="secondary">
-          {value}
-        </Badge>
       </div>
       <div className="text-xs text-muted-foreground">{labels[value - 1]}</div>
     </div>
