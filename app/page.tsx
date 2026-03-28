@@ -263,6 +263,7 @@ const DEMO_PROFILES = [
     id: "sara",
     emoji: "👧",
     name: "Sara",
+    arName: "سارة",
     tagline: "8 years old · Child with autism",
     arTagline: "8 سنوات · توحد",
     description: "Prefers very short AAC phrases. Her parent supports her in public settings like pharmacies and cafés.",
@@ -275,6 +276,7 @@ const DEMO_PROFILES = [
     id: "ahmad",
     emoji: "👦",
     name: "Ahmad",
+    arName: "أحمد",
     tagline: "14 years old · Cerebral palsy",
     arTagline: "14 سنة · شلل دماغي",
     description: "Uses moderate-length phrases and needs support at family gatherings and social settings.",
@@ -287,6 +289,7 @@ const DEMO_PROFILES = [
     id: "layla",
     emoji: "👩",
     name: "Layla",
+    arName: "ليلى",
     tagline: "32 years old · ALS",
     arTagline: "32 سنة · التصلب الجانبي الضموري",
     description: "Adult who recently lost speech. Prefers full sentences and uses AAC in both professional and family contexts.",
@@ -299,6 +302,7 @@ const DEMO_PROFILES = [
     id: "noor",
     emoji: "🧑",
     name: "Noor",
+    arName: "نور",
     tagline: "19 years old · Aphasia",
     arTagline: "19 سنة · حبسة كلامية",
     description: "Young adult recovering from stroke. Uses short sentence starters and is often in café or social settings.",
@@ -1044,7 +1048,7 @@ export default function QatarAACProbePrototype() {
                     >
                       <div className="text-4xl">{profile.emoji}</div>
                       <div>
-                        <div className="font-semibold text-base">{profile.name}</div>
+                        <div className="font-semibold text-base">{language === "ar" ? profile.arName : profile.name}</div>
                         <div className="text-xs text-blue-700 font-medium mt-0.5">{language === "ar" ? profile.arTagline : profile.tagline}</div>
                       </div>
                       <p className="text-xs text-muted-foreground leading-relaxed">{language === "ar" ? profile.arDescription : profile.description}</p>
