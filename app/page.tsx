@@ -126,13 +126,7 @@ const likertLabelsAr = {
     "٤ – مفيدة جداً",
     "٥ – مفيدة تماماً",
   ],
-  ease: [
-    "١ – صعب جداً",
-    "٢ – صعب",
-    "٣ – محايد",
-    "٤ – سهل",
-    "٥ – سهل جداً",
-  ],
+  ease: ["١ – صعب جداً", "٢ – صعب", "٣ – محايد", "٤ – سهل", "٥ – سهل جداً"],
   speed: [
     "١ – بطيء جداً",
     "٢ – بطيء",
@@ -268,7 +262,10 @@ const api = {
   },
 };
 
-const goalsByLocation: Record<string, { value: string; label: string; arLabel: string }[]> = {
+const goalsByLocation: Record<
+  string,
+  { value: string; label: string; arLabel: string }[]
+> = {
   pharmacy: [
     { value: "ask dose", label: "Ask dose", arLabel: "سؤال عن الجرعة" },
     { value: "refill", label: "Refill", arLabel: "إعادة الصرف" },
@@ -282,23 +279,50 @@ const goalsByLocation: Record<string, { value: string; label: string; arLabel: s
   majlis: [
     { value: "greet", label: "Greet", arLabel: "تحية" },
     { value: "share story", label: "Share story", arLabel: "مشاركة أخبار" },
-    { value: "join conversation", label: "Join conversation", arLabel: "الانضمام للحديث" },
-    { value: "express feeling", label: "Express feeling", arLabel: "التعبير عن مشاعر" },
+    {
+      value: "join conversation",
+      label: "Join conversation",
+      arLabel: "الانضمام للحديث",
+    },
+    {
+      value: "express feeling",
+      label: "Express feeling",
+      arLabel: "التعبير عن مشاعر",
+    },
   ],
 };
 
-const SAMPLE_IMAGES: Record<string, { src: string; label: string; arLabel: string }[]> = {
+const SAMPLE_IMAGES: Record<
+  string,
+  { src: string; label: string; arLabel: string }[]
+> = {
   pharmacy: [
-    { src: "/samples/pharmacy/medicine.jpg", label: "Medicine box", arLabel: "علبة دواء" },
-    { src: "/samples/pharmacy/pills.jpg",    label: "Pills",        arLabel: "حبوب" },
+    {
+      src: "/samples/pharmacy/medicine.jpg",
+      label: "Medicine box",
+      arLabel: "علبة دواء",
+    },
+    { src: "/samples/pharmacy/pills.jpg", label: "Pills", arLabel: "حبوب" },
   ],
   cafe: [
-    { src: "/samples/cafe/coffee.jpg",    label: "Coffee",   arLabel: "قهوة" },
-    { src: "/samples/cafe/sandwich.jpg",  label: "Sandwich", arLabel: "ساندويش" },
+    { src: "/samples/cafe/coffee.jpg", label: "Coffee", arLabel: "قهوة" },
+    {
+      src: "/samples/cafe/sandwich.jpg",
+      label: "Sandwich",
+      arLabel: "ساندويش",
+    },
   ],
   majlis: [
-    { src: "/samples/gathering/coffee.jpg",        label: "Coffee gathering", arLabel: "قهوة في التجمع" },
-    { src: "/samples/gathering/family_majlis.webp", label: "Family majlis",   arLabel: "مجلس عائلي" },
+    {
+      src: "/samples/gathering/coffee.jpg",
+      label: "Coffee gathering",
+      arLabel: "قهوة في التجمع",
+    },
+    {
+      src: "/samples/gathering/family_majlis.webp",
+      label: "Family majlis",
+      arLabel: "مجلس عائلي",
+    },
   ],
 };
 
@@ -320,11 +344,17 @@ const DEMO_PROFILES = [
     location: "pharmacy",
     tagline: "12 years old · Autism · Pharmacy",
     arTagline: "12 سنة · توحد · صيدلية",
-    description: "Uses very short AAC phrases. Visiting a pharmacy to ask about medication.",
-    arDescription: "تستخدم عبارات AAC قصيرة جداً. تزور صيدلية للسؤال عن الدواء.",
+    description:
+      "Uses very short AAC phrases. Visiting a pharmacy to ask about medication.",
+    arDescription:
+      "تستخدم عبارات AAC قصيرة جداً. تزور صيدلية للسؤال عن الدواء.",
     partnerRole: "parent",
     simpleStyle: true,
-    phrases: ["Hi, I use AAC. Please give me a moment.", "Can you help me?", "I need this medicine."],
+    phrases: [
+      "Hi, I use AAC. Please give me a moment.",
+      "Can you help me?",
+      "I need this medicine.",
+    ],
   },
   {
     id: "ahmad",
@@ -335,11 +365,17 @@ const DEMO_PROFILES = [
     location: "majlis",
     tagline: "14 years old · Cerebral palsy · Family gathering",
     arTagline: "14 سنة · شلل دماغي · تجمع عائلي",
-    description: "Uses moderate-length phrases. Needs AAC support at a family majlis gathering.",
-    arDescription: "يستخدم عبارات متوسطة الطول. يحتاج دعم AAC في تجمع عائلي بالمجلس.",
+    description:
+      "Uses moderate-length phrases. Needs AAC support at a family majlis gathering.",
+    arDescription:
+      "يستخدم عبارات متوسطة الطول. يحتاج دعم AAC في تجمع عائلي بالمجلس.",
     partnerRole: "caregiver",
     simpleStyle: false,
-    phrases: ["Hi, I use AAC. Please give me a moment.", "I would like to join.", "Can you help me?"],
+    phrases: [
+      "Hi, I use AAC. Please give me a moment.",
+      "I would like to join.",
+      "Can you help me?",
+    ],
   },
   {
     id: "layla",
@@ -354,7 +390,11 @@ const DEMO_PROFILES = [
     arDescription: "تودّ استخدام AAC للطلب باستقلالية في مقهى.",
     partnerRole: "parent",
     simpleStyle: false,
-    phrases: ["Hi, I use AAC. Please give me a moment.", "I would like a coffee please.", "Can I have this?"],
+    phrases: [
+      "Hi, I use AAC. Please give me a moment.",
+      "I would like a coffee please.",
+      "Can I have this?",
+    ],
   },
 ];
 
@@ -365,25 +405,38 @@ const UI_LABELS = {
     welcomeDesc: "Please enter your participant ID to begin the session.",
     participantId: "Participant ID",
     participantPlaceholder: "e.g. P01",
-    privacyNote: "No personal data is collected — this ID is used only to link your anonymous responses.",
+    privacyNote:
+      "No personal data is collected — this ID is used only to link your anonymous responses.",
     startSession: "Start Session →",
     // Header
-    headerSubtitle: "Snap a photo · get words · speak — explore how AI can support an AAC user in everyday moments.",
+    headerSubtitle:
+      "Snap a photo · get words · speak — explore how AI can support an AAC user in everyday moments.",
     langToggle: "🌐 العربية",
     // Steps
-    steps: ["👤 Profile", "🧠 Generate", "📋 Evaluate", "🔍 Verify", "📊 Evaluate"] as unknown as string[],
+    steps: [
+      "👤 Profile",
+      "🧠 Generate",
+      "📋 Evaluate",
+      "🔍 Verify",
+      "📊 Evaluate",
+    ] as unknown as string[],
     // Scenario card
     scenarioTitle: "Today's scenario: Out in Doha",
-    scenarioDesc: "An AAC user needs fast, low-effort support across three real settings.",
+    scenarioDesc:
+      "An AAC user needs fast, low-effort support across three real settings.",
     pharmacyScenario: "Pharmacy counter",
-    pharmacyScenarioDesc: "Point camera at medicine box → get a short sentence about dosage or a refill.",
+    pharmacyScenarioDesc:
+      "Point camera at medicine box → get a short sentence about dosage or a refill.",
     cafeScenario: "Café ordering",
-    cafeScenarioDesc: "Point camera at the menu → order independently with AI-suggested words.",
+    cafeScenarioDesc:
+      "Point camera at the menu → order independently with AI-suggested words.",
     majlisScenario: "Family gathering / majlis",
-    majlisScenarioDesc: "Prepare greetings and topics beforehand so the user can join conversations naturally.",
+    majlisScenarioDesc:
+      "Prepare greetings and topics beforehand so the user can join conversations naturally.",
     // Profile picker
     selectProfile: "Select a demo profile",
-    selectProfileDesc: "Choose the AAC user you will be simulating during this session.",
+    selectProfileDesc:
+      "Choose the AAC user you will be simulating during this session.",
     selectedCheck: "✓ Selected",
     profileLoaded: "Profile loaded",
     partnerLabel: "Partner: ",
@@ -421,7 +474,8 @@ const UI_LABELS = {
     intentionLabel: "Intention",
     preparedSuggestions: "Prepared suggestions for this location",
     extraContext: "Extra context (optional)",
-    extraContextPlaceholder: "Example: asthma med, child is anxious, need a very short sentence",
+    extraContextPlaceholder:
+      "Example: asthma med, child is anxious, need a very short sentence",
     // Step 1 — time options
     morning: "Morning",
     afternoon: "Afternoon",
@@ -439,7 +493,8 @@ const UI_LABELS = {
     keywordsTitle: "Keywords → sentences",
     keywordsDesc: "AI suggests words, then 3 sentence options to pick from.",
     voiceInput: "Voice input could be added here",
-    noKeywords: "No keywords yet. Upload an image or capture one from the camera, then generate.",
+    noKeywords:
+      "No keywords yet. Upload an image or capture one from the camera, then generate.",
     addExtraKeywords: "Add extra keywords for sentence generation",
     keywordsPlaceholder: "",
     generatingSentences: "Generating sentences…",
@@ -471,11 +526,15 @@ const UI_LABELS = {
     qb1: "How accurately did the image represent your intended meaning?",
     qb2: "How helpful was the image verification for confirming your intent?",
     qb3: "How likely are you to use this feature to convey your message?",
+    qb4: "How would you rate the speed of the image generation?",
     additionalComments: "Additional comments",
     commentsPlaceholder: "Any other thoughts, reactions, or feedback...",
     saving: "Saving…",
     submit: "Submit",
     submitted: "Submitted!",
+    thankYou: "Thank you for your participation!",
+    thankYouDesc: "Your responses have been saved. You can start a new submission below.",
+    doAnother: "Start another submission",
     // Footer
     footer: "Qatar AAC AI Design Probe · Workshop prototype",
   },
@@ -485,22 +544,33 @@ const UI_LABELS = {
     welcomeDesc: "يرجى إدخال رقم المشارك للبدء.",
     participantId: "رقم المشارك",
     participantPlaceholder: "مثال: P01",
-    privacyNote: "لا يتم جمع بيانات شخصية — يُستخدم هذا الرقم فقط لربط إجاباتك المجهولة.",
+    privacyNote:
+      "لا يتم جمع بيانات شخصية — يُستخدم هذا الرقم فقط لربط إجاباتك المجهولة.",
     startSession: "ابدأ الجلسة ←",
     // Header
-    headerSubtitle: "التقط صورة · احصل على كلمات · تحدث — استكشف كيف يمكن للذكاء الاصطناعي دعم مستخدم AAC في لحظات يومية.",
+    headerSubtitle:
+      "التقط صورة · احصل على كلمات · تحدث — استكشف كيف يمكن للذكاء الاصطناعي دعم مستخدم AAC في لحظات يومية.",
     langToggle: "🌐 English",
     // Steps
-    steps: ["👤 الملف", "🧠 توليد", "📋 تقييم", "🔍 تحقق", "📊 تقييم"] as unknown as string[],
+    steps: [
+      "👤 الملف",
+      "🧠 توليد",
+      "📋 تقييم",
+      "🔍 تحقق",
+      "📊 تقييم",
+    ] as unknown as string[],
     // Scenario card
     scenarioTitle: "سيناريو اليوم: خارج في الدوحة",
     scenarioDesc: "مستخدم AAC يحتاج إلى دعم سريع وسهل في ثلاثة أماكن حقيقية.",
     pharmacyScenario: "طاولة الصيدلية",
-    pharmacyScenarioDesc: "وجّه الكاميرا نحو علبة الدواء ← احصل على جملة قصيرة عن الجرعة أو إعادة الصرف.",
+    pharmacyScenarioDesc:
+      "وجّه الكاميرا نحو علبة الدواء ← احصل على جملة قصيرة عن الجرعة أو إعادة الصرف.",
     cafeScenario: "طلب في المقهى",
-    cafeScenarioDesc: "وجّه الكاميرا نحو القائمة ← اطلب باستقلالية بكلمات مقترحة من الذكاء الاصطناعي.",
+    cafeScenarioDesc:
+      "وجّه الكاميرا نحو القائمة ← اطلب باستقلالية بكلمات مقترحة من الذكاء الاصطناعي.",
     majlisScenario: "تجمع عائلي / مجلس",
-    majlisScenarioDesc: "جهّز التحيات والمواضيع مسبقاً ليتمكن المستخدم من المشاركة في المحادثات بشكل طبيعي.",
+    majlisScenarioDesc:
+      "جهّز التحيات والمواضيع مسبقاً ليتمكن المستخدم من المشاركة في المحادثات بشكل طبيعي.",
     // Profile picker
     selectProfile: "اختر ملفاً تجريبياً",
     selectProfileDesc: "اختر مستخدم AAC الذي ستمثله خلال هذه الجلسة.",
@@ -541,7 +611,8 @@ const UI_LABELS = {
     intentionLabel: "النية",
     preparedSuggestions: "اقتراحات جاهزة لهذا الموقع",
     extraContext: "سياق إضافي (اختياري)",
-    extraContextPlaceholder: "مثال: دواء الربو، الطفل قلق، أحتاج جملة قصيرة جداً",
+    extraContextPlaceholder:
+      "مثال: دواء الربو، الطفل قلق، أحتاج جملة قصيرة جداً",
     // Step 1 — time options
     morning: "صباح",
     afternoon: "بعد الظهر",
@@ -591,11 +662,15 @@ const UI_LABELS = {
     qb1: "ما مدى دقة الصورة في تمثيل معناك المقصود؟",
     qb2: "ما مدى فائدة التحقق بالصورة في تأكيد قصدك؟",
     qb3: "ما مدى احتمال استخدامك لهذه الميزة لنقل رسالتك؟",
+    qb4: "كيف تقيّم سرعة توليد الصورة؟",
     additionalComments: "تعليقات إضافية",
     commentsPlaceholder: "أي أفكار أو ردود فعل أو ملاحظات أخرى...",
     saving: "جارٍ الحفظ…",
     submit: "إرسال",
     submitted: "تم الإرسال!",
+    thankYou: "شكراً على مشاركتك!",
+    thankYouDesc: "تم حفظ إجاباتك. يمكنك بدء تقديم جديد أدناه.",
+    doAnother: "بدء تقديم آخر",
     // Footer
     footer: "مسبار تصميم AAC بالذكاء الاصطناعي في قطر · نموذج أولي للورشة",
   },
@@ -604,8 +679,12 @@ const UI_LABELS = {
 export default function QatarAACProbePrototype() {
   const [participantId, setParticipantId] = useState("");
   const [participantIdInput, setParticipantIdInput] = useState("");
-  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
-  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
+    null,
+  );
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
+    null,
+  );
   const [profileName, setProfileName] = useState("");
   const [partnerRole, setPartnerRole] = useState("parent");
   const [language, setLanguage] = useState("en");
@@ -624,25 +703,48 @@ export default function QatarAACProbePrototype() {
     majlis: [
       { id: "m1", text: "Eid Mubarak", arText: "عيد مبارك" },
       { id: "m2", text: "How are you?", arText: "كيف حالك؟" },
-      { id: "m3", text: "I want to talk about football.", arText: "أريد أن أتحدث عن كرة القدم." },
+      {
+        id: "m3",
+        text: "I want to talk about football.",
+        arText: "أريد أن أتحدث عن كرة القدم.",
+      },
     ],
     school: [
-      { id: "s1", text: "I forgot my book today.", arText: "نسيت كتابي اليوم." },
-      { id: "s2", text: "Can you explain that again?", arText: "هل يمكنك شرح ذلك مرة أخرى؟" },
+      {
+        id: "s1",
+        text: "I forgot my book today.",
+        arText: "نسيت كتابي اليوم.",
+      },
+      {
+        id: "s2",
+        text: "Can you explain that again?",
+        arText: "هل يمكنك شرح ذلك مرة أخرى؟",
+      },
     ],
     pharmacy: [
-      { id: "ph1", text: "I want to ask about the dose.", arText: "أريد السؤال عن الجرعة." },
-      { id: "ph2", text: "I need a refill for this medicine.", arText: "أحتاج إلى إعادة تعبئة هذا الدواء." },
+      {
+        id: "ph1",
+        text: "I want to ask about the dose.",
+        arText: "أريد السؤال عن الجرعة.",
+      },
+      {
+        id: "ph2",
+        text: "I need a refill for this medicine.",
+        arText: "أحتاج إلى إعادة تعبئة هذا الدواء.",
+      },
     ],
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [inputMode, setInputMode] = useState<"upload" | "sample" | "camera">("upload");
+  const [inputMode, setInputMode] = useState<"upload" | "sample" | "camera">(
+    "upload",
+  );
   const [imagePreview, setImagePreview] = useState("");
   const [timeOfDay, setTimeOfDay] = useState("afternoon");
   const [location, setLocation] = useState("pharmacy");
   const [goal, setGoal] = useState("ask dose");
   const [freeContext, setFreeContext] = useState("");
+  const [selectedPhraseIds, setSelectedPhraseIds] = useState<Set<string>>(new Set());
   const [intention, setIntention] = useState("request");
 
   const [notes, setNotes] = useState("");
@@ -655,7 +757,9 @@ export default function QatarAACProbePrototype() {
 
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyDecision, setVerifyDecision] = useState<string | null>(null);
-  const [alternatives, setAlternatives] = useState<{ text: string; imageUrl: string }[]>([]);
+  const [alternatives, setAlternatives] = useState<
+    { text: string; imageUrl: string }[]
+  >([]);
   const [altLoading, setAltLoading] = useState(false);
 
   const [kwLoading, setKwLoading] = useState(false);
@@ -666,8 +770,18 @@ export default function QatarAACProbePrototype() {
   const [sentences, setSentences] = useState<string[]>([]);
   const [selectedSentence, setSelectedSentence] = useState("");
 
-  const [likertA, setLikertA] = useState({ keywordRelevance: 1, sentenceUsefulness: 1, ease: 1, speed: 1 });
-  const [likertB, setLikertB] = useState({ imageAccuracy: 1, helpfulness: 1, likelihood: 1 });
+  const [likertA, setLikertA] = useState({
+    keywordRelevance: 1,
+    sentenceUsefulness: 1,
+    ease: 1,
+    speed: 1,
+  });
+  const [likertB, setLikertB] = useState({
+    imageAccuracy: 1,
+    helpfulness: 1,
+    likelihood: 1,
+    speed: 1,
+  });
 
   const [cameraOn, setCameraOn] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
@@ -722,7 +836,9 @@ export default function QatarAACProbePrototype() {
     setSelectedSentence("");
     const res = await fetch(src);
     const blob = await res.blob();
-    const file = new File([blob], src.split("/").pop() || "sample", { type: blob.type });
+    const file = new File([blob], src.split("/").pop() || "sample", {
+      type: blob.type,
+    });
     const dataUrl = await toBase64(file);
     setImageFile(file);
     setImagePreview(dataUrl);
@@ -945,7 +1061,12 @@ export default function QatarAACProbePrototype() {
         body: JSON.stringify({
           participantId,
           profile: { name: profileName, partnerRole, language, style },
-          scenario: { location, goal: context.goal, intention, timeOfDay: context.timeOfDay },
+          scenario: {
+            location,
+            goal: context.goal,
+            intention,
+            timeOfDay: context.timeOfDay,
+          },
           keywords,
           selectedSentence,
           verifyDecision,
@@ -964,9 +1085,34 @@ export default function QatarAACProbePrototype() {
     }
   }
 
+  function resetForNewSubmission() {
+    setStep(0);
+    setSelectedProfileId(null);
+    setSelectedLocationId(null);
+    setImagePreview("");
+    setImageFile(null);
+    setKeywords([]);
+    setSentences([]);
+    setSelectedSentence("");
+    setVerifyImageUrl("");
+    setVerifyDecision(null);
+    setLikertA({ keywordRelevance: 1, sentenceUsefulness: 1, ease: 1, speed: 1 });
+    setLikertB({ imageAccuracy: 1, helpfulness: 1, likelihood: 1, speed: 1 });
+    setLikertASubmitted(false);
+    setLikertBSubmitted(false);
+    setAdditionalComments("");
+    setFreeContext("");
+    setSelectedPhraseIds(new Set());
+    setCustomKw("");
+    setNotes("");
+  }
+
   if (!participantId) {
     return (
-      <div className="min-h-screen w-full bg-sky-50 flex items-center justify-center p-6" dir={language === "ar" ? "rtl" : "ltr"}>
+      <div
+        className="min-h-screen w-full bg-sky-50 flex items-center justify-center p-6"
+        dir={language === "ar" ? "rtl" : "ltr"}
+      >
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -981,7 +1127,10 @@ export default function QatarAACProbePrototype() {
             </CardHeader>
             <CardContent className="p-8 space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="pid" className="text-sm font-medium text-slate-700">
+                <Label
+                  htmlFor="pid"
+                  className="text-sm font-medium text-slate-700"
+                >
                   {t.participantId}
                 </Label>
                 <Input
@@ -996,9 +1145,7 @@ export default function QatarAACProbePrototype() {
                   }}
                   className="rounded-xl text-base h-12"
                 />
-                <p className="text-xs text-muted-foreground">
-                  {t.privacyNote}
-                </p>
+                <p className="text-xs text-muted-foreground">{t.privacyNote}</p>
               </div>
               <Button
                 className="w-full rounded-2xl bg-blue-700 hover:bg-blue-600 py-6 text-base font-semibold"
@@ -1015,7 +1162,10 @@ export default function QatarAACProbePrototype() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-sky-50 p-4 md:p-8" dir={language === "ar" ? "rtl" : "ltr"}>
+    <div
+      className="min-h-screen w-full bg-sky-50 p-4 md:p-8"
+      dir={language === "ar" ? "rtl" : "ltr"}
+    >
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -1036,9 +1186,7 @@ export default function QatarAACProbePrototype() {
               {t.langToggle}
             </button>
           </div>
-          <p className="max-w-xl text-blue-200 text-base">
-            {t.headerSubtitle}
-          </p>
+          <p className="max-w-xl text-blue-200 text-base">{t.headerSubtitle}</p>
         </header>
 
         {/* Step navigator */}
@@ -1046,13 +1194,26 @@ export default function QatarAACProbePrototype() {
           <div className="flex items-center">
             {t.steps.map((label, i) => (
               <React.Fragment key={i}>
-                <button onClick={() => setStep(i)} className="flex flex-col items-center gap-1.5">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-full font-bold text-sm transition-colors ${step === i ? "bg-blue-700 text-white" : step > i ? "bg-blue-200 text-blue-700" : "bg-slate-100 text-slate-400"}`}>
+                <button
+                  onClick={() => setStep(i)}
+                  className="flex flex-col items-center gap-1.5"
+                >
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-full font-bold text-sm transition-colors ${step === i ? "bg-blue-700 text-white" : step > i ? "bg-blue-200 text-blue-700" : "bg-slate-100 text-slate-400"}`}
+                  >
                     {step > i ? <Check className="h-4 w-4" /> : i + 1}
                   </div>
-                  <span className={`text-xs font-medium whitespace-nowrap ${step === i ? "text-blue-700" : "text-muted-foreground"}`}>{label}</span>
+                  <span
+                    className={`text-xs font-medium whitespace-nowrap ${step === i ? "text-blue-700" : "text-muted-foreground"}`}
+                  >
+                    {label}
+                  </span>
                 </button>
-                {i < 4 && <div className={`h-0.5 flex-1 mx-3 mb-5 transition-colors ${step > i ? "bg-blue-300" : "bg-slate-200"}`} />}
+                {i < 4 && (
+                  <div
+                    className={`h-0.5 flex-1 mx-3 mb-5 transition-colors ${step > i ? "bg-blue-300" : "bg-slate-200"}`}
+                  />
+                )}
               </React.Fragment>
             ))}
           </div>
@@ -1060,78 +1221,129 @@ export default function QatarAACProbePrototype() {
 
         {/* Step 0: Profile + Location */}
         {step === 0 && (
-        <>
-          {/* 1 — Profile picker */}
-          <Card className="rounded-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-700 text-white font-bold text-sm">1</div>
-              <div>
-                <CardTitle className="text-lg">{t.selectProfile}</CardTitle>
-                <p className="text-sm text-muted-foreground mt-0.5">{t.selectProfileDesc}</p>
+          <>
+            {/* 1 — Profile picker */}
+            <Card className="rounded-2xl overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-700 text-white font-bold text-sm">
+                  1
+                </div>
+                <div>
+                  <CardTitle className="text-lg">{t.selectProfile}</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {t.selectProfileDesc}
+                  </p>
+                </div>
               </div>
-            </div>
-            <CardContent className="pt-5">
-              <div className="grid gap-4 sm:grid-cols-3">
-                {DEMO_PROFILES.map((profile) => {
-                  const isSelected = selectedProfileId === profile.id;
-                  return (
-                    <button
-                      key={profile.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedProfileId(profile.id);
-                        setProfileName(profile.name);
-                        setPartnerRole(profile.partnerRole);
-                        setSimpleStyle(profile.simpleStyle);
-                        setPhraseBank(profile.phrases.map((text) => ({ id: crypto.randomUUID(), text })));
-                        setSelectedLocationId(profile.location);
-                        setLocation(profile.location);
-                      }}
-                      className={`rounded-2xl border-2 p-5 text-left transition-all space-y-2 ${
-                        isSelected
-                          ? "border-blue-700 bg-blue-50 ring-2 ring-blue-700/20"
-                          : "border-transparent bg-slate-50 hover:border-blue-200 hover:bg-blue-50"
-                      }`}
-                    >
-                      <div className="text-4xl flex gap-1">{profile.emoji}<span className="text-3xl">{profile.scenarioEmoji}</span></div>
-                      <div>
-                        <div className="font-semibold text-lg">{language === "ar" ? profile.arName : profile.name}</div>
-                        <div className="text-sm text-blue-700 font-medium mt-0.5">{language === "ar" ? profile.arTagline : profile.tagline}</div>
-                      </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed">{language === "ar" ? profile.arDescription : profile.description}</p>
-                      {isSelected && <div className="text-xs font-semibold text-blue-700 pt-1">{t.selectedCheck}</div>}
-                    </button>
-                  );
-                })}
+              <CardContent className="pt-5">
+                <div className="grid gap-4 sm:grid-cols-3">
+                  {DEMO_PROFILES.map((profile) => {
+                    const isSelected = selectedProfileId === profile.id;
+                    return (
+                      <button
+                        key={profile.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedProfileId(profile.id);
+                          setProfileName(profile.name);
+                          setPartnerRole(profile.partnerRole);
+                          setSimpleStyle(profile.simpleStyle);
+                          setPhraseBank(
+                            profile.phrases.map((text) => ({
+                              id: crypto.randomUUID(),
+                              text,
+                            })),
+                          );
+                          setSelectedLocationId(profile.location);
+                          setLocation(profile.location);
+                        }}
+                        className={`rounded-2xl border-2 p-5 text-left transition-all space-y-2 ${
+                          isSelected
+                            ? "border-blue-700 bg-blue-50 ring-2 ring-blue-700/20"
+                            : "border-transparent bg-slate-50 hover:border-blue-200 hover:bg-blue-50"
+                        }`}
+                      >
+                        <div className="text-4xl flex gap-1">
+                          {profile.emoji}
+                          <span className="text-3xl">
+                            {profile.scenarioEmoji}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-lg">
+                            {language === "ar" ? profile.arName : profile.name}
+                          </div>
+                          <div className="text-sm text-blue-700 font-medium mt-0.5">
+                            {language === "ar"
+                              ? profile.arTagline
+                              : profile.tagline}
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {language === "ar"
+                            ? profile.arDescription
+                            : profile.description}
+                        </p>
+                        {isSelected && (
+                          <div className="text-xs font-semibold text-blue-700 pt-1">
+                            {t.selectedCheck}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Summary + next */}
+            {selectedProfileId && (
+              <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 flex flex-wrap gap-3 items-center text-xs text-blue-700">
+                <span className="font-medium text-blue-800">
+                  {t.profileLoaded}:
+                </span>
+                <span className="rounded-full bg-blue-100 px-3 py-1">
+                  {language === "ar"
+                    ? (DEMO_PROFILES.find((p) => p.id === selectedProfileId)
+                        ?.arName ?? profileName)
+                    : profileName}
+                </span>
+                <span className="rounded-full bg-blue-100 px-3 py-1">
+                  {t.partnerLabel}
+                  {language === "ar"
+                    ? (PARTNER_ROLE_AR[partnerRole] ?? partnerRole)
+                    : partnerRole}
+                </span>
+                <span className="rounded-full bg-blue-100 px-3 py-1">
+                  {simpleStyle ? t.simpleStyleLabel : t.standardStyleLabel}
+                </span>
+                <span className="rounded-full bg-blue-100 px-3 py-1">
+                  📍{" "}
+                  {language === "ar"
+                    ? { pharmacy: "صيدلية", cafe: "مقهى", majlis: "مجلس" }[
+                        selectedLocationId ?? ""
+                      ]
+                    : { pharmacy: "Pharmacy", cafe: "Café", majlis: "Majlis" }[
+                        selectedLocationId ?? ""
+                      ]}
+                </span>
               </div>
-            </CardContent>
-          </Card>
+            )}
 
-          {/* Summary + next */}
-          {selectedProfileId && (
-            <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 flex flex-wrap gap-3 items-center text-xs text-blue-700">
-              <span className="font-medium text-blue-800">{t.profileLoaded}:</span>
-              <span className="rounded-full bg-blue-100 px-3 py-1">{language === "ar" ? (DEMO_PROFILES.find(p => p.id === selectedProfileId)?.arName ?? profileName) : profileName}</span>
-              <span className="rounded-full bg-blue-100 px-3 py-1">{t.partnerLabel}{language === "ar" ? (PARTNER_ROLE_AR[partnerRole] ?? partnerRole) : partnerRole}</span>
-              <span className="rounded-full bg-blue-100 px-3 py-1">{simpleStyle ? t.simpleStyleLabel : t.standardStyleLabel}</span>
-              <span className="rounded-full bg-blue-100 px-3 py-1">📍 {language === "ar" ? { pharmacy: "صيدلية", cafe: "مقهى", majlis: "مجلس" }[selectedLocationId ?? ""] : { pharmacy: "Pharmacy", cafe: "Café", majlis: "Majlis" }[selectedLocationId ?? ""]}</span>
+            <div className="flex justify-center gap-4 pt-2">
+              <Button
+                onClick={() => setStep(1)}
+                disabled={!selectedProfileId}
+                className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-10 py-6 text-base font-semibold disabled:opacity-40"
+              >
+                {t.nextGenerate}
+              </Button>
             </div>
-          )}
-
-          <div className="flex justify-center gap-4 pt-2">
-            <Button
-              onClick={() => setStep(1)}
-              disabled={!selectedProfileId}
-              className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-10 py-6 text-base font-semibold disabled:opacity-40"
-            >
-              {t.nextGenerate}
-            </Button>
-          </div>
-        </>
+          </>
         )}
 
         {step === 1 && (
-        <div className="space-y-6">
+          <div className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-2">
               <Card className="rounded-2xl overflow-hidden">
                 <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
@@ -1152,11 +1364,15 @@ export default function QatarAACProbePrototype() {
                   <div className="flex rounded-xl border overflow-hidden text-sm font-medium">
                     {(["upload", "sample", "camera"] as const).map((mode) => {
                       const labels = {
-                        upload:  language === "ar" ? "رفع صورة" : "Upload",
-                        sample:  language === "ar" ? "أمثلة" : "Samples",
-                        camera:  language === "ar" ? "كاميرا" : "Camera",
+                        upload: language === "ar" ? "رفع صورة" : "Upload",
+                        sample: language === "ar" ? "أمثلة" : "Samples",
+                        camera: language === "ar" ? "كاميرا" : "Camera",
                       };
-                      const icons = { upload: "📁", sample: "🖼️", camera: "📷" };
+                      const icons = {
+                        upload: "📁",
+                        sample: "🖼️",
+                        camera: "📷",
+                      };
                       return (
                         <button
                           key={mode}
@@ -1181,7 +1397,9 @@ export default function QatarAACProbePrototype() {
                       <Input
                         type="file"
                         accept="image/*"
-                        onChange={(e) => onPickImage(e.target.files?.[0] || null)}
+                        onChange={(e) =>
+                          onPickImage(e.target.files?.[0] || null)
+                        }
                       />
                     </div>
                   )}
@@ -1191,7 +1409,9 @@ export default function QatarAACProbePrototype() {
                     <div className="grid grid-cols-2 gap-3">
                       {(SAMPLE_IMAGES[location] ?? []).length === 0 ? (
                         <p className="col-span-2 text-sm text-muted-foreground">
-                          {language === "ar" ? "لا توجد أمثلة لهذا الموقع." : "No samples for this location."}
+                          {language === "ar"
+                            ? "لا توجد أمثلة لهذا الموقع."
+                            : "No samples for this location."}
                         </p>
                       ) : (
                         (SAMPLE_IMAGES[location] ?? []).map((s) => (
@@ -1200,12 +1420,18 @@ export default function QatarAACProbePrototype() {
                             type="button"
                             onClick={() => onSelectSample(s.src)}
                             className={`rounded-xl border-2 overflow-hidden text-left transition-all ${
-                              imagePreview && imagePreview.length > 100 && imageFile?.name === s.src.split("/").pop()
+                              imagePreview &&
+                              imagePreview.length > 100 &&
+                              imageFile?.name === s.src.split("/").pop()
                                 ? "border-blue-700 ring-2 ring-blue-700/20"
                                 : "border-transparent hover:border-blue-300"
                             }`}
                           >
-                            <img src={s.src} alt={s.label} className="w-full aspect-square object-cover" />
+                            <img
+                              src={s.src}
+                              alt={s.label}
+                              className="w-full aspect-square object-cover"
+                            />
                             <div className="px-2 py-1 text-xs font-medium text-slate-600">
                               {language === "ar" ? s.arLabel : s.label}
                             </div>
@@ -1219,19 +1445,42 @@ export default function QatarAACProbePrototype() {
                   {inputMode === "camera" && (
                     <div className="space-y-3">
                       <div className="flex flex-wrap gap-2">
-                        <Button type="button" onClick={startCamera} className="rounded-xl">
-                          <Camera className="mr-2 h-4 w-4" />{t.startCamera}
+                        <Button
+                          type="button"
+                          onClick={startCamera}
+                          className="rounded-xl"
+                        >
+                          <Camera className="mr-2 h-4 w-4" />
+                          {t.startCamera}
                         </Button>
-                        <Button type="button" variant="secondary" onClick={capturePhoto} className="rounded-xl">
-                          <ImageIcon className="mr-2 h-4 w-4" />{t.capturePhoto}
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={capturePhoto}
+                          className="rounded-xl"
+                        >
+                          <ImageIcon className="mr-2 h-4 w-4" />
+                          {t.capturePhoto}
                         </Button>
-                        <Button type="button" variant="outline" onClick={stopCamera} className="rounded-xl">
-                          <CameraOff className="mr-2 h-4 w-4" />{t.stopCamera}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={stopCamera}
+                          className="rounded-xl"
+                        >
+                          <CameraOff className="mr-2 h-4 w-4" />
+                          {t.stopCamera}
                         </Button>
                       </div>
                       {cameraOn && (
                         <div className="overflow-hidden rounded-2xl border">
-                          <video ref={videoRef} autoPlay playsInline muted className="h-auto w-full" />
+                          <video
+                            ref={videoRef}
+                            autoPlay
+                            playsInline
+                            muted
+                            className="h-auto w-full"
+                          />
                         </div>
                       )}
                     </div>
@@ -1272,7 +1521,9 @@ export default function QatarAACProbePrototype() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="morning">{t.morning}</SelectItem>
-                          <SelectItem value="afternoon">{t.afternoon}</SelectItem>
+                          <SelectItem value="afternoon">
+                            {t.afternoon}
+                          </SelectItem>
                           <SelectItem value="evening">{t.evening}</SelectItem>
                           <SelectItem value="night">{t.night}</SelectItem>
                         </SelectContent>
@@ -1283,8 +1534,16 @@ export default function QatarAACProbePrototype() {
                         <MapPin className="h-4 w-4" /> {t.locationLabel}
                       </Label>
                       <div className="flex items-center gap-2 rounded-xl border bg-slate-50 px-3 py-2 text-sm text-slate-700">
-                        {{ pharmacy: "💊", cafe: "☕", majlis: "🏡" }[location] ?? "📍"}
-                        <span>{{ pharmacy: t.locPharmacy, cafe: t.locCafe, majlis: t.locMajlis }[location] ?? location}</span>
+                        {{ pharmacy: "💊", cafe: "☕", majlis: "🏡" }[
+                          location
+                        ] ?? "📍"}
+                        <span>
+                          {{
+                            pharmacy: t.locPharmacy,
+                            cafe: t.locCafe,
+                            majlis: t.locMajlis,
+                          }[location] ?? location}
+                        </span>
                       </div>
                     </div>
                     <div className="space-y-1">
@@ -1294,9 +1553,15 @@ export default function QatarAACProbePrototype() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="request">{t.intentRequest}</SelectItem>
-                          <SelectItem value="question">{t.intentQuestion}</SelectItem>
-                          <SelectItem value="conversation">{t.intentConversation}</SelectItem>
+                          <SelectItem value="request">
+                            {t.intentRequest}
+                          </SelectItem>
+                          <SelectItem value="question">
+                            {t.intentQuestion}
+                          </SelectItem>
+                          <SelectItem value="conversation">
+                            {t.intentConversation}
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1306,28 +1571,32 @@ export default function QatarAACProbePrototype() {
                     <div className="space-y-2">
                       <Label>{t.preparedSuggestions}</Label>
                       <div className="flex flex-wrap gap-2">
-                        {locationSpecificPhrases.map((item) => (
-                          <Button
-                            key={item.id}
-                            type="button"
-                            variant="secondary"
-                            className="rounded-xl"
-                            onClick={() => {
-                              const display = language === "ar" ? item.arText : item.text;
-                              setFreeContext((prev) =>
-                                prev.trim()
-                                  ? `${prev}${prev.trim().endsWith(".") ? " " : "; "}${display}`
-                                  : display,
-                              );
-                            }}
-                          >
-                            {language === "ar" ? item.arText : item.text}
-                          </Button>
-                        ))}
+                        {locationSpecificPhrases.map((item) => {
+                          const isActive = selectedPhraseIds.has(item.id);
+                          return (
+                            <Button
+                              key={item.id}
+                              type="button"
+                              variant={isActive ? "default" : "secondary"}
+                              className={`rounded-xl ${isActive ? "bg-blue-700 text-white" : ""}`}
+                              onClick={() => {
+                                const display = language === "ar" ? item.arText : item.text;
+                                if (isActive) {
+                                  setSelectedPhraseIds((prev) => { const n = new Set(prev); n.delete(item.id); return n; });
+                                  setFreeContext((prev) => prev.replace(`; ${display}`, "").replace(display, "").trim());
+                                } else {
+                                  setSelectedPhraseIds((prev) => new Set(prev).add(item.id));
+                                  setFreeContext((prev) => prev.trim() ? `${prev}${prev.trim().endsWith(".") ? " " : "; "}${display}` : display);
+                                }
+                              }}
+                            >
+                              {language === "ar" ? item.arText : item.text}
+                            </Button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
-
                 </CardContent>
               </Card>
 
@@ -1416,13 +1685,13 @@ export default function QatarAACProbePrototype() {
                     }
                     className="w-full rounded-xl"
                   >
-                    {sentLoading
-                      ? t.generatingSentences
-                      : t.generate3Sentences}
+                    {sentLoading ? t.generatingSentences : t.generate3Sentences}
                   </Button>
 
                   <div className="space-y-2">
-                    <div className="text-sm font-medium">{t.sentenceOptions}</div>
+                    <div className="text-sm font-medium">
+                      {t.sentenceOptions}
+                    </div>
                     {sentences.length ? (
                       <div className="space-y-2">
                         {sentences.map((s) => (
@@ -1438,7 +1707,8 @@ export default function QatarAACProbePrototype() {
                             <div className="text-sm leading-relaxed">{s}</div>
                             {selectedSentence === s && (
                               <div className="mt-2 inline-flex items-center gap-1 text-xs text-primary">
-                                <Check className="h-3 w-3" /> {t.sentenceSelected}
+                                <Check className="h-3 w-3" />{" "}
+                                {t.sentenceSelected}
                               </div>
                             )}
                           </button>
@@ -1487,22 +1757,31 @@ export default function QatarAACProbePrototype() {
                 </CardContent>
               </Card>
             </div>
-          <div className="flex justify-center gap-4 pt-2">
-            <Button onClick={() => setStep(0)} variant="outline" className="rounded-2xl px-10 py-6 text-base font-semibold">{t.back}</Button>
-            <Button onClick={() => setStep(2)} className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-10 py-6 text-base font-semibold">{t.nextEvaluate}</Button>
+            <div className="flex justify-center gap-4 pt-2">
+              <Button
+                onClick={() => setStep(0)}
+                variant="outline"
+                className="rounded-2xl px-10 py-6 text-base font-semibold"
+              >
+                {t.back}
+              </Button>
+              <Button
+                onClick={() => setStep(2)}
+                className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-10 py-6 text-base font-semibold"
+              >
+                {t.nextEvaluate}
+              </Button>
+            </div>
           </div>
-        </div>
         )}
 
         {step === 3 && (
-        <div className="space-y-6">
+          <div className="space-y-6">
             <Card className="rounded-2xl overflow-hidden">
               <div className="bg-gradient-to-r from-slate-100 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
                 <span className="text-2xl">🔍</span>
                 <div>
-                  <CardTitle className="text-lg">
-                    {t.verifyTitle}
-                  </CardTitle>
+                  <CardTitle className="text-lg">{t.verifyTitle}</CardTitle>
                   <p className="text-sm text-muted-foreground mt-0.5">
                     {t.verifyDesc}
                   </p>
@@ -1542,9 +1821,7 @@ export default function QatarAACProbePrototype() {
 
                   {verifyImageUrl ? (
                     <div className="space-y-2">
-                      <div className="text-sm font-medium">
-                        {t.doesMatch}
-                      </div>
+                      <div className="text-sm font-medium">{t.doesMatch}</div>
                       <div className="flex gap-2">
                         <Button
                           className={`rounded-xl ${verifyDecision === "yes" ? "bg-blue-700 hover:bg-blue-600 text-white" : "border border-blue-200 text-blue-700 hover:bg-blue-50 bg-white"}`}
@@ -1554,7 +1831,10 @@ export default function QatarAACProbePrototype() {
                         </Button>
                         <Button
                           className={`rounded-xl ${verifyDecision === "no" ? "bg-blue-800 hover:bg-blue-700 text-white" : "border border-slate-200 text-slate-600 hover:bg-slate-50 bg-white"}`}
-                          onClick={() => { setVerifyDecision("no"); fetchAlternatives(); }}
+                          onClick={() => {
+                            setVerifyDecision("no");
+                            fetchAlternatives();
+                          }}
                         >
                           <X className="mr-2 h-4 w-4" /> {t.no}
                         </Button>
@@ -1562,11 +1842,16 @@ export default function QatarAACProbePrototype() {
 
                       {verifyDecision === "no" && (
                         <div className="space-y-3 pt-1">
-                          <div className="text-sm font-medium">{t.pickClosest}</div>
+                          <div className="text-sm font-medium">
+                            {t.pickClosest}
+                          </div>
                           {altLoading ? (
                             <div className="grid grid-cols-3 gap-3">
                               {[0, 1, 2].map((i) => (
-                                <div key={i} className="rounded-2xl border bg-slate-50 animate-pulse aspect-square" />
+                                <div
+                                  key={i}
+                                  className="rounded-2xl border bg-slate-50 animate-pulse aspect-square"
+                                />
                               ))}
                             </div>
                           ) : (
@@ -1581,8 +1866,14 @@ export default function QatarAACProbePrototype() {
                                   }}
                                   className="flex flex-col items-center gap-2 rounded-2xl border p-2 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors"
                                 >
-                                  <img src={alt.imageUrl} alt={alt.text} className="w-full rounded-xl object-cover aspect-square" />
-                                  <span className="text-xs text-muted-foreground leading-tight">{alt.text}</span>
+                                  <img
+                                    src={alt.imageUrl}
+                                    alt={alt.text}
+                                    className="w-full rounded-xl object-cover aspect-square"
+                                  />
+                                  <span className="text-xs text-muted-foreground leading-tight">
+                                    {alt.text}
+                                  </span>
                                 </button>
                               ))}
                             </div>
@@ -1599,7 +1890,19 @@ export default function QatarAACProbePrototype() {
 
                 {verifyImageUrl && (
                   <div className="space-y-3">
-                    <div className="text-sm font-medium">{t.verificationImage}</div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-medium">
+                        {t.verificationImage}
+                      </div>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="rounded-xl"
+                        onClick={() => setVerifyImageUrl("")}
+                      >
+                        {t.removeImage}
+                      </Button>
+                    </div>
                     <div className="overflow-hidden rounded-2xl border">
                       <img
                         src={verifyImageUrl}
@@ -1611,133 +1914,236 @@ export default function QatarAACProbePrototype() {
                 )}
               </CardContent>
             </Card>
-          <div className="flex justify-center gap-4 pt-2">
-            <Button onClick={() => setStep(2)} variant="outline" className="rounded-2xl px-10 py-6 text-base font-semibold">{t.back}</Button>
-            <Button onClick={() => setStep(4)} className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-10 py-6 text-base font-semibold">{t.nextRate}</Button>
+            <div className="flex justify-center gap-4 pt-2">
+              <Button
+                onClick={() => setStep(2)}
+                variant="outline"
+                className="rounded-2xl px-10 py-6 text-base font-semibold"
+              >
+                {t.back}
+              </Button>
+              <Button
+                onClick={() => setStep(4)}
+                className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-10 py-6 text-base font-semibold"
+              >
+                {t.nextRate}
+              </Button>
+            </div>
           </div>
-        </div>
         )}
 
         {/* Step 2 — Evaluate A: keywords + sentences */}
         {step === 2 && (
-        <div className="space-y-6">
-          <Card className="rounded-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
-              <span className="text-2xl">📋</span>
-              <div>
-                <CardTitle className="text-lg">{t.rateTitleA}</CardTitle>
-                <p className="text-sm text-muted-foreground mt-0.5">{t.rateDescA}</p>
+          <div className="space-y-6">
+            <Card className="rounded-2xl overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
+                <span className="text-2xl">📋</span>
+                <div>
+                  <CardTitle className="text-lg">{t.rateTitleA}</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {t.rateDescA}
+                  </p>
+                </div>
               </div>
-            </div>
-            <CardContent className="space-y-5 pt-5">
-              <LikertItem
-                title={t.qa1}
-                value={likertA.keywordRelevance}
-                labels={language === "ar" ? likertLabelsAr.keywordRelevance : likertLabels.keywordRelevance}
-                onChange={(v) => setLikertA((x) => ({ ...x, keywordRelevance: v }))}
-                rtl={language === "ar"}
-              />
-              <LikertItem
-                title={t.qa2}
-                value={likertA.sentenceUsefulness}
-                labels={language === "ar" ? likertLabelsAr.sentenceHelpfulness : likertLabels.sentenceHelpfulness}
-                onChange={(v) => setLikertA((x) => ({ ...x, sentenceUsefulness: v }))}
-                rtl={language === "ar"}
-              />
-              <LikertItem
-                title={t.qa3}
-                value={likertA.ease}
-                labels={language === "ar" ? likertLabelsAr.ease : likertLabels.ease}
-                onChange={(v) => setLikertA((x) => ({ ...x, ease: v }))}
-                rtl={language === "ar"}
-              />
-              <LikertItem
-                title={t.qa4}
-                value={likertA.speed}
-                labels={language === "ar" ? likertLabelsAr.speed : likertLabels.speed}
-                onChange={(v) => setLikertA((x) => ({ ...x, speed: v }))}
-                rtl={language === "ar"}
-              />
+              <CardContent className="space-y-5 pt-5">
+                <LikertItem
+                  title={t.qa1}
+                  value={likertA.keywordRelevance}
+                  labels={
+                    language === "ar"
+                      ? likertLabelsAr.keywordRelevance
+                      : likertLabels.keywordRelevance
+                  }
+                  onChange={(v) =>
+                    setLikertA((x) => ({ ...x, keywordRelevance: v }))
+                  }
+                  rtl={language === "ar"}
+                />
+                <LikertItem
+                  title={t.qa2}
+                  value={likertA.sentenceUsefulness}
+                  labels={
+                    language === "ar"
+                      ? likertLabelsAr.sentenceHelpfulness
+                      : likertLabels.sentenceHelpfulness
+                  }
+                  onChange={(v) =>
+                    setLikertA((x) => ({ ...x, sentenceUsefulness: v }))
+                  }
+                  rtl={language === "ar"}
+                />
+                <LikertItem
+                  title={t.qa3}
+                  value={likertA.ease}
+                  labels={
+                    language === "ar" ? likertLabelsAr.ease : likertLabels.ease
+                  }
+                  onChange={(v) => setLikertA((x) => ({ ...x, ease: v }))}
+                  rtl={language === "ar"}
+                />
+                <LikertItem
+                  title={t.qa4}
+                  value={likertA.speed}
+                  labels={
+                    language === "ar"
+                      ? likertLabelsAr.speed
+                      : likertLabels.speed
+                  }
+                  onChange={(v) => setLikertA((x) => ({ ...x, speed: v }))}
+                  rtl={language === "ar"}
+                />
 
-              {!likertASubmitted ? (
-                <Button className="w-full rounded-xl bg-blue-700 hover:bg-blue-600" onClick={submitLikertA}>
-                  {t.submit}
-                </Button>
-              ) : (
-                <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-2 rounded-2xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700 font-medium">
-                  <Check className="h-4 w-4 shrink-0" /> {t.submitted}
-                </motion.div>
-              )}
-            </CardContent>
-          </Card>
-          <div className="flex justify-center gap-4 pt-2">
-            <Button onClick={() => setStep(1)} variant="outline" className="rounded-2xl px-10 py-6 text-base font-semibold">{t.back}</Button>
-            <Button onClick={() => setStep(3)} className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-10 py-6 text-base font-semibold">{t.nextVerify}</Button>
+                {!likertASubmitted ? (
+                  <Button
+                    className="w-full rounded-xl bg-blue-700 hover:bg-blue-600"
+                    onClick={submitLikertA}
+                  >
+                    {t.submit}
+                  </Button>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 rounded-2xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700 font-medium"
+                  >
+                    <Check className="h-4 w-4 shrink-0" /> {t.submitted}
+                  </motion.div>
+                )}
+              </CardContent>
+            </Card>
+            <div className="flex justify-center gap-4 pt-2">
+              <Button
+                onClick={() => setStep(1)}
+                variant="outline"
+                className="rounded-2xl px-10 py-6 text-base font-semibold"
+              >
+                {t.back}
+              </Button>
+              <Button
+                onClick={() => setStep(3)}
+                className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-10 py-6 text-base font-semibold"
+              >
+                {t.nextVerify}
+              </Button>
+            </div>
           </div>
-        </div>
         )}
 
         {/* Step 4 — Evaluate B: image verification */}
         {step === 4 && (
-        <div className="space-y-6">
-          <Card className="rounded-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
-              <span className="text-2xl">📊</span>
-              <div>
-                <CardTitle className="text-lg">{t.rateTitleB}</CardTitle>
-                <p className="text-sm text-muted-foreground mt-0.5">{t.rateDescB}</p>
+          <div className="space-y-6">
+            <Card className="rounded-2xl overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
+                <span className="text-2xl">📊</span>
+                <div>
+                  <CardTitle className="text-lg">{t.rateTitleB}</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {t.rateDescB}
+                  </p>
+                </div>
               </div>
-            </div>
-            <CardContent className="space-y-5 pt-5">
-              <LikertItem
-                title={t.qb1}
-                value={likertB.imageAccuracy}
-                labels={language === "ar" ? likertLabelsAr.imageAccuracy : likertLabels.imageAccuracy}
-                onChange={(v) => setLikertB((x) => ({ ...x, imageAccuracy: v }))}
-                rtl={language === "ar"}
-              />
-              <LikertItem
-                title={t.qb2}
-                value={likertB.helpfulness}
-                labels={language === "ar" ? likertLabelsAr.helpfulness : likertLabels.helpfulness}
-                onChange={(v) => setLikertB((x) => ({ ...x, helpfulness: v }))}
-                rtl={language === "ar"}
-              />
-              <LikertItem
-                title={t.qb3}
-                value={likertB.likelihood}
-                labels={language === "ar" ? likertLabelsAr.likelihood : likertLabels.likelihood}
-                onChange={(v) => setLikertB((x) => ({ ...x, likelihood: v }))}
-                rtl={language === "ar"}
-              />
-
-              <div className="space-y-1">
-                <Label className="text-sm font-medium">{t.additionalComments}</Label>
-                <Textarea
-                  value={additionalComments}
-                  onChange={(e) => setAdditionalComments(e.target.value)}
-                  placeholder={t.commentsPlaceholder}
-                  className="rounded-2xl min-h-[100px]"
+              <CardContent className="space-y-5 pt-5">
+                <LikertItem
+                  title={t.qb1}
+                  value={likertB.imageAccuracy}
+                  labels={
+                    language === "ar"
+                      ? likertLabelsAr.imageAccuracy
+                      : likertLabels.imageAccuracy
+                  }
+                  onChange={(v) =>
+                    setLikertB((x) => ({ ...x, imageAccuracy: v }))
+                  }
+                  rtl={language === "ar"}
                 />
-              </div>
+                <LikertItem
+                  title={t.qb2}
+                  value={likertB.helpfulness}
+                  labels={
+                    language === "ar"
+                      ? likertLabelsAr.helpfulness
+                      : likertLabels.helpfulness
+                  }
+                  onChange={(v) =>
+                    setLikertB((x) => ({ ...x, helpfulness: v }))
+                  }
+                  rtl={language === "ar"}
+                />
+                <LikertItem
+                  title={t.qb3}
+                  value={likertB.likelihood}
+                  labels={
+                    language === "ar"
+                      ? likertLabelsAr.likelihood
+                      : likertLabels.likelihood
+                  }
+                  onChange={(v) => setLikertB((x) => ({ ...x, likelihood: v }))}
+                  rtl={language === "ar"}
+                />
+                <LikertItem
+                  title={t.qb4}
+                  value={likertB.speed}
+                  labels={
+                    language === "ar"
+                      ? likertLabelsAr.speed
+                      : likertLabels.speed
+                  }
+                  onChange={(v) => setLikertB((x) => ({ ...x, speed: v }))}
+                  rtl={language === "ar"}
+                />
 
-              {!likertBSubmitted ? (
-                <Button className="w-full rounded-xl bg-blue-700 hover:bg-blue-600" onClick={submitLikertB} disabled={likertBSaving}>
-                  {likertBSaving ? t.saving : t.submit}
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium">
+                    {t.additionalComments}
+                  </Label>
+                  <Textarea
+                    value={additionalComments}
+                    onChange={(e) => setAdditionalComments(e.target.value)}
+                    placeholder={t.commentsPlaceholder}
+                    className="rounded-2xl min-h-[100px]"
+                  />
+                </div>
+
+                {!likertBSubmitted ? (
+                  <Button
+                    className="w-full rounded-xl bg-blue-700 hover:bg-blue-600"
+                    onClick={submitLikertB}
+                    disabled={likertBSaving}
+                  >
+                    {likertBSaving ? t.saving : t.submit}
+                  </Button>
+                ) : null}
+              </CardContent>
+            </Card>
+
+            {likertBSubmitted ? (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-2xl border border-green-200 bg-green-50 p-8 text-center space-y-4"
+              >
+                <div className="text-4xl">🎉</div>
+                <div className="text-xl font-bold text-green-800">{t.thankYou}</div>
+                <p className="text-sm text-green-700">{t.thankYouDesc}</p>
+                <Button
+                  onClick={resetForNewSubmission}
+                  className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-8 py-5 text-base font-semibold"
+                >
+                  {t.doAnother}
                 </Button>
-              ) : (
-                <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-2 rounded-2xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700 font-medium">
-                  <Check className="h-4 w-4 shrink-0" /> {t.submitted}
-                </motion.div>
-              )}
-            </CardContent>
-          </Card>
-          <div className="flex justify-center pt-2">
-            <Button onClick={() => setStep(3)} variant="outline" className="rounded-2xl px-10 py-6 text-base font-semibold">{t.back}</Button>
+              </motion.div>
+            ) : (
+              <div className="flex justify-center pt-2">
+                <Button
+                  onClick={() => setStep(3)}
+                  variant="outline"
+                  className="rounded-2xl px-10 py-6 text-base font-semibold"
+                >
+                  {t.back}
+                </Button>
+              </div>
+            )}
           </div>
-        </div>
         )}
 
         <footer className="text-center text-xs text-muted-foreground py-2">
@@ -1785,7 +2191,10 @@ function LikertItem({
           />
           <div className="flex justify-between px-2.5 text-xs text-muted-foreground">
             {ticks.map((n) => (
-              <span key={n} className={n === value ? "font-semibold text-blue-700" : ""}>
+              <span
+                key={n}
+                className={n === value ? "font-semibold text-blue-700" : ""}
+              >
                 {n}
               </span>
             ))}

@@ -1,0 +1,82 @@
+[
+  {
+    "participantId": "en test",
+    "profile": {
+      "name": "Sara",
+      "partnerRole": "parent",
+      "language": "en",
+      "style": "simple"
+    },
+    "scenario": {
+      "location": "pharmacy",
+      "goal": "ask dose",
+      "intention": "request",
+      "timeOfDay": "afternoon"
+    },
+    "keywords": [
+      "medicine",
+      "bottle",
+      "box",
+      "syrup",
+      "dose",
+      "ask",
+      "pharmacy"
+    ],
+    "selectedSentence": "How much to take?",
+    "verifyDecision": null,
+    "evaluationA": {
+      "keywordRelevance": 5,
+      "sentenceUsefulness": 4,
+      "ease": 4,
+      "speed": 4
+    },
+    "evaluationB": {
+      "imageAccuracy": 4,
+      "helpfulness": 4,
+      "likelihood": 3,
+      "speed": 3
+    },
+    "additionalComments": "",
+    "submittedAt": "2026-03-29T04:55:43.859Z",
+    "savedAt": "2026-03-29T04:55:44.023Z"
+  },
+  {
+    "participantId": "ar test",
+    "profile": {
+      "name": "Ahmad",
+      "partnerRole": "caregiver",
+      "language": "ar",
+      "style": "rich"
+    },
+    "scenario": {
+      "location": "majlis",
+      "goal": "greet",
+      "intention": "request",
+      "timeOfDay": "afternoon"
+    },
+    "keywords": [
+      "دلة",
+      "فناجين",
+      "قهوة",
+      "مجلس",
+      "ضيافة"
+    ],
+    "selectedSentence": "- ممكن تضيف قهوة في فناجين؟",
+    "verifyDecision": null,
+    "evaluationA": {
+      "keywordRelevance": 4,
+      "sentenceUsefulness": 5,
+      "ease": 4,
+      "speed": 5
+    },
+    "evaluationB": {
+      "imageAccuracy": 4,
+      "helpfulness": 4,
+      "likelihood": 3,
+      "speed": 3
+    },
+    "additionalComments": "",
+    "submittedAt": "2026-03-29T05:03:43.526Z",
+    "savedAt": "2026-03-29T05:03:43.560Z"
+  }
+]
