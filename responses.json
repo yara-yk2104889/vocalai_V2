@@ -78,5 +78,46 @@
     "additionalComments": "",
     "submittedAt": "2026-03-29T05:03:43.526Z",
     "savedAt": "2026-03-29T05:03:43.560Z"
+  },
+  {
+    "participantId": "test",
+    "profile": {
+      "name": "Sara",
+      "partnerRole": "parent",
+      "language": "en",
+      "style": "simple"
+    },
+    "scenario": {
+      "location": "pharmacy",
+      "goal": "ask dose",
+      "intention": "request",
+      "timeOfDay": "afternoon"
+    },
+    "keywords": [
+      "Panadol",
+      "pharmacy",
+      "afternoon",
+      "dose",
+      "tablets",
+      "paracetamol",
+      "pain relief"
+    ],
+    "selectedSentence": "- What is Panadol dose?",
+    "verifyDecision": "yes",
+    "evaluationA": {
+      "keywordRelevance": 4,
+      "sentenceUsefulness": 4,
+      "ease": 5,
+      "speed": 5
+    },
+    "evaluationB": {
+      "imageAccuracy": 4,
+      "helpfulness": 4,
+      "likelihood": 3,
+      "speed": 3
+    },
+    "additionalComments": "",
+    "submittedAt": "2026-03-30T14:18:27.576Z",
+    "savedAt": "2026-03-30T14:18:27.707Z"
   }
 ]
