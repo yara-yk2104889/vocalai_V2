@@ -1190,28 +1190,33 @@ export default function QatarAACProbePrototype() {
         </header>
 
         {/* Step navigator */}
-        <div className="rounded-2xl bg-white border shadow-sm p-5">
+        <div className="rounded-2xl bg-white border shadow-sm p-3 sm:p-5">
           <div className="flex items-center">
             {t.steps.map((label, i) => (
               <React.Fragment key={i}>
                 <button
                   onClick={() => setStep(i)}
-                  className="flex flex-col items-center gap-1.5"
+                  className="flex flex-col items-center gap-1"
                 >
                   <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full font-bold text-sm transition-colors ${step === i ? "bg-blue-700 text-white" : step > i ? "bg-blue-200 text-blue-700" : "bg-slate-100 text-slate-400"}`}
+                    className={`flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full font-bold text-xs sm:text-sm transition-colors ${step === i ? "bg-blue-700 text-white" : step > i ? "bg-blue-200 text-blue-700" : "bg-slate-100 text-slate-400"}`}
                   >
-                    {step > i ? <Check className="h-4 w-4" /> : i + 1}
+                    {step > i ? <Check className="h-3 w-3 sm:h-4 sm:w-4" /> : i + 1}
                   </div>
                   <span
-                    className={`text-xs font-medium whitespace-nowrap ${step === i ? "text-blue-700" : "text-muted-foreground"}`}
+                    className={`hidden sm:block text-xs font-medium whitespace-nowrap ${step === i ? "text-blue-700" : "text-muted-foreground"}`}
                   >
                     {label}
+                  </span>
+                  <span
+                    className={`sm:hidden text-[10px] font-medium max-w-[40px] text-center leading-tight ${step === i ? "text-blue-700" : "text-muted-foreground"}`}
+                  >
+                    {label.replace(/^\S+\s/, "")}
                   </span>
                 </button>
                 {i < 4 && (
                   <div
-                    className={`h-0.5 flex-1 mx-3 mb-5 transition-colors ${step > i ? "bg-blue-300" : "bg-slate-200"}`}
+                    className={`h-0.5 flex-1 mx-1 sm:mx-3 mb-4 sm:mb-5 transition-colors ${step > i ? "bg-blue-300" : "bg-slate-200"}`}
                   />
                 )}
               </React.Fragment>
