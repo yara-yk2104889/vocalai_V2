@@ -1302,38 +1302,6 @@ export default function QatarAACProbePrototype() {
             </Card>
 
             {/* Summary + next */}
-            {selectedProfileId && (
-              <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 flex flex-wrap gap-3 items-center text-xs text-blue-700">
-                <span className="font-medium text-blue-800">
-                  {t.profileLoaded}:
-                </span>
-                <span className="rounded-full bg-blue-100 px-3 py-1">
-                  {language === "ar"
-                    ? (DEMO_PROFILES.find((p) => p.id === selectedProfileId)
-                        ?.arName ?? profileName)
-                    : profileName}
-                </span>
-                <span className="rounded-full bg-blue-100 px-3 py-1">
-                  {t.partnerLabel}
-                  {language === "ar"
-                    ? (PARTNER_ROLE_AR[partnerRole] ?? partnerRole)
-                    : partnerRole}
-                </span>
-                <span className="rounded-full bg-blue-100 px-3 py-1">
-                  {simpleStyle ? t.simpleStyleLabel : t.standardStyleLabel}
-                </span>
-                <span className="rounded-full bg-blue-100 px-3 py-1">
-                  📍{" "}
-                  {language === "ar"
-                    ? { pharmacy: "صيدلية", cafe: "مقهى", majlis: "مجلس" }[
-                        selectedLocationId ?? ""
-                      ]
-                    : { pharmacy: "Pharmacy", cafe: "Café", majlis: "Majlis" }[
-                        selectedLocationId ?? ""
-                      ]}
-                </span>
-              </div>
-            )}
 
             <div className="flex justify-center gap-4 pt-2">
               <Button
