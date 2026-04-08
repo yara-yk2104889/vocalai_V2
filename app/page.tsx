@@ -36,6 +36,7 @@ import {
   Square,
   Camera,
   CameraOff,
+  RefreshCw,
 } from "lucide-react";
 
 const likertLabels = {
@@ -785,8 +786,10 @@ export default function QatarAACProbePrototype() {
 
   const [cameraOn, setCameraOn] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const style = simpleStyle ? "simple" : "rich";
   const t = UI_LABELS[language as "en" | "ar"] ?? UI_LABELS.en;
@@ -818,6 +821,14 @@ export default function QatarAACProbePrototype() {
       setGoal(allowed[0].value);
     }
   }, [location, goal]);
+
+  // Attach stream to video element after it renders
+  useEffect(() => {
+    if (cameraOn && cameraStream && videoRef.current) {
+      videoRef.current.srcObject = cameraStream;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [cameraOn, cameraStream]);
 
   useEffect(() => {
     return () => {
@@ -857,24 +868,27 @@ export default function QatarAACProbePrototype() {
     setImagePreview(dataUrl);
   }
 
-  async function startCamera() {
+  async function startCamera(facing: "user" | "environment" = facingMode) {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: { facingMode: facing },
         audio: false,
       });
-
+      setFacingMode(facing);
       setCameraStream(stream);
       setCameraOn(true);
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
+      // stream is attached to videoRef via useEffect after render
     } catch (error) {
       console.error("Camera access failed:", error);
       alert("Could not access the camera. Please allow camera permission.");
     }
+  }
+
+  function switchCamera() {
+    startCamera(facingMode === "environment" ? "user" : "environment");
   }
 
   function stopCamera() {
@@ -896,6 +910,11 @@ export default function QatarAACProbePrototype() {
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
+    // Front camera preview is mirrored for UX — flip canvas back so captured image is correct
+    if (facingMode === "user") {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     const dataUrl = canvas.toDataURL("image/png");
@@ -904,6 +923,12 @@ export default function QatarAACProbePrototype() {
     setKeywords([]);
     setSentences([]);
     setSelectedSentence("");
+    // Stop camera so only the captured photo is shown
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+    }
+    setCameraStream(null);
+    setCameraOn(false);
   }
 
   async function runVerifyImage() {
@@ -1368,6 +1393,7 @@ export default function QatarAACProbePrototype() {
                   {inputMode === "upload" && (
                     <div className="grid gap-2">
                       <Input
+                        ref={fileInputRef}
                         type="file"
                         accept="image/*"
                         onChange={(e) =>
@@ -1420,7 +1446,7 @@ export default function QatarAACProbePrototype() {
                       <div className="flex flex-wrap gap-2">
                         <Button
                           type="button"
-                          onClick={startCamera}
+                          onClick={() => startCamera()}
                           className="rounded-xl"
                         >
                           <Camera className="mr-2 h-4 w-4" />
@@ -1435,6 +1461,17 @@ export default function QatarAACProbePrototype() {
                           <ImageIcon className="mr-2 h-4 w-4" />
                           {t.capturePhoto}
                         </Button>
+                        {cameraOn && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={switchCamera}
+                            className="rounded-xl"
+                          >
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            {facingMode === "environment" ? (language === "ar" ? "كاميرا أمامية" : "Front camera") : (language === "ar" ? "كاميرا خلفية" : "Back camera")}
+                          </Button>
+                        )}
                         <Button
                           type="button"
                           variant="outline"
@@ -1452,6 +1489,7 @@ export default function QatarAACProbePrototype() {
                             autoPlay
                             playsInline
                             muted
+                            style={facingMode === "user" ? { transform: "scaleX(-1)" } : undefined}
                             className="h-auto w-full"
                           />
                         </div>
@@ -1468,18 +1506,37 @@ export default function QatarAACProbePrototype() {
                         className="rounded-xl w-full max-w-md"
                       />
 
-                      <Button
-                        variant="destructive"
-                        onClick={() => {
-                          setImagePreview("");
-                          setKeywords([]);
-                          setSentences([]);
-                          setSelectedSentence("");
-                        }}
-                        className="w-fit rounded-xl"
-                      >
-                        {t.removeImage}
-                      </Button>
+                      <div className="flex gap-2 flex-wrap">
+                        {inputMode === "camera" && (
+                          <Button
+                            variant="secondary"
+                            onClick={() => {
+                              setImagePreview("");
+                              setKeywords([]);
+                              setSentences([]);
+                              setSelectedSentence("");
+                              startCamera();
+                            }}
+                            className="w-fit rounded-xl"
+                          >
+                            <Camera className="mr-2 h-4 w-4" />
+                            {language === "ar" ? "إعادة التصوير" : "Retake"}
+                          </Button>
+                        )}
+                        <Button
+                          variant="destructive"
+                          onClick={() => {
+                            setImagePreview("");
+                            setKeywords([]);
+                            setSentences([]);
+                            setSelectedSentence("");
+                            if (fileInputRef.current) fileInputRef.current.value = "";
+                          }}
+                          className="w-fit rounded-xl"
+                        >
+                          {t.removeImage}
+                        </Button>
+                      </div>
                     </div>
                   )}
 
