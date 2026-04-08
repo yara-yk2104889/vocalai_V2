@@ -7,7 +7,18 @@ const client = new OpenAI({
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { prompt } = body;
+    const { prompt, style } = body;
+
+    const styleInstructions = style === "cartoon"
+      ? `
+            - Use a bright, friendly cartoon illustration style — bold outlines, flat colors, cheerful and expressive.
+            - Think children's picture book or animated film aesthetic.
+            - Characters and objects should be rounded, soft, and approachable.
+            - Use vibrant, saturated colors.`
+      : `
+            - Use a realistic photographic style — natural lighting, real-world textures and colors.
+            - The scene should look like an actual photograph or high-quality photorealistic render.
+            - Avoid cartoon or illustrated aesthetics.`;
 
     const response = await client.images.generate({
       model: "gpt-image-1",
@@ -24,6 +35,7 @@ export async function POST(req: Request) {
             - Use a plain white or very light background.
             - Focus on the key meaning of the message, not decorative details.
             - If the message is about wanting or requesting something, show that visually through the scene rather than writing words.
+            ${styleInstructions}
 
             The image should function as a meaning-check image, not as a final AAC symbol.
             `,
@@ -43,9 +55,10 @@ export async function POST(req: Request) {
 
     return Response.json({ url: imageUrl });
   } catch (error) {
-    console.error("Generate image route error:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Generate image route error:", message);
     return new Response(
-      JSON.stringify({ error: "Failed to generate image" }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { "Content-Type": "application/json" } },
     );
   }

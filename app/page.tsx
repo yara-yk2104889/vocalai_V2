@@ -168,14 +168,14 @@ function toBase64(file: File): Promise<string> {
 }
 
 const api = {
-  async generateImage({ prompt }: { prompt: string }) {
+  async generateImage({ prompt, style }: { prompt: string; style: "realistic" | "cartoon" }) {
     // SWITCH MODELS HERE!!!
     const response = await fetch("/api/generate-image", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify({ prompt, style }),
     });
 
     if (!response.ok) {
@@ -450,9 +450,12 @@ const UI_LABELS = {
     suggestedKeywords: "Suggested keywords",
     generateSentences: "Generate sentences",
     sentenceOptions: "Sentence options",
-    quickNote: "Quick note (what the user is trying to say)",
+    quickNote: "Describe your image",
     generateImage: "Generate verification image",
     clearImage: "Clear image",
+    imageStyle: "Image style",
+    imageStyleRealistic: "Realistic",
+    imageStyleCartoon: "Cartoon",
     doesMatch: "Does this image match the intended meaning?",
     yes: "Yes",
     no: "No",
@@ -587,9 +590,12 @@ const UI_LABELS = {
     suggestedKeywords: "الكلمات المقترحة",
     generateSentences: "توليد الجمل",
     sentenceOptions: "خيارات الجملة",
-    quickNote: "ملاحظة سريعة (ماذا يريد المستخدم أن يقول)",
+    quickNote: "صف صورتك",
     generateImage: "توليد صورة للتحقق",
     clearImage: "مسح الصورة",
+    imageStyle: "نمط الصورة",
+    imageStyleRealistic: "واقعي",
+    imageStyleCartoon: "كرتوني",
     doesMatch: "هل تطابق هذه الصورة المعنى المقصود؟",
     yes: "نعم",
     no: "لا",
@@ -755,6 +761,7 @@ export default function QatarAACProbePrototype() {
   const [likertBSaving, setLikertBSaving] = useState(false);
   const [step, setStep] = useState(0);
   const [verifyImageUrl, setVerifyImageUrl] = useState("");
+  const [imageStyleMode, setImageStyleMode] = useState<"realistic" | "cartoon">("realistic");
 
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyDecision, setVerifyDecision] = useState<string | null>(null);
@@ -936,7 +943,7 @@ export default function QatarAACProbePrototype() {
     setVerifyDecision(null);
     try {
       const prompt = notes || "User note";
-      const out = await api.generateImage({ prompt });
+      const out = await api.generateImage({ prompt, style: imageStyleMode });
       setVerifyImageUrl(out.url);
     } finally {
       setVerifyLoading(false);
@@ -1824,6 +1831,25 @@ export default function QatarAACProbePrototype() {
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder={t.quickNotePlaceholder}
                     />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">{t.imageStyle}</Label>
+                    <div className="flex rounded-xl border overflow-hidden w-fit">
+                      <button
+                        type="button"
+                        onClick={() => setImageStyleMode("realistic")}
+                        className={`px-4 py-2 text-sm font-medium transition-colors ${imageStyleMode === "realistic" ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
+                      >
+                        📷 {t.imageStyleRealistic}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setImageStyleMode("cartoon")}
+                        className={`px-4 py-2 text-sm font-medium transition-colors ${imageStyleMode === "cartoon" ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
+                      >
+                        🎨 {t.imageStyleCartoon}
+                      </button>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <Button

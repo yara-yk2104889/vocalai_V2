@@ -1,47 +1,6 @@
 [
   {
-    "participantId": "en test",
-    "profile": {
-      "name": "Sara",
-      "partnerRole": "parent",
-      "language": "en",
-      "style": "simple"
-    },
-    "scenario": {
-      "location": "pharmacy",
-      "goal": "ask dose",
-      "intention": "request",
-      "timeOfDay": "afternoon"
-    },
-    "keywords": [
-      "medicine",
-      "bottle",
-      "box",
-      "syrup",
-      "dose",
-      "ask",
-      "pharmacy"
-    ],
-    "selectedSentence": "How much to take?",
-    "verifyDecision": null,
-    "evaluationA": {
-      "keywordRelevance": 5,
-      "sentenceUsefulness": 4,
-      "ease": 4,
-      "speed": 4
-    },
-    "evaluationB": {
-      "imageAccuracy": 4,
-      "helpfulness": 4,
-      "likelihood": 3,
-      "speed": 3
-    },
-    "additionalComments": "",
-    "submittedAt": "2026-03-29T04:55:43.859Z",
-    "savedAt": "2026-03-29T04:55:44.023Z"
-  },
-  {
-    "participantId": "ar test",
+    "participantId": "arabic test",
     "profile": {
       "name": "Ahmad",
       "partnerRole": "caregiver",
