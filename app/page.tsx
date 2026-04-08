@@ -906,6 +906,11 @@ export default function QatarAACProbePrototype() {
     setCameraOn(false);
   }
 
+  function goToStep(n: number) {
+    stopCamera();
+    setStep(n);
+  }
+
   function capturePhoto() {
     if (!videoRef.current || !canvasRef.current) return;
 
@@ -1227,7 +1232,7 @@ export default function QatarAACProbePrototype() {
             {t.steps.map((label, i) => (
               <React.Fragment key={i}>
                 <button
-                  onClick={() => setStep(i)}
+                  onClick={() => goToStep(i)}
                   className="flex flex-col items-center gap-1"
                 >
                   <div
@@ -1337,7 +1342,7 @@ export default function QatarAACProbePrototype() {
 
             <div className="flex justify-center gap-4 pt-2">
               <Button
-                onClick={() => setStep(1)}
+                onClick={() => goToStep(1)}
                 disabled={!selectedProfileId}
                 className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-10 py-6 text-base font-semibold disabled:opacity-40"
               >
@@ -1382,7 +1387,17 @@ export default function QatarAACProbePrototype() {
                         <button
                           key={mode}
                           type="button"
-                          onClick={() => setInputMode(mode)}
+                          onClick={() => {
+                            if (mode !== inputMode) {
+                              setImagePreview("");
+                              setKeywords([]);
+                              setSentences([]);
+                              setSelectedSentence("");
+                              if (fileInputRef.current) fileInputRef.current.value = "";
+                              if (inputMode === "camera") stopCamera();
+                            }
+                            setInputMode(mode);
+                          }}
                           className={`flex-1 py-2 flex items-center justify-center gap-1.5 transition-colors ${
                             inputMode === mode
                               ? "bg-blue-700 text-white"
@@ -1794,14 +1809,14 @@ export default function QatarAACProbePrototype() {
             </div>
             <div className="flex justify-center gap-4 pt-2">
               <Button
-                onClick={() => setStep(0)}
+                onClick={() => goToStep(0)}
                 variant="outline"
                 className="rounded-2xl px-10 py-6 text-base font-semibold"
               >
                 {t.back}
               </Button>
               <Button
-                onClick={() => setStep(2)}
+                onClick={() => goToStep(2)}
                 className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-10 py-6 text-base font-semibold"
               >
                 {t.nextEvaluate}
@@ -1970,14 +1985,14 @@ export default function QatarAACProbePrototype() {
             </Card>
             <div className="flex justify-center gap-4 pt-2">
               <Button
-                onClick={() => setStep(2)}
+                onClick={() => goToStep(2)}
                 variant="outline"
                 className="rounded-2xl px-10 py-6 text-base font-semibold"
               >
                 {t.back}
               </Button>
               <Button
-                onClick={() => setStep(4)}
+                onClick={() => goToStep(4)}
                 className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-10 py-6 text-base font-semibold"
               >
                 {t.nextRate}
@@ -2067,14 +2082,14 @@ export default function QatarAACProbePrototype() {
             </Card>
             <div className="flex justify-center gap-4 pt-2">
               <Button
-                onClick={() => setStep(1)}
+                onClick={() => goToStep(1)}
                 variant="outline"
                 className="rounded-2xl px-10 py-6 text-base font-semibold"
               >
                 {t.back}
               </Button>
               <Button
-                onClick={() => setStep(3)}
+                onClick={() => goToStep(3)}
                 className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-10 py-6 text-base font-semibold"
               >
                 {t.nextVerify}
@@ -2189,7 +2204,7 @@ export default function QatarAACProbePrototype() {
             ) : (
               <div className="flex justify-center pt-2">
                 <Button
-                  onClick={() => setStep(3)}
+                  onClick={() => goToStep(3)}
                   variant="outline"
                   className="rounded-2xl px-10 py-6 text-base font-semibold"
                 >
