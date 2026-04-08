@@ -1443,7 +1443,7 @@ export default function QatarAACProbePrototype() {
                   {/* Camera */}
                   {inputMode === "camera" && (
                     <div className="space-y-3">
-                      <div className="flex flex-wrap gap-2">
+                      {!cameraOn && (
                         <Button
                           type="button"
                           onClick={() => startCamera()}
@@ -1452,38 +1452,9 @@ export default function QatarAACProbePrototype() {
                           <Camera className="mr-2 h-4 w-4" />
                           {t.startCamera}
                         </Button>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={capturePhoto}
-                          className="rounded-xl"
-                        >
-                          <ImageIcon className="mr-2 h-4 w-4" />
-                          {t.capturePhoto}
-                        </Button>
-                        {cameraOn && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={switchCamera}
-                            className="rounded-xl"
-                          >
-                            <RefreshCw className="mr-2 h-4 w-4" />
-                            {facingMode === "environment" ? (language === "ar" ? "كاميرا أمامية" : "Front camera") : (language === "ar" ? "كاميرا خلفية" : "Back camera")}
-                          </Button>
-                        )}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={stopCamera}
-                          className="rounded-xl"
-                        >
-                          <CameraOff className="mr-2 h-4 w-4" />
-                          {t.stopCamera}
-                        </Button>
-                      </div>
+                      )}
                       {cameraOn && (
-                        <div className="overflow-hidden rounded-2xl border">
+                        <div className="relative overflow-hidden rounded-2xl border bg-black">
                           <video
                             ref={videoRef}
                             autoPlay
@@ -1492,6 +1463,33 @@ export default function QatarAACProbePrototype() {
                             style={facingMode === "user" ? { transform: "scaleX(-1)" } : undefined}
                             className="h-auto w-full"
                           />
+                          {/* Camera controls overlay */}
+                          <div className="absolute bottom-4 inset-x-0 flex items-center justify-center gap-8">
+                            {/* Stop camera */}
+                            <button
+                              type="button"
+                              onClick={stopCamera}
+                              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white"
+                            >
+                              <CameraOff className="h-5 w-5" />
+                            </button>
+                            {/* Shutter */}
+                            <button
+                              type="button"
+                              onClick={capturePhoto}
+                              className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-white/30 backdrop-blur-sm"
+                            >
+                              <div className="h-12 w-12 rounded-full bg-white" />
+                            </button>
+                            {/* Flip camera */}
+                            <button
+                              type="button"
+                              onClick={switchCamera}
+                              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white"
+                            >
+                              <RefreshCw className="h-5 w-5" />
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
