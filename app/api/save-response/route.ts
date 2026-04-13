@@ -1,22 +1,31 @@
-import fs from "fs/promises";
-import path from "path";
+import { createClient } from "@supabase/supabase-js";
 
-const FILE_PATH = path.join(process.cwd(), "responses.json");
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    let existing: unknown[] = [];
-    try {
-      const raw = await fs.readFile(FILE_PATH, "utf-8");
-      existing = JSON.parse(raw);
-    } catch {
-      // file doesn't exist yet or is malformed — start fresh
-    }
+    const { error } = await supabase.from("responses").insert({
+      participant_id: body.participantId,
+      profile: body.profile,
+      scenario: body.scenario,
+      keywords: body.keywords,
+      selected_sentence: body.selectedSentence,
+      verify_decision: body.verifyDecision,
+      evaluation_a: body.evaluationA,
+      evaluation_b: body.evaluationB,
+      additional_comments: body.additionalComments,
+      submitted_at: body.submittedAt,
+    });
 
-    existing.push({ ...body, savedAt: new Date().toISOString() });
-    await fs.writeFile(FILE_PATH, JSON.stringify(existing, null, 2), "utf-8");
+    if (error) {
+      console.error("Supabase insert error:", error);
+      return Response.json({ ok: false }, { status: 500 });
+    }
 
     return Response.json({ ok: true });
   } catch (err) {
