@@ -1669,7 +1669,7 @@ export default function QatarAACProbePrototype() {
                     </Button>
                     <Button
                       variant="secondary"
-                      onClick={() => setKeywords([])}
+                      onClick={() => { setKeywords([]); setSentences([]); setSelectedSentence(""); }}
                       className="rounded-xl"
                     >
                       {t.clear}
