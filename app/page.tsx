@@ -25,7 +25,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import {
-  Mic,
   Image as ImageIcon,
   Sparkles,
   Check,
@@ -496,7 +495,6 @@ const UI_LABELS = {
     // Step 1 — right panel
     keywordsTitle: "Keywords → sentences",
     keywordsDesc: "AI suggests words, then 3 sentence options to pick from.",
-    voiceInput: "Voice input could be added here",
     noKeywords:
       "No keywords yet. Upload an image or capture one from the camera, then generate.",
     addExtraKeywords: "Add extra keywords for sentence generation",
@@ -636,7 +634,6 @@ const UI_LABELS = {
     // Step 1 — right panel
     keywordsTitle: "الكلمات ← الجمل",
     keywordsDesc: "الذكاء الاصطناعي يقترح كلمات، ثم 3 خيارات جمل للاختيار.",
-    voiceInput: "يمكن إضافة الإدخال الصوتي هنا",
     noKeywords: "لا توجد كلمات بعد. ارفع صورة أو التقط واحدة، ثم ولّد.",
     addExtraKeywords: "أضف كلمات إضافية لتوليد الجمل",
     keywordsPlaceholder: "",
@@ -1701,9 +1698,6 @@ export default function QatarAACProbePrototype() {
                     >
                       {t.clear}
                     </Button>
-                    <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
-                      <Mic className="h-4 w-4" /> {t.voiceInput}
-                    </div>
                   </div>
 
 

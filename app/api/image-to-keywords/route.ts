@@ -34,7 +34,6 @@ export async function POST(req: Request) {
 
 Situation:
 - Location: ${context.location}
-- Time: ${context.timeOfDay}
 - Goal: ${context.goal}
 ${customKeywords.length > 0 ? `- User also wants to include: ${customKeywords.join(", ")}` : ""}
 
