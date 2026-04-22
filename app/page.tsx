@@ -1054,10 +1054,32 @@ export default function QatarAACProbePrototype() {
   function speakSelectedSentence() {
     if (!selectedSentence || typeof window === "undefined") return;
     window.speechSynthesis.cancel();
+
     const utterance = new SpeechSynthesisUtterance(selectedSentence);
-    utterance.lang = language === "ar" ? "ar-SA" : "en-US";
     utterance.rate = 0.9;
     utterance.pitch = 1;
+
+    const isArabic = language === "ar";
+    utterance.lang = isArabic ? "ar-SA" : "en-US";
+
+    const voices = window.speechSynthesis.getVoices();
+
+    if (isArabic) {
+      // Prefer iOS Arabic voices, then any Arabic voice
+      const preferred = ["Maged", "Laila"];
+      const voice =
+        voices.find((v) => preferred.some((n) => v.name.includes(n))) ||
+        voices.find((v) => v.lang.startsWith("ar"));
+      if (voice) utterance.voice = voice;
+    } else {
+      // Prefer high-quality iOS/macOS English voices, then Google voices (Android)
+      const preferred = ["Samantha", "Karen", "Daniel", "Moira", "Google UK English Female", "Google US English"];
+      const voice =
+        voices.find((v) => preferred.some((n) => v.name.includes(n))) ||
+        voices.find((v) => v.lang.startsWith("en") && v.localService);
+      if (voice) utterance.voice = voice;
+    }
+
     window.speechSynthesis.speak(utterance);
   }
 
