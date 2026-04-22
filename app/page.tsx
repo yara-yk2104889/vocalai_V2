@@ -744,7 +744,6 @@ export default function QatarAACProbePrototype() {
   const [location, setLocation] = useState("pharmacy");
   const [goal, setGoal] = useState("ask dose");
   const [freeContext, setFreeContext] = useState("");
-  const [selectedPhraseIds, setSelectedPhraseIds] = useState<Set<string>>(new Set());
   const [intention, setIntention] = useState("request");
 
   const [notes, setNotes] = useState("");
@@ -1055,32 +1054,43 @@ export default function QatarAACProbePrototype() {
     if (!selectedSentence || typeof window === "undefined") return;
     window.speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(selectedSentence);
-    utterance.rate = 0.9;
-    utterance.pitch = 1;
-
     const isArabic = language === "ar";
-    utterance.lang = isArabic ? "ar-SA" : "en-US";
 
-    const voices = window.speechSynthesis.getVoices();
+    function pickVoiceAndSpeak() {
+      const utterance = new SpeechSynthesisUtterance(selectedSentence);
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+      utterance.lang = isArabic ? "ar-SA" : "en-US";
 
-    if (isArabic) {
-      // Prefer iOS Arabic voices, then any Arabic voice
-      const preferred = ["Maged", "Laila"];
-      const voice =
-        voices.find((v) => preferred.some((n) => v.name.includes(n))) ||
-        voices.find((v) => v.lang.startsWith("ar"));
-      if (voice) utterance.voice = voice;
-    } else {
-      // Prefer high-quality iOS/macOS English voices, then Google voices (Android)
-      const preferred = ["Samantha", "Karen", "Daniel", "Moira", "Google UK English Female", "Google US English"];
-      const voice =
-        voices.find((v) => preferred.some((n) => v.name.includes(n))) ||
-        voices.find((v) => v.lang.startsWith("en") && v.localService);
-      if (voice) utterance.voice = voice;
+      const voices = window.speechSynthesis.getVoices();
+
+      if (isArabic) {
+        const preferred = ["Maged", "Laila"];
+        const voice =
+          voices.find((v) => preferred.some((n) => v.name.includes(n))) ||
+          voices.find((v) => v.lang.startsWith("ar"));
+        if (voice) utterance.voice = voice;
+      } else {
+        const preferred = ["Samantha", "Karen", "Daniel", "Moira", "Google UK English Female", "Google US English"];
+        const voice =
+          voices.find((v) => preferred.some((n) => v.name.includes(n))) ||
+          voices.find((v) => v.lang.startsWith("en") && v.localService);
+        if (voice) utterance.voice = voice;
+      }
+
+      window.speechSynthesis.speak(utterance);
     }
 
-    window.speechSynthesis.speak(utterance);
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      pickVoiceAndSpeak();
+    } else {
+      // Voices not loaded yet (common on iOS) — wait for them
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.onvoiceschanged = null;
+        pickVoiceAndSpeak();
+      };
+    }
   }
 
   function stopSpeaking() {
@@ -1173,7 +1183,6 @@ export default function QatarAACProbePrototype() {
     setLikertBSubmitted(false);
     setAdditionalComments("");
     setFreeContext("");
-    setSelectedPhraseIds(new Set());
     setCustomKw("");
     setNotes("");
   }
@@ -1638,7 +1647,8 @@ export default function QatarAACProbePrototype() {
                       <Label>{t.preparedSuggestions}</Label>
                       <div className="flex flex-wrap gap-2">
                         {locationSpecificPhrases.map((item) => {
-                          const isActive = selectedPhraseIds.has(item.id);
+                          const display = language === "ar" ? item.arText : item.text;
+                          const isActive = selectedSentence === display;
                           return (
                             <Button
                               key={item.id}
@@ -1646,17 +1656,10 @@ export default function QatarAACProbePrototype() {
                               variant={isActive ? "default" : "secondary"}
                               className={`rounded-xl ${isActive ? "bg-blue-700 text-white" : ""}`}
                               onClick={() => {
-                                const display = language === "ar" ? item.arText : item.text;
-                                if (isActive) {
-                                  setSelectedPhraseIds((prev) => { const n = new Set(prev); n.delete(item.id); return n; });
-                                  setFreeContext((prev) => prev.replace(`; ${display}`, "").replace(display, "").trim());
-                                } else {
-                                  setSelectedPhraseIds((prev) => new Set(prev).add(item.id));
-                                  setFreeContext((prev) => prev.trim() ? `${prev}${prev.trim().endsWith(".") ? " " : "; "}${display}` : display);
-                                }
+                                setSelectedSentence(isActive ? "" : display);
                               }}
                             >
-                              {language === "ar" ? item.arText : item.text}
+                              {display}
                             </Button>
                           );
                         })}
