@@ -957,6 +957,7 @@ export default function QatarAACProbePrototype() {
 
   async function runKeywords() {
     setKwLoading(true);
+    setSentLoading(true);
     try {
       const imageDataUrl = imagePreview || "";
       const typedKeywords = customKw
@@ -971,12 +972,32 @@ export default function QatarAACProbePrototype() {
         language,
       });
 
-      setKeywords(out.keywords || []);
+      const generatedKeywords = out.keywords || [];
+      setKeywords(generatedKeywords);
+
+      // Auto-generate sentences without showing keywords to the user
+      const mergedKeywords = [
+        ...generatedKeywords,
+        ...typedKeywords,
+      ];
+      const uniqueKeywords = Array.from(new Set(mergedKeywords)).slice(0, 8);
+
+      const sentOut = await api.keywordsToSentences({
+        keywords: uniqueKeywords,
+        context,
+        language,
+        style,
+        intention,
+      });
+
+      setSentences(sentOut.sentences || []);
+      setSelectedSentence(sentOut.sentences?.[0] || "");
     } catch (error) {
       console.error(error);
-      alert("Keyword generation failed.");
+      alert("Generation failed.");
     } finally {
       setKwLoading(false);
+      setSentLoading(false);
     }
   }
 
@@ -1668,10 +1689,10 @@ export default function QatarAACProbePrototype() {
                   <div className="flex flex-wrap items-center gap-2">
                     <Button
                       onClick={runKeywords}
-                      disabled={!imagePreview || kwLoading}
+                      disabled={!imagePreview || kwLoading || sentLoading}
                       className="rounded-xl"
                     >
-                      {kwLoading ? "…" : t.generateKeywords}
+                      {kwLoading || sentLoading ? t.generatingSentences : t.generate3Sentences}
                     </Button>
                     <Button
                       variant="secondary"
@@ -1685,58 +1706,7 @@ export default function QatarAACProbePrototype() {
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border p-3">
-                    <div className="mb-2 text-sm font-medium">
-                      {t.suggestedKeywords}
-                    </div>
-                    {keywords.length ? (
-                      <div className="flex flex-wrap gap-2">
-                        {keywords.map((k) => (
-                          <Badge
-                            key={k}
-                            variant="secondary"
-                            className="flex items-center gap-1 rounded-xl pr-1"
-                          >
-                            <span>{k}</span>
-                            <button
-                              type="button"
-                              className="ml-1 rounded-full p-0.5 hover:bg-background"
-                              onClick={() =>
-                                setKeywords((prev) =>
-                                  prev.filter((item) => item !== k),
-                                )
-                              }
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-sm text-muted-foreground">
-                        {t.noKeywords}
-                      </div>
-                    )}
-                  </div>
 
-                  <div className="space-y-1">
-                    <Label>{t.addExtraKeywords}</Label>
-                    <Input
-                      value={customKw}
-                      onChange={(e) => setCustomKw(e.target.value)}
-                      placeholder={t.keywordsPlaceholder}
-                    />
-                  </div>
-
-                  <Button
-                    onClick={runSentences}
-                    disabled={
-                      (!keywords.length && !customKw.trim()) || sentLoading
-                    }
-                    className="w-full rounded-xl"
-                  >
-                    {sentLoading ? t.generatingSentences : t.generate3Sentences}
-                  </Button>
 
                   <div className="space-y-2">
                     <div className="text-sm font-medium">
