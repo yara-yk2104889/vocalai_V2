@@ -30,7 +30,6 @@ import {
   Check,
   X,
   MapPin,
-  Clock,
   Volume2,
   Square,
   Camera,
@@ -192,7 +191,6 @@ const api = {
   }: {
     imageDataUrl: string;
     context: {
-      timeOfDay: string;
       location: string;
       partnerRole: string;
       goal: string;
@@ -230,7 +228,6 @@ const api = {
   }: {
     keywords: string[];
     context: {
-      timeOfDay: string;
       location: string;
       partnerRole: string;
       goal: string;
@@ -744,7 +741,6 @@ export default function QatarAACProbePrototype() {
     "upload",
   );
   const [imagePreview, setImagePreview] = useState("");
-  const [timeOfDay, setTimeOfDay] = useState("afternoon");
   const [location, setLocation] = useState("pharmacy");
   const [goal, setGoal] = useState("ask dose");
   const [freeContext, setFreeContext] = useState("");
@@ -810,13 +806,12 @@ export default function QatarAACProbePrototype() {
 
   const context = useMemo(
     () => ({
-      timeOfDay,
       location,
       partnerRole,
       goal,
       freeContext,
     }),
-    [timeOfDay, location, partnerRole, goal, freeContext],
+    [location, partnerRole, goal, freeContext],
   );
 
   useEffect(() => {
@@ -1120,7 +1115,6 @@ export default function QatarAACProbePrototype() {
             location,
             goal: context.goal,
             intention,
-            timeOfDay: context.timeOfDay,
           },
           keywords,
           selectedSentence,
@@ -1579,24 +1573,6 @@ export default function QatarAACProbePrototype() {
                   )}
 
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1">
-                      <Label className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" /> {t.timeLabel}
-                      </Label>
-                      <Select value={timeOfDay} onValueChange={setTimeOfDay}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="morning">{t.morning}</SelectItem>
-                          <SelectItem value="afternoon">
-                            {t.afternoon}
-                          </SelectItem>
-                          <SelectItem value="evening">{t.evening}</SelectItem>
-                          <SelectItem value="night">{t.night}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                     <div className="space-y-1">
                       <Label className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" /> {t.locationLabel}
