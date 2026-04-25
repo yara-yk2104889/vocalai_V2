@@ -331,69 +331,6 @@ const PARTNER_ROLE_AR: Record<string, string> = {
   stranger: "غريب / عام",
 };
 
-const DEMO_PROFILES = [
-  {
-    id: "sara",
-    emoji: "👧",
-    scenarioEmoji: "💊",
-    name: "Sara",
-    arName: "سارة",
-    location: "pharmacy",
-    tagline: "12 years old · Autism · Pharmacy",
-    arTagline: "12 سنة · توحد · صيدلية",
-    description:
-      "Uses very short AAC phrases. Visiting a pharmacy to ask about medication.",
-    arDescription:
-      "تستخدم عبارات AAC قصيرة جداً. تزور صيدلية للسؤال عن الدواء.",
-    partnerRole: "parent",
-    simpleStyle: true,
-    phrases: [
-      "Hi, I use AAC. Please give me a moment.",
-      "Can you help me?",
-      "I need this medicine.",
-    ],
-  },
-  {
-    id: "ahmad",
-    emoji: "👦",
-    scenarioEmoji: "🏡",
-    name: "Ahmad",
-    arName: "أحمد",
-    location: "majlis",
-    tagline: "14 years old · Cerebral palsy · Family gathering",
-    arTagline: "14 سنة · شلل دماغي · تجمع عائلي",
-    description:
-      "Uses moderate-length phrases. Needs AAC support at a family majlis gathering.",
-    arDescription:
-      "يستخدم عبارات متوسطة الطول. يحتاج دعم AAC في تجمع عائلي بالمجلس.",
-    partnerRole: "caregiver",
-    simpleStyle: false,
-    phrases: [
-      "Hi, I use AAC. Please give me a moment.",
-      "I would like to join.",
-      "Can you help me?",
-    ],
-  },
-  {
-    id: "layla",
-    emoji: "👩",
-    scenarioEmoji: "☕",
-    name: "Layla",
-    arName: "ليلى",
-    location: "cafe",
-    tagline: "18 years old · Autism · Café",
-    arTagline: "18 سنة · توحد · مقهى",
-    description: "Would like to use AAC to order at a café independently.",
-    arDescription: "تودّ استخدام AAC للطلب باستقلالية في مقهى.",
-    partnerRole: "parent",
-    simpleStyle: false,
-    phrases: [
-      "Hi, I use AAC. Please give me a moment.",
-      "I would like a coffee please.",
-      "Can I have this?",
-    ],
-  },
-];
 
 const UI_LABELS = {
   en: {
@@ -500,6 +437,38 @@ const UI_LABELS = {
     generate3Sentences: "Generate 3 sentence options",
     sentenceSelected: "Selected",
     noSentences: "Generate sentences to see options.",
+    matchQuestion: "Does this match your intended meaning?",
+    refineLabel: "Add keywords to improve the suggestions",
+    regenerate: "Regenerate",
+    profileNameLabel: "Name",
+    profileAgeLabel: "Age",
+    profileGenderLabel: "Gender",
+    profileConditionLabel: "Condition",
+    partnerRoleLabel: "Communication partner",
+    sentenceStyleLabel: "Sentence style",
+    chooseLocation: "Choose a location",
+    namePlaceholder: "e.g. Sara",
+    agePlaceholder: "e.g. 12",
+    selectPlaceholder: "Select…",
+    genderMale: "Male",
+    genderFemale: "Female",
+    conditionAutism: "Autism",
+    conditionALS: "ALS",
+    conditionCerebralPalsy: "Cerebral Palsy",
+    conditionDownSyndrome: "Down Syndrome",
+    conditionAphasia: "Aphasia",
+    conditionOther: "Other",
+    partnerParent: "Parent",
+    partnerCaregiver: "Caregiver",
+    partnerTeacher: "Teacher",
+    partnerSLT: "Speech-language therapist",
+    partnerStranger: "Stranger / General public",
+    styleSimple: "Simple (short, 4–6 words)",
+    styleStandard: "Standard (natural length)",
+    pharmacyDesc: "Ask about medicine or dosage",
+    cafeDesc: "Order food or drinks independently",
+    majlisDesc: "Join a family gathering or conversation",
+    sliderHint: "Move the slider to rate",
     readyToSpeak: "Ready to speak",
     selectSentenceHint: "Select a sentence above.",
     speak: "Speak",
@@ -638,6 +607,38 @@ const UI_LABELS = {
     generate3Sentences: "توليد 3 خيارات جمل",
     sentenceSelected: "محددة",
     noSentences: "ولّد جملاً لرؤية الخيارات.",
+    matchQuestion: "هل هذا يعكس المعنى المقصود؟",
+    refineLabel: "أضف كلمات لتحسين الاقتراحات",
+    regenerate: "إعادة التوليد",
+    profileNameLabel: "الاسم",
+    profileAgeLabel: "العمر",
+    profileGenderLabel: "الجنس",
+    profileConditionLabel: "الحالة",
+    partnerRoleLabel: "شريك التواصل",
+    sentenceStyleLabel: "أسلوب الجملة",
+    chooseLocation: "اختر موقعاً",
+    namePlaceholder: "مثال: سارة",
+    agePlaceholder: "مثال: ١٢",
+    selectPlaceholder: "اختر...",
+    genderMale: "ذكر",
+    genderFemale: "أنثى",
+    conditionAutism: "توحد",
+    conditionALS: "التصلب الجانبي الضموري",
+    conditionCerebralPalsy: "شلل دماغي",
+    conditionDownSyndrome: "متلازمة داون",
+    conditionAphasia: "حبسة كلامية",
+    conditionOther: "أخرى",
+    partnerParent: "والد/ة",
+    partnerCaregiver: "مقدم رعاية",
+    partnerTeacher: "معلم",
+    partnerSLT: "أخصائي نطق ولغة",
+    partnerStranger: "غريب / عام",
+    styleSimple: "بسيط (قصير، ٤–٦ كلمات)",
+    styleStandard: "معتدل (طول طبيعي)",
+    pharmacyDesc: "سؤال عن الدواء أو الجرعة",
+    cafeDesc: "طلب طعام أو مشروبات باستقلالية",
+    majlisDesc: "الانضمام إلى تجمع عائلي أو حوار",
+    sliderHint: "حرك المتزلق للتقييم",
     readyToSpeak: "جاهز للكلام",
     selectSentenceHint: "اختر جملة من الأعلى.",
     speak: "تحدث",
@@ -680,16 +681,16 @@ const UI_LABELS = {
 export default function QatarAACProbePrototype() {
   const [participantId, setParticipantId] = useState("");
   const [participantIdInput, setParticipantIdInput] = useState("");
-  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
-    null,
-  );
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
     null,
   );
   const [profileName, setProfileName] = useState("");
-  const [partnerRole, setPartnerRole] = useState("parent");
+  const [profileAge, setProfileAge] = useState("");
+  const [profileGender, setProfileGender] = useState("");
+  const [profileCondition, setProfileCondition] = useState("");
+  const partnerRole = "parent";
   const [language, setLanguage] = useState("en");
-  const [simpleStyle, setSimpleStyle] = useState(true);
+  const simpleStyle = true;
   const [phraseBank, setPhraseBank] = useState([
     { id: "p1", text: "Hi, I use AAC. Please give me a moment." },
     { id: "p2", text: "Please speak slowly." },
@@ -747,6 +748,7 @@ export default function QatarAACProbePrototype() {
   const [intention, setIntention] = useState("request");
 
   const [notes, setNotes] = useState("");
+  const [commentsA, setCommentsA] = useState("");
   const [additionalComments, setAdditionalComments] = useState("");
   const [likertASubmitted, setLikertASubmitted] = useState(false);
   const [likertBSubmitted, setLikertBSubmitted] = useState(false);
@@ -769,18 +771,20 @@ export default function QatarAACProbePrototype() {
   const [sentLoading, setSentLoading] = useState(false);
   const [sentences, setSentences] = useState<string[]>([]);
   const [selectedSentence, setSelectedSentence] = useState("");
+  const [sentenceMatch, setSentenceMatch] = useState<"yes" | "no" | null>(null);
+  const [refinementKw, setRefinementKw] = useState("");
 
-  const [likertA, setLikertA] = useState({
-    keywordRelevance: 1,
-    sentenceUsefulness: 1,
-    ease: 1,
-    speed: 1,
+  const [likertA, setLikertA] = useState<Record<string, number | null>>({
+    keywordRelevance: null,
+    sentenceUsefulness: null,
+    ease: null,
+    speed: null,
   });
-  const [likertB, setLikertB] = useState({
-    imageAccuracy: 1,
-    helpfulness: 1,
-    likelihood: 1,
-    speed: 1,
+  const [likertB, setLikertB] = useState<Record<string, number | null>>({
+    imageAccuracy: null,
+    helpfulness: null,
+    likelihood: null,
+    speed: null,
   });
 
   const [cameraOn, setCameraOn] = useState(false);
@@ -994,13 +998,12 @@ export default function QatarAACProbePrototype() {
 
   async function runSentences() {
     setSentLoading(true);
+    setSentenceMatch(null);
     try {
       const mergedKeywords = [
         ...keywords,
-        ...customKw
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        ...customKw.split(",").map((s) => s.trim()).filter(Boolean),
+        ...refinementKw.split(",").map((s) => s.trim()).filter(Boolean),
       ];
 
       const uniqueKeywords = Array.from(new Set(mergedKeywords)).slice(0, 8);
@@ -1115,7 +1118,7 @@ export default function QatarAACProbePrototype() {
           const r = await fetch("/api/generate-image", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt: text }),
+            body: JSON.stringify({ prompt: text, style: imageStyleMode }),
           });
           const { url } = await r.json();
           return { text, imageUrl: url as string };
@@ -1137,12 +1140,28 @@ export default function QatarAACProbePrototype() {
   async function submitLikertB() {
     setLikertBSaving(true);
     try {
+      // Upload image to Supabase Storage if one exists
+      let savedImageUrl = verifyImageUrl;
+      if (verifyImageUrl) {
+        try {
+          const uploadRes = await fetch("/api/upload-image", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ imageUrl: verifyImageUrl }),
+          });
+          const uploadData = await uploadRes.json();
+          if (uploadData.url) savedImageUrl = uploadData.url;
+        } catch {
+          // Non-fatal — fall back to original URL
+        }
+      }
+
       await fetch("/api/save-response", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           participantId,
-          profile: { name: profileName, partnerRole, language, style },
+          profile: { name: profileName, age: profileAge, gender: profileGender, condition: profileCondition, partnerRole, language, style },
           scenario: {
             location,
             goal: context.goal,
@@ -1151,7 +1170,9 @@ export default function QatarAACProbePrototype() {
           keywords,
           selectedSentence,
           verifyDecision,
+          verifyImageUrl: savedImageUrl,
           evaluationA: likertA,
+          commentsA,
           evaluationB: likertB,
           additionalComments,
           submittedAt: new Date().toISOString(),
@@ -1168,8 +1189,11 @@ export default function QatarAACProbePrototype() {
 
   function resetForNewSubmission() {
     setStep(0);
-    setSelectedProfileId(null);
     setSelectedLocationId(null);
+    setProfileName("");
+    setProfileAge("");
+    setProfileGender("");
+    setProfileCondition("");
     setImagePreview("");
     setImageFile(null);
     setKeywords([]);
@@ -1177,10 +1201,11 @@ export default function QatarAACProbePrototype() {
     setSelectedSentence("");
     setVerifyImageUrl("");
     setVerifyDecision(null);
-    setLikertA({ keywordRelevance: 1, sentenceUsefulness: 1, ease: 1, speed: 1 });
-    setLikertB({ imageAccuracy: 1, helpfulness: 1, likelihood: 1, speed: 1 });
+    setLikertA({ keywordRelevance: null, sentenceUsefulness: null, ease: null, speed: null });
+    setLikertB({ imageAccuracy: null, helpfulness: null, likelihood: null, speed: null });
     setLikertASubmitted(false);
     setLikertBSubmitted(false);
+    setCommentsA("");
     setAdditionalComments("");
     setFreeContext("");
     setCustomKw("");
@@ -1190,7 +1215,7 @@ export default function QatarAACProbePrototype() {
   if (!participantId) {
     return (
       <div
-        className="min-h-screen w-full bg-sky-50 flex items-center justify-center p-6"
+        className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-sky-50 to-indigo-50 flex items-center justify-center p-6"
         dir={language === "ar" ? "rtl" : "ltr"}
       >
         <motion.div
@@ -1198,8 +1223,8 @@ export default function QatarAACProbePrototype() {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md"
         >
-          <Card className="rounded-3xl shadow-lg border-0">
-            <CardHeader className="rounded-t-3xl bg-gradient-to-r from-blue-800 to-blue-600 p-8 text-white">
+          <Card className="rounded-3xl shadow-xl border-0">
+            <CardHeader className="rounded-t-3xl bg-gradient-to-r from-indigo-500 via-blue-500 to-sky-400 p-8 text-white">
               <CardTitle className="text-2xl font-bold">{t.welcome}</CardTitle>
               <CardDescription className="text-blue-200 text-base mt-1">
                 {t.welcomeDesc}
@@ -1243,7 +1268,7 @@ export default function QatarAACProbePrototype() {
 
   return (
     <div
-      className="min-h-screen w-full bg-sky-50 p-4 md:p-8"
+      className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-sky-50 to-indigo-50 p-4 md:p-8"
       dir={language === "ar" ? "rtl" : "ltr"}
     >
       <motion.div
@@ -1251,7 +1276,7 @@ export default function QatarAACProbePrototype() {
         animate={{ opacity: 1, y: 0 }}
         className="mx-auto max-w-6xl space-y-6"
       >
-        <header className="flex flex-col gap-3 rounded-3xl bg-gradient-to-r from-blue-800 to-blue-600 p-8 text-white shadow-lg">
+        <header className="flex flex-col gap-3 rounded-3xl bg-gradient-to-r from-indigo-500 via-blue-500 to-sky-400 p-8 text-white shadow-xl">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <span className="text-4xl">💬</span>
@@ -1270,7 +1295,7 @@ export default function QatarAACProbePrototype() {
         </header>
 
         {/* Step navigator */}
-        <div className="rounded-2xl bg-white border shadow-sm p-3 sm:p-5">
+        <div className="rounded-3xl bg-white border shadow-sm p-3 sm:p-5">
           <div className="flex items-center">
             {t.steps.map((label, i) => (
               <React.Fragment key={i}>
@@ -1308,7 +1333,7 @@ export default function QatarAACProbePrototype() {
         {step === 0 && (
           <>
             {/* 1 — Profile picker */}
-            <Card className="rounded-2xl overflow-hidden">
+            <Card className="rounded-3xl overflow-hidden shadow-sm">
               <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-700 text-white font-bold text-sm">
                   1
@@ -1320,27 +1345,76 @@ export default function QatarAACProbePrototype() {
                   </p>
                 </div>
               </div>
+              <CardContent className="space-y-5 pt-5">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label>{t.profileNameLabel} <span className="text-red-500">*</span></Label>
+                    <Input
+                      value={profileName}
+                      onChange={(e) => setProfileName(e.target.value)}
+                      placeholder={t.namePlaceholder}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>{t.profileAgeLabel}</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={120}
+                      value={profileAge}
+                      onChange={(e) => setProfileAge(e.target.value)}
+                      placeholder={t.agePlaceholder}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>{t.profileGenderLabel}</Label>
+                    <Select value={profileGender} onValueChange={setProfileGender}>
+                      <SelectTrigger><SelectValue placeholder={t.selectPlaceholder} /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">{t.genderMale}</SelectItem>
+                        <SelectItem value="female">{t.genderFemale}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label>{t.profileConditionLabel}</Label>
+                    <Select value={profileCondition} onValueChange={setProfileCondition}>
+                      <SelectTrigger><SelectValue placeholder={t.selectPlaceholder} /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="autism">{t.conditionAutism}</SelectItem>
+                        <SelectItem value="als">{t.conditionALS}</SelectItem>
+                        <SelectItem value="cerebral-palsy">{t.conditionCerebralPalsy}</SelectItem>
+                        <SelectItem value="down-syndrome">{t.conditionDownSyndrome}</SelectItem>
+                        <SelectItem value="aphasia">{t.conditionAphasia}</SelectItem>
+                        <SelectItem value="other">{t.conditionOther}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Location picker */}
+            <Card className="rounded-3xl overflow-hidden shadow-sm">
+              <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-700 text-white font-bold text-sm">2</div>
+                <CardTitle className="text-lg">{t.chooseLocation} <span className="text-red-500">*</span></CardTitle>
+              </div>
               <CardContent className="pt-5">
                 <div className="grid gap-4 sm:grid-cols-3">
-                  {DEMO_PROFILES.map((profile) => {
-                    const isSelected = selectedProfileId === profile.id;
+                  {[
+                    { id: "pharmacy", emoji: "💊", label: "Pharmacy", arLabel: "صيدلية", desc: t.pharmacyDesc },
+                    { id: "cafe", emoji: "☕", label: "Café", arLabel: "مقهى", desc: t.cafeDesc },
+                    { id: "majlis", emoji: "🏡", label: "Majlis", arLabel: "مجلس", desc: t.majlisDesc },
+                  ].map((loc) => {
+                    const isSelected = selectedLocationId === loc.id;
                     return (
                       <button
-                        key={profile.id}
+                        key={loc.id}
                         type="button"
                         onClick={() => {
-                          setSelectedProfileId(profile.id);
-                          setProfileName(profile.name);
-                          setPartnerRole(profile.partnerRole);
-                          setSimpleStyle(profile.simpleStyle);
-                          setPhraseBank(
-                            profile.phrases.map((text) => ({
-                              id: crypto.randomUUID(),
-                              text,
-                            })),
-                          );
-                          setSelectedLocationId(profile.location);
-                          setLocation(profile.location);
+                          setSelectedLocationId(loc.id);
+                          setLocation(loc.id);
                         }}
                         className={`rounded-2xl border-2 p-5 text-left transition-all space-y-2 ${
                           isSelected
@@ -1348,32 +1422,10 @@ export default function QatarAACProbePrototype() {
                             : "border-transparent bg-slate-50 hover:border-blue-200 hover:bg-blue-50"
                         }`}
                       >
-                        <div className="text-4xl flex gap-1">
-                          {profile.emoji}
-                          <span className="text-3xl">
-                            {profile.scenarioEmoji}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="font-semibold text-lg">
-                            {language === "ar" ? profile.arName : profile.name}
-                          </div>
-                          <div className="text-sm text-blue-700 font-medium mt-0.5">
-                            {language === "ar"
-                              ? profile.arTagline
-                              : profile.tagline}
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground leading-relaxed">
-                          {language === "ar"
-                            ? profile.arDescription
-                            : profile.description}
-                        </p>
-                        {isSelected && (
-                          <div className="text-xs font-semibold text-blue-700 pt-1">
-                            {t.selectedCheck}
-                          </div>
-                        )}
+                        <div className="text-4xl">{loc.emoji}</div>
+                        <div className="font-semibold text-lg">{language === "ar" ? loc.arLabel : loc.label}</div>
+                        <p className="text-sm text-muted-foreground">{loc.desc}</p>
+                        {isSelected && <div className="text-xs font-semibold text-blue-700">{t.selectedCheck}</div>}
                       </button>
                     );
                   })}
@@ -1381,13 +1433,11 @@ export default function QatarAACProbePrototype() {
               </CardContent>
             </Card>
 
-            {/* Summary + next */}
-
             <div className="flex justify-center gap-4 pt-2">
               <Button
                 onClick={() => goToStep(1)}
-                disabled={!selectedProfileId}
-                className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-10 py-6 text-base font-semibold disabled:opacity-40"
+                disabled={!profileName.trim() || !selectedLocationId}
+                className="rounded-full bg-blue-600 hover:bg-blue-500 px-10 py-6 text-base font-semibold shadow-md disabled:opacity-40"
               >
                 {t.nextGenerate}
               </Button>
@@ -1398,7 +1448,7 @@ export default function QatarAACProbePrototype() {
         {step === 1 && (
           <div className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-2">
-              <Card className="rounded-2xl overflow-hidden">
+              <Card className="rounded-3xl overflow-hidden shadow-sm">
                 <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-700 text-white font-bold text-lg">
                     1
@@ -1512,7 +1562,7 @@ export default function QatarAACProbePrototype() {
                         <Button
                           type="button"
                           onClick={() => startCamera()}
-                          className="rounded-xl"
+                          className="rounded-full"
                         >
                           <Camera className="mr-2 h-4 w-4" />
                           {t.startCamera}
@@ -1669,7 +1719,7 @@ export default function QatarAACProbePrototype() {
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl overflow-hidden">
+              <Card className="rounded-3xl overflow-hidden shadow-sm">
                 <div className="bg-gradient-to-r from-sky-50 to-blue-50 border-b px-6 py-4 flex items-center gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-800 text-white font-bold text-lg">
                     2
@@ -1688,14 +1738,14 @@ export default function QatarAACProbePrototype() {
                     <Button
                       onClick={runKeywords}
                       disabled={!imagePreview || kwLoading || sentLoading}
-                      className="rounded-xl"
+                      className="rounded-full"
                     >
                       {kwLoading || sentLoading ? t.generatingSentences : t.generate3Sentences}
                     </Button>
                     <Button
                       variant="secondary"
-                      onClick={() => { setKeywords([]); setSentences([]); setSelectedSentence(""); }}
-                      className="rounded-xl"
+                      onClick={() => { setKeywords([]); setSentences([]); setSelectedSentence(""); setSentenceMatch(null); setRefinementKw(""); }}
+                      className="rounded-full"
                     >
                       {t.clear}
                     </Button>
@@ -1736,6 +1786,50 @@ export default function QatarAACProbePrototype() {
                     )}
                   </div>
 
+                  {sentences.length > 0 && (
+                    <>
+                      <Separator />
+                      <div className="space-y-3">
+                        <div className="text-sm font-medium">{t.matchQuestion}</div>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant={sentenceMatch === "yes" ? "default" : "outline"}
+                            className="rounded-full"
+                            onClick={() => { setSentenceMatch("yes"); setRefinementKw(""); }}
+                          >
+                            <Check className="mr-2 h-4 w-4" /> {t.yes}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={sentenceMatch === "no" ? "default" : "outline"}
+                            className="rounded-full"
+                            onClick={() => setSentenceMatch("no")}
+                          >
+                            <X className="mr-2 h-4 w-4" /> {t.no}
+                          </Button>
+                        </div>
+                        {sentenceMatch === "no" && (
+                          <div className="space-y-2">
+                            <Label>{t.refineLabel}</Label>
+                            <Input
+                              value={refinementKw}
+                              onChange={(e) => setRefinementKw(e.target.value)}
+                              placeholder="e.g. urgent, help, price"
+                            />
+                            <Button
+                              onClick={runSentences}
+                              disabled={!refinementKw.trim() || sentLoading}
+                              className="w-full rounded-xl"
+                            >
+                              {sentLoading ? t.generatingSentences : t.regenerate}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+
                   <Separator />
 
                   <div className="space-y-2">
@@ -1754,7 +1848,7 @@ export default function QatarAACProbePrototype() {
 
                     <div className="flex gap-2">
                       <Button
-                        className="rounded-xl"
+                        className="rounded-full"
                         disabled={!selectedSentence}
                         onClick={speakSelectedSentence}
                       >
@@ -1762,7 +1856,7 @@ export default function QatarAACProbePrototype() {
                       </Button>
                       <Button
                         variant="secondary"
-                        className="rounded-xl"
+                        className="rounded-full"
                         onClick={stopSpeaking}
                       >
                         <Square className="mr-2 h-4 w-4" /> {t.stop}
@@ -1782,7 +1876,7 @@ export default function QatarAACProbePrototype() {
               </Button>
               <Button
                 onClick={() => goToStep(2)}
-                className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-10 py-6 text-base font-semibold"
+                className="rounded-full bg-blue-600 hover:bg-blue-500 px-10 py-6 text-base font-semibold shadow-md"
               >
                 {t.nextEvaluate}
               </Button>
@@ -1792,7 +1886,7 @@ export default function QatarAACProbePrototype() {
 
         {step === 3 && (
           <div className="space-y-6">
-            <Card className="rounded-2xl overflow-hidden">
+            <Card className="rounded-3xl overflow-hidden shadow-sm">
               <div className="bg-gradient-to-r from-slate-100 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
                 <span className="text-2xl">🔍</span>
                 <div>
@@ -1833,7 +1927,7 @@ export default function QatarAACProbePrototype() {
                   </div>
                   <div className="flex gap-2">
                     <Button
-                      className="rounded-xl bg-blue-700 hover:bg-blue-600"
+                      className="rounded-full bg-blue-600 hover:bg-blue-500"
                       onClick={runVerifyImage}
                       disabled={!notes.trim() || verifyLoading}
                     >
@@ -1922,7 +2016,12 @@ export default function QatarAACProbePrototype() {
                   )}
                 </div>
 
-                {verifyImageUrl && (
+                {verifyLoading ? (
+                  <div className="rounded-2xl border border-dashed p-16 flex flex-col items-center justify-center gap-3 text-muted-foreground">
+                    <RefreshCw className="h-10 w-10 animate-spin text-blue-500" />
+                    <span className="text-sm">Loading…</span>
+                  </div>
+                ) : verifyImageUrl ? (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="text-sm font-medium">
@@ -1931,7 +2030,7 @@ export default function QatarAACProbePrototype() {
                       <Button
                         variant="destructive"
                         size="sm"
-                        className="rounded-xl"
+                        className="rounded-full"
                         onClick={() => setVerifyImageUrl("")}
                       >
                         {t.removeImage}
@@ -1945,7 +2044,7 @@ export default function QatarAACProbePrototype() {
                       />
                     </div>
                   </div>
-                )}
+                ) : null}
               </CardContent>
             </Card>
             <div className="flex justify-center gap-4 pt-2">
@@ -1958,7 +2057,8 @@ export default function QatarAACProbePrototype() {
               </Button>
               <Button
                 onClick={() => goToStep(4)}
-                className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-10 py-6 text-base font-semibold"
+                disabled={!verifyDecision}
+                className="rounded-full bg-blue-600 hover:bg-blue-500 px-10 py-6 text-base font-semibold shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {t.nextRate}
               </Button>
@@ -1969,7 +2069,7 @@ export default function QatarAACProbePrototype() {
         {/* Step 2 — Evaluate A: keywords + sentences */}
         {step === 2 && (
           <div className="space-y-6">
-            <Card className="rounded-2xl overflow-hidden">
+            <Card className="rounded-3xl overflow-hidden shadow-sm">
               <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
                 <span className="text-2xl">📋</span>
                 <div>
@@ -1992,6 +2092,7 @@ export default function QatarAACProbePrototype() {
                     setLikertA((x) => ({ ...x, keywordRelevance: v }))
                   }
                   rtl={language === "ar"}
+                  sliderHint={t.sliderHint}
                 />
                 <LikertItem
                   title={t.qa2}
@@ -2005,6 +2106,7 @@ export default function QatarAACProbePrototype() {
                     setLikertA((x) => ({ ...x, sentenceUsefulness: v }))
                   }
                   rtl={language === "ar"}
+                  sliderHint={t.sliderHint}
                 />
                 <LikertItem
                   title={t.qa3}
@@ -2014,6 +2116,7 @@ export default function QatarAACProbePrototype() {
                   }
                   onChange={(v) => setLikertA((x) => ({ ...x, ease: v }))}
                   rtl={language === "ar"}
+                  sliderHint={t.sliderHint}
                 />
                 <LikertItem
                   title={t.qa4}
@@ -2025,12 +2128,26 @@ export default function QatarAACProbePrototype() {
                   }
                   onChange={(v) => setLikertA((x) => ({ ...x, speed: v }))}
                   rtl={language === "ar"}
+                  sliderHint={t.sliderHint}
                 />
+
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium">
+                    {t.additionalComments}
+                  </Label>
+                  <Textarea
+                    value={commentsA}
+                    onChange={(e) => setCommentsA(e.target.value)}
+                    placeholder={t.commentsPlaceholder}
+                    className="rounded-2xl min-h-[100px]"
+                  />
+                </div>
 
                 {!likertASubmitted ? (
                   <Button
-                    className="w-full rounded-xl bg-blue-700 hover:bg-blue-600"
+                    className="w-full rounded-full bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed"
                     onClick={submitLikertA}
+                    disabled={Object.values(likertA).some((v) => v === null)}
                   >
                     {t.submit}
                   </Button>
@@ -2055,7 +2172,8 @@ export default function QatarAACProbePrototype() {
               </Button>
               <Button
                 onClick={() => goToStep(3)}
-                className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-10 py-6 text-base font-semibold"
+                disabled={!likertASubmitted}
+                className="rounded-full bg-blue-600 hover:bg-blue-500 px-10 py-6 text-base font-semibold shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {t.nextVerify}
               </Button>
@@ -2066,7 +2184,7 @@ export default function QatarAACProbePrototype() {
         {/* Step 4 — Evaluate B: image verification */}
         {step === 4 && (
           <div className="space-y-6">
-            <Card className="rounded-2xl overflow-hidden">
+            <Card className="rounded-3xl overflow-hidden shadow-sm">
               <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
                 <span className="text-2xl">📊</span>
                 <div>
@@ -2089,6 +2207,7 @@ export default function QatarAACProbePrototype() {
                     setLikertB((x) => ({ ...x, imageAccuracy: v }))
                   }
                   rtl={language === "ar"}
+                  sliderHint={t.sliderHint}
                 />
                 <LikertItem
                   title={t.qb2}
@@ -2102,6 +2221,7 @@ export default function QatarAACProbePrototype() {
                     setLikertB((x) => ({ ...x, helpfulness: v }))
                   }
                   rtl={language === "ar"}
+                  sliderHint={t.sliderHint}
                 />
                 <LikertItem
                   title={t.qb3}
@@ -2113,6 +2233,7 @@ export default function QatarAACProbePrototype() {
                   }
                   onChange={(v) => setLikertB((x) => ({ ...x, likelihood: v }))}
                   rtl={language === "ar"}
+                  sliderHint={t.sliderHint}
                 />
                 <LikertItem
                   title={t.qb4}
@@ -2124,6 +2245,7 @@ export default function QatarAACProbePrototype() {
                   }
                   onChange={(v) => setLikertB((x) => ({ ...x, speed: v }))}
                   rtl={language === "ar"}
+                  sliderHint={t.sliderHint}
                 />
 
                 <div className="space-y-1">
@@ -2140,9 +2262,9 @@ export default function QatarAACProbePrototype() {
 
                 {!likertBSubmitted ? (
                   <Button
-                    className="w-full rounded-xl bg-blue-700 hover:bg-blue-600"
+                    className="w-full rounded-full bg-blue-600 hover:bg-blue-500"
                     onClick={submitLikertB}
-                    disabled={likertBSaving}
+                    disabled={likertBSaving || Object.values(likertB).some((v) => v === null)}
                   >
                     {likertBSaving ? t.saving : t.submit}
                   </Button>
@@ -2196,26 +2318,29 @@ function LikertItem({
   min = 1,
   max = 5,
   rtl = false,
+  sliderHint = "Move the slider to rate",
 }: {
   title: string;
-  value: number;
+  value: number | null;
   labels: string[];
   onChange: (v: number) => void;
   min?: number;
   max?: number;
   rtl?: boolean;
+  sliderHint?: string;
 }) {
   const ticks = Array.from({ length: max - min + 1 }, (_, i) => min + i);
+  const display = value ?? min;
   return (
-    <div className="space-y-2 rounded-2xl border p-4" dir={rtl ? "rtl" : "ltr"}>
+    <div className={`space-y-2 rounded-2xl border p-4 ${value === null ? "border-dashed border-blue-200 bg-blue-50/40" : ""}`} dir={rtl ? "rtl" : "ltr"}>
       <div className="text-sm font-medium">{title}</div>
       <div className="flex items-center gap-4">
-        <Badge className="rounded-xl" variant="secondary">
-          {value}
+        <Badge className="rounded-full" variant={value === null ? "outline" : "secondary"}>
+          {value ?? "—"}
         </Badge>
         <div className="flex-1 space-y-1">
           <Slider
-            value={[value]}
+            value={[display]}
             min={min}
             max={max}
             step={1}
@@ -2235,7 +2360,9 @@ function LikertItem({
           </div>
         </div>
       </div>
-      <div className="text-xs text-muted-foreground">{labels[value - 1]}</div>
+      <div className="text-xs text-muted-foreground">
+        {value !== null ? labels[value - 1] : sliderHint}
+      </div>
     </div>
   );
 }
