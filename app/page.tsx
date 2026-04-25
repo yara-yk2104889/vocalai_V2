@@ -680,6 +680,45 @@ const UI_LABELS = {
   },
 } as const;
 
+const SCENARIO_CONFIG: Record<string, { en: { prompt: string; inputLabel: string; placeholder: string }; ar: { prompt: string; inputLabel: string; placeholder: string } }> = {
+  cafe: {
+    en: {
+      prompt: "You're at a busy café and the barista is waiting for your order! You'd like to order a drink.",
+      inputLabel: "Which drink would you like to order?",
+      placeholder: "e.g. large iced latte, hot chocolate with cream…",
+    },
+    ar: {
+      prompt: "أنت في مقهى مزدحم والبارستا ينتظر طلبك! تريد طلب مشروب.",
+      inputLabel: "أي مشروب تريد أن تطلب؟",
+      placeholder: "مثال: لاتيه مثلج كبير، شوكولاتة ساخنة...",
+    },
+  },
+  pharmacy: {
+    en: {
+      prompt: "You are at a pharmacy and need medicine for a symptom you're experiencing.",
+      inputLabel: "What symptom do you have, or what medicine do you need?",
+      placeholder: "e.g. headache, cough syrup, fever medication…",
+    },
+    ar: {
+      prompt: "أنت في صيدلية وتحتاج إلى دواء لأحد الأعراض التي تعاني منها.",
+      inputLabel: "ما العرض الذي تعاني منه أو الدواء الذي تحتاجه؟",
+      placeholder: "مثال: صداع، شراب للسعال، دواء للحمى...",
+    },
+  },
+  majlis: {
+    en: {
+      prompt: "You are hosting guests in your majlis and would like to offer them something!",
+      inputLabel: "What would you like to offer your guests?",
+      placeholder: "e.g. Arabic coffee, dates, tea, sweets…",
+    },
+    ar: {
+      prompt: "أنت تستضيف ضيوفاً في مجلسك وتريد تقديم شيء لهم!",
+      inputLabel: "ماذا تريد أن تقدم لضيوفك؟",
+      placeholder: "مثال: قهوة عربية، تمر، شاي، حلويات...",
+    },
+  },
+};
+
 export default function QatarAACProbePrototype() {
   const [participantId, setParticipantId] = useState("");
   const [participantIdInput, setParticipantIdInput] = useState("");
@@ -1583,9 +1622,27 @@ export default function QatarAACProbePrototype() {
                 </div>
               </div>
               <CardContent className="space-y-4">
+                {SCENARIO_CONFIG[location] && (
+                  <div className="rounded-2xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800 leading-relaxed">
+                    {SCENARIO_CONFIG[location][language === "ar" ? "ar" : "en"].prompt}
+                  </div>
+                )}
                 <div className="space-y-1">
-                  <Label>{t.quickNote}</Label>
-                  <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t.quickNotePlaceholder} />
+                  <Label className="text-sm font-medium">
+                    {SCENARIO_CONFIG[location]
+                      ? SCENARIO_CONFIG[location][language === "ar" ? "ar" : "en"].inputLabel
+                      : t.quickNote}
+                  </Label>
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder={
+                      SCENARIO_CONFIG[location]
+                        ? SCENARIO_CONFIG[location][language === "ar" ? "ar" : "en"].placeholder
+                        : t.quickNotePlaceholder
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">{language === "ar" ? "اكتب ما ستقوله في هذا الموقف" : "Type what you would say in this situation"}</p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">{t.imageStyle}</Label>
@@ -1731,7 +1788,8 @@ function LikertItem({
   sliderHint?: string;
 }) {
   const ticks = Array.from({ length: max - min + 1 }, (_, i) => min + i);
-  const display = value ?? min;
+  const sliderMin = min - 1;
+  const display = value ?? sliderMin;
   return (
     <div className={`space-y-2 rounded-2xl border p-4 ${value === null ? "border-dashed border-blue-200 bg-blue-50/40" : ""}`} dir={rtl ? "rtl" : "ltr"}>
       <div className="text-sm font-medium">{title}</div>
@@ -1742,10 +1800,10 @@ function LikertItem({
         <div className="flex-1 space-y-1">
           <Slider
             value={[display]}
-            min={min}
+            min={sliderMin}
             max={max}
             step={1}
-            onValueChange={(v) => onChange(v?.[0] ?? min)}
+            onValueChange={(v) => { const n = v?.[0] ?? sliderMin; if (n >= min) onChange(n); }}
             className="w-full"
             dir={rtl ? "rtl" : "ltr"}
           />
