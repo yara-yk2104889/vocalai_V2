@@ -423,8 +423,7 @@ const UI_LABELS = {
     locCafe: "Café",
     locMajlis: "Family gathering / majlis",
     // Step 1 — intention options
-    intentRequest: "Request",
-    intentQuestion: "Question",
+    intentQuestion: "Question / Request",
     intentConversation: "Conversation",
     // Step 1 — right panel
     keywordsTitle: "Keywords → sentences",
@@ -594,8 +593,7 @@ const UI_LABELS = {
     locCafe: "مقهى",
     locMajlis: "تجمع عائلي / مجلس",
     // Step 1 — intention options
-    intentRequest: "طلب",
-    intentQuestion: "سؤال",
+    intentQuestion: "سؤال / طلب",
     intentConversation: "محادثة",
     // Step 1 — right panel
     keywordsTitle: "الكلمات ← الجمل",
@@ -745,7 +743,7 @@ export default function QatarAACProbePrototype() {
   const [location, setLocation] = useState("pharmacy");
   const [goal, setGoal] = useState("ask dose");
   const [freeContext, setFreeContext] = useState("");
-  const [intention, setIntention] = useState("request");
+  const [intention, setIntention] = useState("question");
 
   const [notes, setNotes] = useState("");
   const [commentsA, setCommentsA] = useState("");
@@ -1188,6 +1186,8 @@ export default function QatarAACProbePrototype() {
   }
 
   function resetForNewSubmission() {
+    setParticipantId("");
+    setParticipantIdInput("");
     setStep(0);
     setSelectedLocationId(null);
     setProfileName("");
@@ -1678,9 +1678,6 @@ export default function QatarAACProbePrototype() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="request">
-                            {t.intentRequest}
-                          </SelectItem>
                           <SelectItem value="question">
                             {t.intentQuestion}
                           </SelectItem>

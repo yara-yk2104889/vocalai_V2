@@ -20,11 +20,9 @@ export async function POST(req: Request) {
 
   const intentionInstruction =
     intention === "question"
-      ? "All 3 sentences MUST be phrased as questions (e.g. 'Can I...?', 'Do you have...?', 'What is...?')."
+      ? "All 3 sentences MUST be either questions or direct requests — mix both naturally (e.g. 'Can I have...?', 'What is the dose?', 'I need this medicine.', 'Please help me.'). Some sentences can be questions, others can be requests — vary them."
       : intention === "conversation"
-      ? "All 3 sentences MUST be conversational — social, friendly, or sharing-oriented (e.g. greetings, comments, joining a discussion)."
-      : intention === "request"
-      ? "All 3 sentences MUST be direct requests or needs (e.g. 'I want...', 'Please give me...', 'I need...')."
+      ? "All 3 sentences MUST be conversational — social, friendly, or sharing-oriented (e.g. greetings, comments, joining a discussion). Do NOT phrase them as requests or questions about needs."
       : "";
 
   const response = await client.chat.completions.create({
