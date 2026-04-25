@@ -771,6 +771,7 @@ export default function QatarAACProbePrototype() {
   const [selectedSentence, setSelectedSentence] = useState("");
   const [sentenceMatch, setSentenceMatch] = useState<"yes" | "no" | null>(null);
   const [refinementKw, setRefinementKw] = useState("");
+  const [sentenceMatchHistory, setSentenceMatchHistory] = useState<{match: string; refinementKeywords?: string}[]>([]);
 
   const [likertA, setLikertA] = useState<Record<string, number | null>>({
     keywordRelevance: null,
@@ -996,6 +997,10 @@ export default function QatarAACProbePrototype() {
 
   async function runSentences() {
     setSentLoading(true);
+    // Record "no" attempt with refinement keywords before resetting
+    if (sentenceMatch === "no" && refinementKw.trim()) {
+      setSentenceMatchHistory((prev) => [...prev, { match: "no", refinementKeywords: refinementKw.trim() }]);
+    }
     setSentenceMatch(null);
     try {
       const mergedKeywords = [
@@ -1164,7 +1169,7 @@ export default function QatarAACProbePrototype() {
           scenario: { goal: context.goal, intention },
           keywords,
           selectedSentence,
-          sentenceMatch,
+          sentenceMatch: sentenceMatchHistory,
           evaluationA: likertA,
           commentsA,
           verifyDecision,
@@ -1205,6 +1210,9 @@ export default function QatarAACProbePrototype() {
     setLikertBSubmitted(false);
     setCommentsA("");
     setAdditionalComments("");
+    setSentenceMatch(null);
+    setSentenceMatchHistory([]);
+    setRefinementKw("");
     setFreeContext("");
     setCustomKw("");
     setNotes("");
@@ -1739,7 +1747,7 @@ export default function QatarAACProbePrototype() {
                     </Button>
                     <Button
                       variant="secondary"
-                      onClick={() => { setKeywords([]); setSentences([]); setSelectedSentence(""); setSentenceMatch(null); setRefinementKw(""); }}
+                      onClick={() => { setKeywords([]); setSentences([]); setSelectedSentence(""); setSentenceMatch(null); setRefinementKw(""); setSentenceMatchHistory([]); }}
                       className="rounded-full"
                     >
                       {t.clear}
@@ -1791,7 +1799,7 @@ export default function QatarAACProbePrototype() {
                             type="button"
                             variant={sentenceMatch === "yes" ? "default" : "outline"}
                             className="rounded-full"
-                            onClick={() => { setSentenceMatch("yes"); setRefinementKw(""); }}
+                            onClick={() => { setSentenceMatch("yes"); setSentenceMatchHistory((prev) => [...prev, { match: "yes" }]); setRefinementKw(""); }}
                           >
                             <Check className="mr-2 h-4 w-4" /> {t.yes}
                           </Button>
