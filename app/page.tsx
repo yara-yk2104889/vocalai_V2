@@ -1200,13 +1200,13 @@ export default function QatarAACProbePrototype() {
 
   return (
     <div
-      className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-sky-50 to-indigo-50 p-4 md:p-8"
+      className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-sky-50 to-indigo-50 p-4 md:p-5"
       dir={language === "ar" ? "rtl" : "ltr"}
     >
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mx-auto max-w-7xl space-y-6"
+        className="mx-auto max-w-[1500px] space-y-6"
       >
         <header className="flex flex-col gap-3 rounded-3xl bg-gradient-to-r from-indigo-500 via-blue-500 to-sky-400 p-8 text-white shadow-xl">
           <div className="flex items-center justify-between gap-3">
