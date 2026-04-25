@@ -1166,7 +1166,7 @@ export default function QatarAACProbePrototype() {
           participantId,
           profile: { name: profileName, age: profileAge, gender: profileGender, condition: profileCondition, language },
           location,
-          scenario: { goal: context.goal, intention },
+          scenario: { intention },
           keywords,
           selectedSentence,
           sentenceMatch: sentenceMatchHistory,
