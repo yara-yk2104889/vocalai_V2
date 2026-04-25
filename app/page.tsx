@@ -1206,7 +1206,7 @@ export default function QatarAACProbePrototype() {
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mx-auto max-w-[1500px] space-y-6"
+        className="mx-auto max-w-[1350px] space-y-6"
       >
         <header className="flex flex-col gap-3 rounded-3xl bg-gradient-to-r from-indigo-500 via-blue-500 to-sky-400 p-8 text-white shadow-xl">
           <div className="flex items-center justify-between gap-3">
@@ -1280,7 +1280,6 @@ export default function QatarAACProbePrototype() {
 
             <Card className="rounded-none shadow-none border-0">
               <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-700 text-white font-bold text-sm">2</div>
                 <CardTitle className="text-lg">{t.chooseLocation} <span className="text-red-500">*</span></CardTitle>
               </div>
               <CardContent className="pt-5">
