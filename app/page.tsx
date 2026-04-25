@@ -1808,6 +1808,7 @@ function LikertItem({
             dir={rtl ? "rtl" : "ltr"}
           />
           <div className="flex justify-between px-2.5 text-xs text-muted-foreground">
+            <span className="invisible select-none">0</span>
             {ticks.map((n) => (
               <span
                 key={n}
