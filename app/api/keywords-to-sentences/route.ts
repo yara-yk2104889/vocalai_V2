@@ -6,7 +6,7 @@ const client = new OpenAI({
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { keywords, context, language, style, intention } = body;
+  const { keywords, refinementKeywords, context, language, style, intention } = body;
 
   const langInstruction =
     language === "ar"
@@ -41,14 +41,16 @@ Location: ${context.location}
 Goal: ${context.goal}
 Intention: ${intention}
 
-Keywords:
+Keywords (from image):
 ${keywords.join(", ")}
+${refinementKeywords?.length ? `\nUser refinement keywords (MUST be reflected in the sentences — treat these as the primary topic):
+${refinementKeywords.join(", ")}` : ""}
 
 Return exactly 3 sentences. They MUST vary from each other:
 - Sentence 1: use different keywords or a different angle than sentence 2 and 3
 - Sentence 2: vary the structure or focus (e.g. ask about something else, or phrase it differently)
 - Sentence 3: offer a third distinct option — not a rephrasing of 1 or 2
-
+${refinementKeywords?.length ? `\nIMPORTANT: The user explicitly said the previous sentences did not match. Every sentence MUST incorporate the user refinement keywords above. Do not ignore them.` : ""}
 Do NOT repeat the same idea with slightly different words. Each sentence should feel like a genuinely different thing the user might want to say. ${langInstruction}
 `,
       },

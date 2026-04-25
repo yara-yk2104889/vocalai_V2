@@ -221,12 +221,14 @@ const api = {
 
   async keywordsToSentences({
     keywords,
+    refinementKeywords,
     context,
     language,
     style,
     intention,
   }: {
     keywords: string[];
+    refinementKeywords?: string[];
     context: {
       location: string;
       partnerRole: string;
@@ -244,6 +246,7 @@ const api = {
       },
       body: JSON.stringify({
         keywords,
+        refinementKeywords,
         context,
         language,
         style,
@@ -993,16 +996,16 @@ export default function QatarAACProbePrototype() {
     }
     setSentenceMatch(null);
     try {
-      const mergedKeywords = [
+      const refinementList = refinementKw.split(",").map((s) => s.trim()).filter(Boolean);
+      const baseKeywords = [
         ...keywords,
         ...customKw.split(",").map((s) => s.trim()).filter(Boolean),
-        ...refinementKw.split(",").map((s) => s.trim()).filter(Boolean),
       ];
-
-      const uniqueKeywords = Array.from(new Set(mergedKeywords)).slice(0, 8);
+      const uniqueBase = Array.from(new Set(baseKeywords)).slice(0, 5);
 
       const out = await api.keywordsToSentences({
-        keywords: uniqueKeywords,
+        keywords: uniqueBase,
+        refinementKeywords: refinementList,
         context,
         language,
         style,
@@ -1152,6 +1155,7 @@ export default function QatarAACProbePrototype() {
   }
 
   function resetForNewSubmission() {
+    if (cameraOn) stopCamera();
     setParticipantId("");
     setParticipantIdInput("");
     setProfileSubmitted(false);
@@ -1160,13 +1164,20 @@ export default function QatarAACProbePrototype() {
     setProfileAge("");
     setProfileGender("");
     setProfileCondition("");
+    setLocation("pharmacy");
+    setIntention("question");
+    setGoal("ask dose");
+    setInputMode("upload");
     setImagePreview("");
     setImageFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
     setKeywords([]);
     setSentences([]);
     setSelectedSentence("");
     setVerifyImageUrl("");
     setVerifyDecision(null);
+    setAlternatives([]);
+    setImageStyleMode("realistic");
     setLikertA({ keywordRelevance: null, sentenceUsefulness: null, ease: null, speed: null });
     setLikertB({ imageAccuracy: null, helpfulness: null, likelihood: null, speed: null });
     setLikertASubmitted(false);
