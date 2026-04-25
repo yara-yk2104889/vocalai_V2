@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Card,
@@ -483,7 +483,7 @@ const UI_LABELS = {
     // Stage A — keyword + sentence evaluation (step 2)
     rateTitleA: "Rate the keywords & sentences",
     rateDescA: "How well did the AI support word and sentence generation?",
-    qa1: "How relevant were the generated keywords to your communication goal?",
+    qa1: "How well did the generated sentences match what you wanted to say?",
     qa2: "How useful were the sentence options for what you wanted to say?",
     qa3: "How easy was it to generate a sentence for this situation?",
     qa4: "How would you rate the speed of the AI output?",
@@ -502,6 +502,8 @@ const UI_LABELS = {
     thankYou: "Thank you for your participation!",
     thankYouDesc: "Your responses have been saved. You can start a new submission below.",
     doAnother: "Start another submission",
+    confirmProfile: "Confirm Profile →",
+    profileConfirmed: "Profile confirmed",
     // Footer
     footer: "Qatar AAC AI Design Probe · Workshop prototype",
   },
@@ -652,7 +654,7 @@ const UI_LABELS = {
     // Stage A — keyword + sentence evaluation (step 2)
     rateTitleA: "قيّم الكلمات والجمل",
     rateDescA: "كيف دعم الذكاء الاصطناعي توليد الكلمات والجمل؟",
-    qa1: "ما مدى ملاءمة الكلمات المقترحة لهدف تواصلك؟",
+    qa1: "ما مدى تطابق الجمل المقترحة مع ما أردت قوله؟",
     qa2: "ما مدى فائدة خيارات الجمل لما أردت قوله؟",
     qa3: "ما مدى سهولة توليد جملة في هذا الموقف؟",
     qa4: "كيف تقيّم سرعة مخرجات الذكاء الاصطناعي؟",
@@ -671,6 +673,8 @@ const UI_LABELS = {
     thankYou: "شكراً على مشاركتك!",
     thankYouDesc: "تم حفظ إجاباتك. يمكنك بدء تقديم جديد أدناه.",
     doAnother: "بدء تقديم آخر",
+    confirmProfile: "تأكيد الملف الشخصي ←",
+    profileConfirmed: "تم تأكيد الملف الشخصي",
     // Footer
     footer: "مسبار تصميم AAC بالذكاء الاصطناعي في قطر · نموذج أولي للورشة",
   },
@@ -689,51 +693,6 @@ export default function QatarAACProbePrototype() {
   const partnerRole = "parent";
   const [language, setLanguage] = useState("en");
   const simpleStyle = true;
-  const [phraseBank, setPhraseBank] = useState([
-    { id: "p1", text: "Hi, I use AAC. Please give me a moment." },
-    { id: "p2", text: "Please speak slowly." },
-    { id: "p3", text: "Can you repeat that, please?" },
-  ]);
-
-  const [topicPackLocation, setTopicPackLocation] = useState("majlis");
-  const [topicPackInput, setTopicPackInput] = useState("");
-  const [locationPhraseBank, setLocationPhraseBank] = useState<
-    Record<string, { id: string; text: string; arText: string }[]>
-  >({
-    majlis: [
-      { id: "m1", text: "Eid Mubarak", arText: "عيد مبارك" },
-      { id: "m2", text: "How are you?", arText: "كيف حالك؟" },
-      {
-        id: "m3",
-        text: "I want to talk about football.",
-        arText: "أريد أن أتحدث عن كرة القدم.",
-      },
-    ],
-    school: [
-      {
-        id: "s1",
-        text: "I forgot my book today.",
-        arText: "نسيت كتابي اليوم.",
-      },
-      {
-        id: "s2",
-        text: "Can you explain that again?",
-        arText: "هل يمكنك شرح ذلك مرة أخرى؟",
-      },
-    ],
-    pharmacy: [
-      {
-        id: "ph1",
-        text: "I want to ask about the dose.",
-        arText: "أريد السؤال عن الجرعة.",
-      },
-      {
-        id: "ph2",
-        text: "I need a refill for this medicine.",
-        arText: "أحتاج إلى إعادة تعبئة هذا الدواء.",
-      },
-    ],
-  });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [inputMode, setInputMode] = useState<"upload" | "sample" | "camera">(
@@ -751,7 +710,9 @@ export default function QatarAACProbePrototype() {
   const [likertASubmitted, setLikertASubmitted] = useState(false);
   const [likertBSubmitted, setLikertBSubmitted] = useState(false);
   const [likertBSaving, setLikertBSaving] = useState(false);
-  const [step, setStep] = useState(0);
+  const [profileSubmitted, setProfileSubmitted] = useState(false);
+  const [showEvalA, setShowEvalA] = useState(false);
+  const [showEvalB, setShowEvalB] = useState(false);
   const [verifyImageUrl, setVerifyImageUrl] = useState("");
   const [imageStyleMode, setImageStyleMode] = useState<"realistic" | "cartoon">("realistic");
 
@@ -799,11 +760,6 @@ export default function QatarAACProbePrototype() {
   const availableGoals = useMemo(
     () => goalsByLocation[location] || goalsByLocation.pharmacy,
     [location],
-  );
-
-  const locationSpecificPhrases = useMemo(
-    () => locationPhraseBank[location] || [],
-    [locationPhraseBank, location],
   );
 
   const context = useMemo(
@@ -898,11 +854,6 @@ export default function QatarAACProbePrototype() {
     }
     setCameraStream(null);
     setCameraOn(false);
-  }
-
-  function goToStep(n: number) {
-    stopCamera();
-    setStep(n);
   }
 
   function capturePhoto() {
@@ -1027,33 +978,6 @@ export default function QatarAACProbePrototype() {
     } finally {
       setSentLoading(false);
     }
-  }
-
-  function addPhrase(text: string) {
-    const t = text?.trim();
-    if (!t) return;
-    setPhraseBank((p) => [{ id: `p_${Date.now()}`, text: t }, ...p]);
-  }
-
-  function addLocationPhrase(text: string, targetLocation: string) {
-    const t = text?.trim();
-    if (!t) return;
-    setLocationPhraseBank((prev) => ({
-      ...prev,
-      [targetLocation]: [
-        { id: `${targetLocation}_${Date.now()}`, text: t, arText: t },
-        ...(prev[targetLocation] || []),
-      ],
-    }));
-  }
-
-  function removeLocationPhrase(targetLocation: string, id: string) {
-    setLocationPhraseBank((prev) => ({
-      ...prev,
-      [targetLocation]: (prev[targetLocation] || []).filter(
-        (item) => item.id !== id,
-      ),
-    }));
   }
 
   function speakSelectedSentence() {
@@ -1191,7 +1115,7 @@ export default function QatarAACProbePrototype() {
   function resetForNewSubmission() {
     setParticipantId("");
     setParticipantIdInput("");
-    setStep(0);
+    setProfileSubmitted(false);
     setSelectedLocationId(null);
     setProfileName("");
     setProfileAge("");
@@ -1208,6 +1132,8 @@ export default function QatarAACProbePrototype() {
     setLikertB({ imageAccuracy: null, helpfulness: null, likelihood: null, speed: null });
     setLikertASubmitted(false);
     setLikertBSubmitted(false);
+    setShowEvalA(false);
+    setShowEvalB(false);
     setCommentsA("");
     setAdditionalComments("");
     setSentenceMatch(null);
@@ -1280,7 +1206,7 @@ export default function QatarAACProbePrototype() {
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mx-auto max-w-6xl space-y-6"
+        className="mx-auto max-w-7xl space-y-6"
       >
         <header className="flex flex-col gap-3 rounded-3xl bg-gradient-to-r from-indigo-500 via-blue-500 to-sky-400 p-8 text-white shadow-xl">
           <div className="flex items-center justify-between gap-3">
@@ -1300,81 +1226,33 @@ export default function QatarAACProbePrototype() {
           <p className="max-w-xl text-blue-200 text-base">{t.headerSubtitle}</p>
         </header>
 
-        {/* Step navigator */}
-        <div className="rounded-3xl bg-white border shadow-sm p-3 sm:p-5">
-          <div className="flex items-center">
-            {t.steps.map((label, i) => (
-              <React.Fragment key={i}>
-                <button
-                  onClick={() => goToStep(i)}
-                  className="flex flex-col items-center gap-1"
-                >
-                  <div
-                    className={`flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full font-bold text-xs sm:text-sm transition-colors ${step === i ? "bg-blue-700 text-white" : step > i ? "bg-blue-200 text-blue-700" : "bg-slate-100 text-slate-400"}`}
-                  >
-                    {step > i ? <Check className="h-3 w-3 sm:h-4 sm:w-4" /> : i + 1}
-                  </div>
-                  <span
-                    className={`hidden sm:block text-xs font-medium whitespace-nowrap ${step === i ? "text-blue-700" : "text-muted-foreground"}`}
-                  >
-                    {label}
-                  </span>
-                  <span
-                    className={`sm:hidden text-[10px] font-medium max-w-[40px] text-center leading-tight ${step === i ? "text-blue-700" : "text-muted-foreground"}`}
-                  >
-                    {label.replace(/^\S+\s/, "")}
-                  </span>
-                </button>
-                {i < 4 && (
-                  <div
-                    className={`h-0.5 flex-1 mx-1 sm:mx-3 mb-4 sm:mb-5 transition-colors ${step > i ? "bg-blue-300" : "bg-slate-200"}`}
-                  />
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
+        {/* ── 3-column layout ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
-        {/* Step 0: Profile + Location */}
-        {step === 0 && (
-          <>
-            {/* 1 — Profile picker */}
-            <Card className="rounded-3xl overflow-hidden shadow-sm">
+          {/* Column 1: Profile + Location */}
+          <div className="space-y-6">
+            <div className="rounded-3xl overflow-hidden shadow-sm border">
+            <Card className="rounded-none shadow-none border-0 border-b">
               <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-700 text-white font-bold text-sm">
-                  1
-                </div>
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-700 text-white font-bold text-sm">1</div>
                 <div>
                   <CardTitle className="text-lg">{t.selectProfile}</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {t.selectProfileDesc}
-                  </p>
+                  <p className="text-sm text-muted-foreground mt-0.5">{t.selectProfileDesc}</p>
                 </div>
               </div>
               <CardContent className="space-y-5 pt-5">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1">
                     <Label>{t.profileNameLabel} <span className="text-red-500">*</span></Label>
-                    <Input
-                      value={profileName}
-                      onChange={(e) => setProfileName(e.target.value)}
-                      placeholder={t.namePlaceholder}
-                    />
+                    <Input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder={t.namePlaceholder} disabled={profileSubmitted} />
                   </div>
                   <div className="space-y-1">
                     <Label>{t.profileAgeLabel}</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={120}
-                      value={profileAge}
-                      onChange={(e) => setProfileAge(e.target.value)}
-                      placeholder={t.agePlaceholder}
-                    />
+                    <Input type="number" min={1} max={120} value={profileAge} onChange={(e) => setProfileAge(e.target.value)} placeholder={t.agePlaceholder} disabled={profileSubmitted} />
                   </div>
                   <div className="space-y-1">
                     <Label>{t.profileGenderLabel}</Label>
-                    <Select value={profileGender} onValueChange={setProfileGender}>
+                    <Select value={profileGender} onValueChange={setProfileGender} disabled={profileSubmitted}>
                       <SelectTrigger><SelectValue placeholder={t.selectPlaceholder} /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="male">{t.genderMale}</SelectItem>
@@ -1384,7 +1262,7 @@ export default function QatarAACProbePrototype() {
                   </div>
                   <div className="space-y-1">
                     <Label>{t.profileConditionLabel}</Label>
-                    <Select value={profileCondition} onValueChange={setProfileCondition}>
+                    <Select value={profileCondition} onValueChange={setProfileCondition} disabled={profileSubmitted}>
                       <SelectTrigger><SelectValue placeholder={t.selectPlaceholder} /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="autism">{t.conditionAutism}</SelectItem>
@@ -1400,14 +1278,13 @@ export default function QatarAACProbePrototype() {
               </CardContent>
             </Card>
 
-            {/* Location picker */}
-            <Card className="rounded-3xl overflow-hidden shadow-sm">
+            <Card className="rounded-none shadow-none border-0">
               <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-700 text-white font-bold text-sm">2</div>
                 <CardTitle className="text-lg">{t.chooseLocation} <span className="text-red-500">*</span></CardTitle>
               </div>
               <CardContent className="pt-5">
-                <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid gap-3">
                   {[
                     { id: "pharmacy", emoji: "💊", label: "Pharmacy", arLabel: "صيدلية", desc: t.pharmacyDesc },
                     { id: "cafe", emoji: "☕", label: "Café", arLabel: "مقهى", desc: t.cafeDesc },
@@ -1418,19 +1295,13 @@ export default function QatarAACProbePrototype() {
                       <button
                         key={loc.id}
                         type="button"
-                        onClick={() => {
-                          setSelectedLocationId(loc.id);
-                          setLocation(loc.id);
-                        }}
-                        className={`rounded-2xl border-2 p-5 text-left transition-all space-y-2 ${
-                          isSelected
-                            ? "border-blue-700 bg-blue-50 ring-2 ring-blue-700/20"
-                            : "border-transparent bg-slate-50 hover:border-blue-200 hover:bg-blue-50"
-                        }`}
+                        onClick={() => { if (!profileSubmitted) { setSelectedLocationId(loc.id); setLocation(loc.id); } }}
+                        disabled={profileSubmitted}
+                        className={`rounded-2xl border-2 p-4 text-left transition-all space-y-1 ${isSelected ? "border-blue-700 bg-blue-50 ring-2 ring-blue-700/20" : "border-transparent bg-slate-50 hover:border-blue-200 hover:bg-blue-50"} ${profileSubmitted ? "cursor-default" : ""}`}
                       >
-                        <div className="text-4xl">{loc.emoji}</div>
-                        <div className="font-semibold text-lg">{language === "ar" ? loc.arLabel : loc.label}</div>
-                        <p className="text-sm text-muted-foreground">{loc.desc}</p>
+                        <div className="text-3xl">{loc.emoji}</div>
+                        <div className="font-semibold">{language === "ar" ? loc.arLabel : loc.label}</div>
+                        <p className="text-xs text-muted-foreground">{loc.desc}</p>
                         {isSelected && <div className="text-xs font-semibold text-blue-700">{t.selectedCheck}</div>}
                       </button>
                     );
@@ -1438,872 +1309,400 @@ export default function QatarAACProbePrototype() {
                 </div>
               </CardContent>
             </Card>
-
-            <div className="flex justify-center gap-4 pt-2">
-              <Button
-                onClick={() => goToStep(1)}
-                disabled={!profileName.trim() || !selectedLocationId}
-                className="rounded-full bg-blue-600 hover:bg-blue-500 px-10 py-6 text-base font-semibold shadow-md disabled:opacity-40"
-              >
-                {t.nextGenerate}
-              </Button>
             </div>
-          </>
-        )}
 
-        {step === 1 && (
-          <div className="space-y-6">
-            <div className="grid gap-6 lg:grid-cols-2">
-              <Card className="rounded-3xl overflow-hidden shadow-sm">
-                <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-700 text-white font-bold text-lg">
-                    1
-                  </div>
-                  <div>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <ImageIcon className="h-4 w-4" /> {t.addPhotoTitle}
-                    </CardTitle>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {t.addPhotoDesc}
-                    </p>
-                  </div>
+            {!profileSubmitted ? (
+              <Button
+                onClick={() => setProfileSubmitted(true)}
+                disabled={!profileName.trim() || !selectedLocationId}
+                className="w-full rounded-full bg-blue-600 hover:bg-blue-500 py-6 text-base font-semibold shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {t.confirmProfile}
+              </Button>
+            ) : (
+              <div className="flex items-center justify-between gap-2 rounded-2xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700 font-medium">
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 shrink-0" /> {t.profileConfirmed}
                 </div>
-                <CardContent className="space-y-4">
-                  {/* Input mode tabs */}
-                  <div className="flex rounded-xl border overflow-hidden text-sm font-medium">
-                    {(["upload", "sample", "camera"] as const).map((mode) => {
-                      const labels = {
-                        upload: language === "ar" ? "رفع صورة" : "Upload",
-                        sample: language === "ar" ? "أمثلة" : "Samples",
-                        camera: language === "ar" ? "كاميرا" : "Camera",
-                      };
-                      const icons = {
-                        upload: "📁",
-                        sample: "🖼️",
-                        camera: "📷",
-                      };
-                      return (
-                        <button
-                          key={mode}
-                          type="button"
-                          onClick={() => {
-                            if (mode !== inputMode) {
-                              setImagePreview("");
-                              setKeywords([]);
-                              setSentences([]);
-                              setSelectedSentence("");
-                              if (fileInputRef.current) fileInputRef.current.value = "";
-                              if (inputMode === "camera") stopCamera();
-                            }
-                            setInputMode(mode);
-                          }}
-                          className={`flex-1 py-2 flex items-center justify-center gap-1.5 transition-colors ${
-                            inputMode === mode
-                              ? "bg-blue-700 text-white"
-                              : "bg-white text-slate-600 hover:bg-blue-50"
-                          }`}
-                        >
-                          <span>{icons[mode]}</span>
-                          {labels[mode]}
-                        </button>
-                      );
-                    })}
-                  </div>
+                <button
+                  type="button"
+                  onClick={() => setProfileSubmitted(false)}
+                  className="text-xs text-blue-600 underline hover:text-blue-800"
+                >
+                  {language === "ar" ? "تعديل" : "Edit"}
+                </button>
+              </div>
+            )}
+          </div>
 
-                  {/* Upload */}
-                  {inputMode === "upload" && (
-                    <div className="grid gap-2">
-                      <Input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) =>
-                          onPickImage(e.target.files?.[0] || null)
-                        }
-                      />
-                    </div>
-                  )}
-
-                  {/* Sample gallery */}
-                  {inputMode === "sample" && (
-                    <div className="grid grid-cols-2 gap-3">
-                      {(SAMPLE_IMAGES[location] ?? []).length === 0 ? (
-                        <p className="col-span-2 text-sm text-muted-foreground">
-                          {language === "ar"
-                            ? "لا توجد أمثلة لهذا الموقع."
-                            : "No samples for this location."}
-                        </p>
-                      ) : (
-                        (SAMPLE_IMAGES[location] ?? []).map((s) => (
-                          <button
-                            key={s.src}
-                            type="button"
-                            onClick={() => onSelectSample(s.src)}
-                            className={`rounded-xl border-2 overflow-hidden text-left transition-all ${
-                              imagePreview &&
-                              imagePreview.length > 100 &&
-                              imageFile?.name === s.src.split("/").pop()
-                                ? "border-blue-700 ring-2 ring-blue-700/20"
-                                : "border-transparent hover:border-blue-300"
-                            }`}
-                          >
-                            <img
-                              src={s.src}
-                              alt={s.label}
-                              className="w-full aspect-square object-cover"
-                            />
-                            <div className="px-2 py-1 text-xs font-medium text-slate-600">
-                              {language === "ar" ? s.arLabel : s.label}
-                            </div>
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  )}
-
-                  {/* Camera */}
-                  {inputMode === "camera" && (
-                    <div className="space-y-3">
-                      {!cameraOn && (
-                        <Button
-                          type="button"
-                          onClick={() => startCamera()}
-                          className="rounded-full"
-                        >
-                          <Camera className="mr-2 h-4 w-4" />
-                          {t.startCamera}
-                        </Button>
-                      )}
-                      {cameraOn && (
-                        <div className="relative overflow-hidden rounded-2xl border bg-black">
-                          <video
-                            ref={videoRef}
-                            autoPlay
-                            playsInline
-                            muted
-                            style={facingMode === "user" ? { transform: "scaleX(-1)" } : undefined}
-                            className="h-auto w-full"
-                          />
-                          {/* Camera controls overlay */}
-                          <div className="absolute bottom-4 inset-x-0 flex items-center justify-center gap-8">
-                            {/* Stop camera */}
-                            <button
-                              type="button"
-                              onClick={stopCamera}
-                              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white"
-                            >
-                              <CameraOff className="h-5 w-5" />
-                            </button>
-                            {/* Shutter */}
-                            <button
-                              type="button"
-                              onClick={capturePhoto}
-                              className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-white/30 backdrop-blur-sm"
-                            >
-                              <div className="h-12 w-12 rounded-full bg-white" />
-                            </button>
-                            {/* Flip camera */}
-                            <button
-                              type="button"
-                              onClick={switchCamera}
-                              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white"
-                            >
-                              <RefreshCw className="h-5 w-5" />
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  <canvas ref={canvasRef} className="hidden" />
-
-                  {imagePreview && inputMode !== "sample" && (
-                    <div className="mt-4 flex flex-col gap-2">
-                      <img
-                        src={imagePreview}
-                        className="rounded-xl w-full max-w-md"
-                      />
-
-                      <div className="flex gap-2 flex-wrap">
-                        {inputMode === "camera" && (
-                          <Button
-                            variant="secondary"
-                            onClick={() => {
-                              setImagePreview("");
-                              setKeywords([]);
-                              setSentences([]);
-                              setSelectedSentence("");
-                              startCamera();
-                            }}
-                            className="w-fit rounded-xl"
-                          >
-                            <Camera className="mr-2 h-4 w-4" />
-                            {language === "ar" ? "إعادة التصوير" : "Retake"}
-                          </Button>
-                        )}
-                        <Button
-                          variant="destructive"
-                          onClick={() => {
-                            setImagePreview("");
-                            setKeywords([]);
-                            setSentences([]);
-                            setSelectedSentence("");
+          {/* Column 2: Generate + Evaluate A */}
+          <div className={`space-y-6 transition-opacity duration-300 ${!profileSubmitted ? "opacity-40 pointer-events-none select-none" : ""}`}>
+            <div className="rounded-3xl overflow-hidden shadow-sm border">
+            {!showEvalA ? (<>
+            <Card className="rounded-none shadow-none border-0 border-b">
+              <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-700 text-white font-bold text-lg">1</div>
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2"><ImageIcon className="h-4 w-4" /> {t.addPhotoTitle}</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t.addPhotoDesc}</p>
+                </div>
+              </div>
+              <CardContent className="space-y-4">
+                <div className="flex rounded-xl border overflow-hidden text-sm font-medium">
+                  {(["upload", "sample", "camera"] as const).map((mode) => {
+                    const labels = { upload: language === "ar" ? "رفع صورة" : "Upload", sample: language === "ar" ? "أمثلة" : "Samples", camera: language === "ar" ? "كاميرا" : "Camera" };
+                    const icons = { upload: "📁", sample: "🖼️", camera: "📷" };
+                    return (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => {
+                          if (mode !== inputMode) {
+                            setImagePreview(""); setKeywords([]); setSentences([]); setSelectedSentence("");
                             if (fileInputRef.current) fileInputRef.current.value = "";
-                          }}
-                          className="w-fit rounded-xl"
-                        >
-                          {t.removeImage}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1">
-                      <Label className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" /> {t.locationLabel}
-                      </Label>
-                      <div className="flex items-center gap-2 rounded-xl border bg-slate-50 px-3 py-2 text-sm text-slate-700">
-                        {{ pharmacy: "💊", cafe: "☕", majlis: "🏡" }[
-                          location
-                        ] ?? "📍"}
-                        <span>
-                          {{
-                            pharmacy: t.locPharmacy,
-                            cafe: t.locCafe,
-                            majlis: t.locMajlis,
-                          }[location] ?? location}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <Label>{t.intentionLabel}</Label>
-                      <Select value={intention} onValueChange={setIntention}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="question">
-                            {t.intentQuestion}
-                          </SelectItem>
-                          <SelectItem value="conversation">
-                            {t.intentConversation}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {locationSpecificPhrases.length > 0 && (
-                    <div className="space-y-2">
-                      <Label>{t.preparedSuggestions}</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {locationSpecificPhrases.map((item) => {
-                          const display = language === "ar" ? item.arText : item.text;
-                          const isActive = selectedSentence === display;
-                          return (
-                            <Button
-                              key={item.id}
-                              type="button"
-                              variant={isActive ? "default" : "secondary"}
-                              className={`rounded-xl ${isActive ? "bg-blue-700 text-white" : ""}`}
-                              onClick={() => {
-                                setSelectedSentence(isActive ? "" : display);
-                              }}
-                            >
-                              {display}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card className="rounded-3xl overflow-hidden shadow-sm">
-                <div className="bg-gradient-to-r from-sky-50 to-blue-50 border-b px-6 py-4 flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-800 text-white font-bold text-lg">
-                    2
-                  </div>
-                  <div>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Sparkles className="h-4 w-4" /> {t.keywordsTitle}
-                    </CardTitle>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {t.keywordsDesc}
-                    </p>
-                  </div>
+                            if (inputMode === "camera") stopCamera();
+                          }
+                          setInputMode(mode);
+                        }}
+                        className={`flex-1 py-2 flex items-center justify-center gap-1.5 transition-colors ${inputMode === mode ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-blue-50"}`}
+                      >
+                        <span>{icons[mode]}</span>{labels[mode]}
+                      </button>
+                    );
+                  })}
                 </div>
-                <CardContent className="space-y-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                      onClick={runKeywords}
-                      disabled={!imagePreview || kwLoading || sentLoading}
-                      className="rounded-full"
-                    >
-                      {kwLoading || sentLoading ? t.generatingSentences : t.generate3Sentences}
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      onClick={() => { setKeywords([]); setSentences([]); setSelectedSentence(""); setSentenceMatch(null); setRefinementKw(""); setSentenceMatchHistory([]); }}
-                      className="rounded-full"
-                    >
-                      {t.clear}
-                    </Button>
-                  </div>
 
+                {inputMode === "upload" && (
+                  <Input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => onPickImage(e.target.files?.[0] || null)} />
+                )}
 
-
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium">
-                      {t.sentenceOptions}
-                    </div>
-                    {sentences.length ? (
-                      <div className="space-y-2">
-                        {sentences.map((s) => (
-                          <button
-                            key={s}
-                            onClick={() => setSelectedSentence(s)}
-                            className={`w-full rounded-2xl border p-3 text-left transition ${
-                              selectedSentence === s
-                                ? "border-blue-700 ring-2 ring-blue-700/20"
-                                : "hover:bg-muted"
-                            }`}
-                          >
-                            <div className="text-sm leading-relaxed">{s}</div>
-                            {selectedSentence === s && (
-                              <div className="mt-2 inline-flex items-center gap-1 text-xs text-primary">
-                                <Check className="h-3 w-3" />{" "}
-                                {t.sentenceSelected}
-                              </div>
-                            )}
-                          </button>
-                        ))}
-                      </div>
+                {inputMode === "sample" && (
+                  <div className="grid grid-cols-2 gap-3">
+                    {(SAMPLE_IMAGES[location] ?? []).length === 0 ? (
+                      <p className="col-span-2 text-sm text-muted-foreground">{language === "ar" ? "لا توجد أمثلة لهذا الموقع." : "No samples for this location."}</p>
                     ) : (
-                      <div className="text-sm text-muted-foreground">
-                        {t.noSentences}
+                      (SAMPLE_IMAGES[location] ?? []).map((s) => (
+                        <button
+                          key={s.src}
+                          type="button"
+                          onClick={() => onSelectSample(s.src)}
+                          className={`rounded-xl border-2 overflow-hidden text-left transition-all ${imagePreview && imagePreview.length > 100 && imageFile?.name === s.src.split("/").pop() ? "border-blue-700 ring-2 ring-blue-700/20" : "border-transparent hover:border-blue-300"}`}
+                        >
+                          <img src={s.src} alt={s.label} className="w-full aspect-square object-cover" />
+                          <div className="px-2 py-1 text-xs font-medium text-slate-600">{language === "ar" ? s.arLabel : s.label}</div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+
+                {inputMode === "camera" && (
+                  <div className="space-y-3">
+                    {!cameraOn && (
+                      <Button type="button" onClick={() => startCamera()} className="rounded-full">
+                        <Camera className="mr-2 h-4 w-4" />{t.startCamera}
+                      </Button>
+                    )}
+                    {cameraOn && (
+                      <div className="relative overflow-hidden rounded-2xl border bg-black">
+                        <video ref={videoRef} autoPlay playsInline muted style={facingMode === "user" ? { transform: "scaleX(-1)" } : undefined} className="h-auto w-full" />
+                        <div className="absolute bottom-4 inset-x-0 flex items-center justify-center gap-8">
+                          <button type="button" onClick={stopCamera} className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white"><CameraOff className="h-5 w-5" /></button>
+                          <button type="button" onClick={capturePhoto} className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-white/30 backdrop-blur-sm"><div className="h-12 w-12 rounded-full bg-white" /></button>
+                          <button type="button" onClick={switchCamera} className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white"><RefreshCw className="h-5 w-5" /></button>
+                        </div>
                       </div>
                     )}
                   </div>
+                )}
 
-                  {sentences.length > 0 && (
-                    <>
-                      <Separator />
-                      <div className="space-y-3">
-                        <div className="text-sm font-medium">{t.matchQuestion}</div>
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant={sentenceMatch === "yes" ? "default" : "outline"}
-                            className="rounded-full"
-                            onClick={() => { setSentenceMatch("yes"); setSentenceMatchHistory((prev) => [...prev, { match: "yes" }]); setRefinementKw(""); }}
-                          >
-                            <Check className="mr-2 h-4 w-4" /> {t.yes}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant={sentenceMatch === "no" ? "default" : "outline"}
-                            className="rounded-full"
-                            onClick={() => setSentenceMatch("no")}
-                          >
-                            <X className="mr-2 h-4 w-4" /> {t.no}
-                          </Button>
-                        </div>
-                        {sentenceMatch === "no" && (
-                          <div className="space-y-2">
-                            <Label>{t.refineLabel}</Label>
-                            <Input
-                              value={refinementKw}
-                              onChange={(e) => setRefinementKw(e.target.value)}
-                              placeholder="e.g. urgent, help, price"
-                            />
-                            <Button
-                              onClick={runSentences}
-                              disabled={!refinementKw.trim() || sentLoading}
-                              className="w-full rounded-xl"
-                            >
-                              {sentLoading ? t.generatingSentences : t.regenerate}
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
+                <canvas ref={canvasRef} className="hidden" />
 
-                  <Separator />
-
-                  <div className="space-y-2">
-                    <div className="text-sm font-semibold flex items-center gap-1">
-                      🔊 {t.readyToSpeak}
-                    </div>
-                    <div
-                      className={`rounded-2xl border-2 p-4 text-base font-medium leading-relaxed transition-colors ${selectedSentence ? "border-blue-300 bg-blue-50 text-blue-800" : "border-dashed"}`}
-                    >
-                      {selectedSentence || (
-                        <span className="text-muted-foreground text-sm font-normal">
-                          {t.selectSentenceHint}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button
-                        className="rounded-full"
-                        disabled={!selectedSentence}
-                        onClick={speakSelectedSentence}
-                      >
-                        <Volume2 className="mr-2 h-4 w-4" /> {t.speak}
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        className="rounded-full"
-                        onClick={stopSpeaking}
-                      >
-                        <Square className="mr-2 h-4 w-4" /> {t.stop}
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            <div className="flex justify-center gap-4 pt-2">
-              <Button
-                onClick={() => goToStep(0)}
-                variant="outline"
-                className="rounded-2xl px-10 py-6 text-base font-semibold"
-              >
-                {t.back}
-              </Button>
-              <Button
-                onClick={() => goToStep(2)}
-                className="rounded-full bg-blue-600 hover:bg-blue-500 px-10 py-6 text-base font-semibold shadow-md"
-              >
-                {t.nextEvaluate}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="space-y-6">
-            <Card className="rounded-3xl overflow-hidden shadow-sm">
-              <div className="bg-gradient-to-r from-slate-100 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
-                <span className="text-2xl">🔍</span>
-                <div>
-                  <CardTitle className="text-lg">{t.verifyTitle}</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {t.verifyDesc}
-                  </p>
-                </div>
-              </div>
-              <CardContent className="grid gap-6 lg:grid-cols-2">
-                <div className="space-y-3">
-                  <div className="space-y-1">
-                    <Label>{t.quickNote}</Label>
-                    <Textarea
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder={t.quickNotePlaceholder}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">{t.imageStyle}</Label>
-                    <div className="flex rounded-xl border overflow-hidden w-fit">
-                      <button
-                        type="button"
-                        onClick={() => setImageStyleMode("realistic")}
-                        className={`px-4 py-2 text-sm font-medium transition-colors ${imageStyleMode === "realistic" ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
-                      >
-                        📷 {t.imageStyleRealistic}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setImageStyleMode("cartoon")}
-                        className={`px-4 py-2 text-sm font-medium transition-colors ${imageStyleMode === "cartoon" ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}
-                      >
-                        🎨 {t.imageStyleCartoon}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      className="rounded-full bg-blue-600 hover:bg-blue-500"
-                      onClick={runVerifyImage}
-                      disabled={!notes.trim() || verifyLoading}
-                    >
-                      {verifyLoading ? "…" : t.generateImage}
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      className="rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50"
-                      onClick={() => {
-                        setVerifyImageUrl("");
-                        setVerifyDecision(null);
-                      }}
-                      disabled={!verifyImageUrl}
-                    >
-                      {t.clearImage}
-                    </Button>
-                  </div>
-
-                  {verifyImageUrl ? (
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium">{t.doesMatch}</div>
-                      <div className="flex gap-2">
-                        <Button
-                          className={`rounded-xl ${verifyDecision === "yes" ? "bg-blue-700 hover:bg-blue-600 text-white" : "border border-blue-200 text-blue-700 hover:bg-blue-50 bg-white"}`}
-                          onClick={() => setVerifyDecision("yes")}
-                        >
-                          <Check className="mr-2 h-4 w-4" /> {t.yes}
+                {imagePreview && inputMode !== "sample" && (
+                  <div className="flex flex-col gap-2">
+                    <img src={imagePreview} className="rounded-xl w-full" />
+                    <div className="flex gap-2 flex-wrap">
+                      {inputMode === "camera" && (
+                        <Button variant="secondary" onClick={() => { setImagePreview(""); setKeywords([]); setSentences([]); setSelectedSentence(""); startCamera(); }} className="w-fit rounded-xl">
+                          <Camera className="mr-2 h-4 w-4" />{language === "ar" ? "إعادة التصوير" : "Retake"}
                         </Button>
-                        <Button
-                          className={`rounded-xl ${verifyDecision === "no" ? "bg-blue-800 hover:bg-blue-700 text-white" : "border border-slate-200 text-slate-600 hover:bg-slate-50 bg-white"}`}
-                          onClick={() => {
-                            setVerifyDecision("no");
-                            fetchAlternatives();
-                          }}
-                        >
-                          <X className="mr-2 h-4 w-4" /> {t.no}
-                        </Button>
-                      </div>
-
-                      {verifyDecision === "no" && (
-                        <div className="space-y-3 pt-1">
-                          <div className="text-sm font-medium">
-                            {t.pickClosest}
-                          </div>
-                          {altLoading ? (
-                            <div className="grid grid-cols-3 gap-3">
-                              {[0, 1, 2].map((i) => (
-                                <div
-                                  key={i}
-                                  className="rounded-2xl border bg-slate-50 animate-pulse aspect-square"
-                                />
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="grid grid-cols-3 gap-3">
-                              {alternatives.map((alt) => (
-                                <button
-                                  key={alt.text}
-                                  onClick={() => {
-                                    setVerifyImageUrl(alt.imageUrl);
-                                    setVerifyDecision("yes");
-                                    setAlternatives([]);
-                                  }}
-                                  className="flex flex-col items-center gap-2 rounded-2xl border p-2 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors"
-                                >
-                                  <img
-                                    src={alt.imageUrl}
-                                    alt={alt.text}
-                                    className="w-full rounded-xl object-cover aspect-square"
-                                  />
-                                  <span className="text-xs text-muted-foreground leading-tight">
-                                    {alt.text}
-                                  </span>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
                       )}
-                    </div>
-                  ) : (
-                    <div className="rounded-2xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-                      {t.noVerifyImage}
-                    </div>
-                  )}
-                </div>
-
-                {verifyLoading ? (
-                  <div className="rounded-2xl border border-dashed p-16 flex flex-col items-center justify-center gap-3 text-muted-foreground">
-                    <RefreshCw className="h-10 w-10 animate-spin text-blue-500" />
-                    <span className="text-sm">Loading…</span>
-                  </div>
-                ) : verifyImageUrl ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm font-medium">
-                        {t.verificationImage}
-                      </div>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="rounded-full"
-                        onClick={() => setVerifyImageUrl("")}
-                      >
+                      <Button variant="destructive" onClick={() => { setImagePreview(""); setKeywords([]); setSentences([]); setSelectedSentence(""); if (fileInputRef.current) fileInputRef.current.value = ""; }} className="w-fit rounded-xl">
                         {t.removeImage}
                       </Button>
                     </div>
-                    <div className="overflow-hidden rounded-2xl border">
-                      <img
-                        src={verifyImageUrl}
-                        alt="verification"
-                        className="h-auto w-full"
-                      />
+                  </div>
+                )}
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {t.locationLabel}</Label>
+                    <div className="flex items-center gap-2 rounded-xl border bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                      {{ pharmacy: "💊", cafe: "☕", majlis: "🏡" }[location] ?? "📍"}
+                      <span>{{ pharmacy: t.locPharmacy, cafe: t.locCafe, majlis: t.locMajlis }[location] ?? location}</span>
                     </div>
                   </div>
-                ) : null}
+                  <div className="space-y-1">
+                    <Label>{t.intentionLabel}</Label>
+                    <Select value={intention} onValueChange={setIntention}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="question">{t.intentQuestion}</SelectItem>
+                        <SelectItem value="conversation">{t.intentConversation}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
               </CardContent>
             </Card>
-            <div className="flex justify-center gap-4 pt-2">
-              <Button
-                onClick={() => goToStep(2)}
-                variant="outline"
-                className="rounded-2xl px-10 py-6 text-base font-semibold"
-              >
-                {t.back}
-              </Button>
-              <Button
-                onClick={() => goToStep(4)}
-                disabled={!verifyDecision}
-                className="rounded-full bg-blue-600 hover:bg-blue-500 px-10 py-6 text-base font-semibold shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {t.nextRate}
-              </Button>
-            </div>
-          </div>
-        )}
 
-        {/* Step 2 — Evaluate A: keywords + sentences */}
-        {step === 2 && (
-          <div className="space-y-6">
-            <Card className="rounded-3xl overflow-hidden shadow-sm">
+            <Card className="rounded-none shadow-none border-0">
+              <div className="bg-gradient-to-r from-sky-50 to-blue-50 border-b px-6 py-4 flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-800 text-white font-bold text-lg">2</div>
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2"><Sparkles className="h-4 w-4" /> {t.keywordsTitle}</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t.keywordsDesc}</p>
+                </div>
+              </div>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button onClick={runKeywords} disabled={!imagePreview || kwLoading || sentLoading} className="rounded-full">
+                    {kwLoading || sentLoading ? t.generatingSentences : t.generate3Sentences}
+                  </Button>
+                  <Button variant="secondary" onClick={() => { setKeywords([]); setSentences([]); setSelectedSentence(""); setSentenceMatch(null); setRefinementKw(""); setSentenceMatchHistory([]); }} className="rounded-full">
+                    {t.clear}
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">{t.sentenceOptions}</div>
+                  {sentences.length ? (
+                    <div className="space-y-2">
+                      {sentences.map((s) => (
+                        <button key={s} onClick={() => setSelectedSentence(s)} className={`w-full rounded-2xl border p-3 text-left transition ${selectedSentence === s ? "border-blue-700 ring-2 ring-blue-700/20" : "hover:bg-muted"}`}>
+                          <div className="text-sm leading-relaxed">{s}</div>
+                          {selectedSentence === s && <div className="mt-2 inline-flex items-center gap-1 text-xs text-primary"><Check className="h-3 w-3" /> {t.sentenceSelected}</div>}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">{t.noSentences}</div>
+                  )}
+                </div>
+
+                {sentences.length > 0 && (
+                  <>
+                    <Separator />
+                    <div className="space-y-3">
+                      <div className="text-sm font-medium">{t.matchQuestion}</div>
+                      <div className="flex gap-2">
+                        <Button type="button" variant={sentenceMatch === "yes" ? "default" : "outline"} className="rounded-full" onClick={() => { setSentenceMatch("yes"); setSentenceMatchHistory((prev) => [...prev, { match: "yes" }]); setRefinementKw(""); }}>
+                          <Check className="mr-2 h-4 w-4" /> {t.yes}
+                        </Button>
+                        <Button type="button" variant={sentenceMatch === "no" ? "default" : "outline"} className="rounded-full" onClick={() => setSentenceMatch("no")}>
+                          <X className="mr-2 h-4 w-4" /> {t.no}
+                        </Button>
+                      </div>
+                      {sentenceMatch === "no" && (
+                        <div className="space-y-2">
+                          <Label>{t.refineLabel}</Label>
+                          <Input value={refinementKw} onChange={(e) => setRefinementKw(e.target.value)} placeholder="e.g. urgent, help, price" />
+                          <Button onClick={runSentences} disabled={!refinementKw.trim() || sentLoading} className="w-full rounded-xl">
+                            {sentLoading ? t.generatingSentences : t.regenerate}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <div className="text-sm font-semibold flex items-center gap-1">🔊 {t.readyToSpeak}</div>
+                  <div className={`rounded-2xl border-2 p-4 text-base font-medium leading-relaxed transition-colors ${selectedSentence ? "border-blue-300 bg-blue-50 text-blue-800" : "border-dashed"}`}>
+                    {selectedSentence || <span className="text-muted-foreground text-sm font-normal">{t.selectSentenceHint}</span>}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button className="rounded-full" disabled={!selectedSentence} onClick={speakSelectedSentence}><Volume2 className="mr-2 h-4 w-4" /> {t.speak}</Button>
+                    <Button variant="secondary" className="rounded-full" onClick={stopSpeaking}><Square className="mr-2 h-4 w-4" /> {t.stop}</Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            {sentences.length > 0 && (
+              <div className="px-6 pb-5 pt-2">
+                <Button className="w-full rounded-full bg-blue-600 hover:bg-blue-500" onClick={() => setShowEvalA(true)}>
+                  {t.nextEvaluate}
+                </Button>
+              </div>
+            )}
+            </>) : (
+            <Card className="rounded-none shadow-none border-0">
               <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
                 <span className="text-2xl">📋</span>
                 <div>
                   <CardTitle className="text-lg">{t.rateTitleA}</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {t.rateDescA}
-                  </p>
+                  <p className="text-sm text-muted-foreground mt-0.5">{t.rateDescA}</p>
                 </div>
               </div>
               <CardContent className="space-y-5 pt-5">
-                <LikertItem
-                  title={t.qa1}
-                  value={likertA.keywordRelevance}
-                  labels={
-                    language === "ar"
-                      ? likertLabelsAr.keywordRelevance
-                      : likertLabels.keywordRelevance
-                  }
-                  onChange={(v) =>
-                    setLikertA((x) => ({ ...x, keywordRelevance: v }))
-                  }
-                  rtl={language === "ar"}
-                  sliderHint={t.sliderHint}
-                />
-                <LikertItem
-                  title={t.qa2}
-                  value={likertA.sentenceUsefulness}
-                  labels={
-                    language === "ar"
-                      ? likertLabelsAr.sentenceHelpfulness
-                      : likertLabels.sentenceHelpfulness
-                  }
-                  onChange={(v) =>
-                    setLikertA((x) => ({ ...x, sentenceUsefulness: v }))
-                  }
-                  rtl={language === "ar"}
-                  sliderHint={t.sliderHint}
-                />
-                <LikertItem
-                  title={t.qa3}
-                  value={likertA.ease}
-                  labels={
-                    language === "ar" ? likertLabelsAr.ease : likertLabels.ease
-                  }
-                  onChange={(v) => setLikertA((x) => ({ ...x, ease: v }))}
-                  rtl={language === "ar"}
-                  sliderHint={t.sliderHint}
-                />
-                <LikertItem
-                  title={t.qa4}
-                  value={likertA.speed}
-                  labels={
-                    language === "ar"
-                      ? likertLabelsAr.speed
-                      : likertLabels.speed
-                  }
-                  onChange={(v) => setLikertA((x) => ({ ...x, speed: v }))}
-                  rtl={language === "ar"}
-                  sliderHint={t.sliderHint}
-                />
-
+                <LikertItem title={t.qa1} value={likertA.keywordRelevance} labels={language === "ar" ? likertLabelsAr.keywordRelevance : likertLabels.keywordRelevance} onChange={(v) => setLikertA((x) => ({ ...x, keywordRelevance: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
+                <LikertItem title={t.qa2} value={likertA.sentenceUsefulness} labels={language === "ar" ? likertLabelsAr.sentenceHelpfulness : likertLabels.sentenceHelpfulness} onChange={(v) => setLikertA((x) => ({ ...x, sentenceUsefulness: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
+                <LikertItem title={t.qa3} value={likertA.ease} labels={language === "ar" ? likertLabelsAr.ease : likertLabels.ease} onChange={(v) => setLikertA((x) => ({ ...x, ease: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
+                <LikertItem title={t.qa4} value={likertA.speed} labels={language === "ar" ? likertLabelsAr.speed : likertLabels.speed} onChange={(v) => setLikertA((x) => ({ ...x, speed: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
                 <div className="space-y-1">
-                  <Label className="text-sm font-medium">
-                    {t.additionalComments}
-                  </Label>
-                  <Textarea
-                    value={commentsA}
-                    onChange={(e) => setCommentsA(e.target.value)}
-                    placeholder={t.commentsPlaceholder}
-                    className="rounded-2xl min-h-[100px]"
-                  />
+                  <Label className="text-sm font-medium">{t.additionalComments}</Label>
+                  <Textarea value={commentsA} onChange={(e) => setCommentsA(e.target.value)} placeholder={t.commentsPlaceholder} className="rounded-2xl min-h-[100px]" />
                 </div>
-
                 {!likertASubmitted ? (
-                  <Button
-                    className="w-full rounded-full bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed"
-                    onClick={submitLikertA}
-                    disabled={Object.values(likertA).some((v) => v === null)}
-                  >
+                  <Button className="w-full rounded-full bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed" onClick={submitLikertA} disabled={Object.values(likertA).some((v) => v === null)}>
                     {t.submit}
                   </Button>
                 ) : (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-2 rounded-2xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700 font-medium"
-                  >
+                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 rounded-2xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700 font-medium">
                     <Check className="h-4 w-4 shrink-0" /> {t.submitted}
                   </motion.div>
                 )}
               </CardContent>
             </Card>
-            <div className="flex justify-center gap-4 pt-2">
-              <Button
-                onClick={() => goToStep(1)}
-                variant="outline"
-                className="rounded-2xl px-10 py-6 text-base font-semibold"
-              >
-                {t.back}
-              </Button>
-              <Button
-                onClick={() => goToStep(3)}
-                disabled={!likertASubmitted}
-                className="rounded-full bg-blue-600 hover:bg-blue-500 px-10 py-6 text-base font-semibold shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {t.nextVerify}
-              </Button>
+            )}
             </div>
           </div>
-        )}
 
-        {/* Step 4 — Evaluate B: image verification */}
-        {step === 4 && (
-          <div className="space-y-6">
-            <Card className="rounded-3xl overflow-hidden shadow-sm">
+          {/* Column 3: Verify + Evaluate B */}
+          <div className={`space-y-6 transition-opacity duration-300 ${!likertASubmitted ? "opacity-40 pointer-events-none select-none" : ""}`}>
+            <div className="rounded-3xl overflow-hidden shadow-sm border">
+            {!showEvalB ? (<>
+            <Card className="rounded-none shadow-none border-0 border-b">
+              <div className="bg-gradient-to-r from-slate-100 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
+                <span className="text-2xl">🔍</span>
+                <div>
+                  <CardTitle className="text-lg">{t.verifyTitle}</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-0.5">{t.verifyDesc}</p>
+                </div>
+              </div>
+              <CardContent className="space-y-4">
+                <div className="space-y-1">
+                  <Label>{t.quickNote}</Label>
+                  <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t.quickNotePlaceholder} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">{t.imageStyle}</Label>
+                  <div className="flex rounded-xl border overflow-hidden w-fit">
+                    <button type="button" onClick={() => setImageStyleMode("realistic")} className={`px-4 py-2 text-sm font-medium transition-colors ${imageStyleMode === "realistic" ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>📷 {t.imageStyleRealistic}</button>
+                    <button type="button" onClick={() => setImageStyleMode("cartoon")} className={`px-4 py-2 text-sm font-medium transition-colors ${imageStyleMode === "cartoon" ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>🎨 {t.imageStyleCartoon}</button>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button className="rounded-full bg-blue-600 hover:bg-blue-500" onClick={runVerifyImage} disabled={!notes.trim() || verifyLoading}>
+                    {verifyLoading ? "…" : t.generateImage}
+                  </Button>
+                  <Button variant="outline" className="rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50" onClick={() => { setVerifyImageUrl(""); setVerifyDecision(null); }} disabled={!verifyImageUrl}>
+                    {t.clearImage}
+                  </Button>
+                </div>
+
+                {verifyLoading ? (
+                  <div className="rounded-2xl border border-dashed p-10 flex flex-col items-center justify-center gap-3 text-muted-foreground">
+                    <RefreshCw className="h-10 w-10 animate-spin text-blue-500" />
+                    <span className="text-sm">Loading…</span>
+                  </div>
+                ) : verifyImageUrl ? (
+                  <div className="space-y-3">
+                    <div className="overflow-hidden rounded-2xl border">
+                      <img src={verifyImageUrl} alt="verification" className="h-auto w-full" />
+                    </div>
+                    <div className="text-sm font-medium">{t.doesMatch}</div>
+                    <div className="flex gap-2">
+                      <Button className={`rounded-xl ${verifyDecision === "yes" ? "bg-blue-700 hover:bg-blue-600 text-white" : "border border-blue-200 text-blue-700 hover:bg-blue-50 bg-white"}`} onClick={() => setVerifyDecision("yes")}>
+                        <Check className="mr-2 h-4 w-4" /> {t.yes}
+                      </Button>
+                      <Button className={`rounded-xl ${verifyDecision === "no" ? "bg-blue-800 hover:bg-blue-700 text-white" : "border border-slate-200 text-slate-600 hover:bg-slate-50 bg-white"}`} onClick={() => { setVerifyDecision("no"); fetchAlternatives(); }}>
+                        <X className="mr-2 h-4 w-4" /> {t.no}
+                      </Button>
+                    </div>
+                    {verifyDecision === "no" && (
+                      <div className="space-y-3 pt-1">
+                        <div className="text-sm font-medium">{t.pickClosest}</div>
+                        {altLoading ? (
+                          <div className="grid grid-cols-3 gap-3">
+                            {[0, 1, 2].map((i) => <div key={i} className="rounded-2xl border bg-slate-50 animate-pulse aspect-square" />)}
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-3 gap-3">
+                            {alternatives.map((alt) => (
+                              <button key={alt.text} onClick={() => { setVerifyImageUrl(alt.imageUrl); setVerifyDecision("yes"); setAlternatives([]); }} className="flex flex-col items-center gap-2 rounded-2xl border p-2 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                                <img src={alt.imageUrl} alt={alt.text} className="w-full rounded-xl object-cover aspect-square" />
+                                <span className="text-xs text-muted-foreground leading-tight">{alt.text}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+                    {t.noVerifyImage}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            {verifyImageUrl && (
+              <div className="px-6 pb-5 pt-2">
+                <Button className="w-full rounded-full bg-blue-600 hover:bg-blue-500" onClick={() => setShowEvalB(true)}>
+                  {t.nextEvaluate}
+                </Button>
+              </div>
+            )}
+            </>) : (
+            <Card className="rounded-none shadow-none border-0">
               <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
                 <span className="text-2xl">📊</span>
                 <div>
                   <CardTitle className="text-lg">{t.rateTitleB}</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {t.rateDescB}
-                  </p>
+                  <p className="text-sm text-muted-foreground mt-0.5">{t.rateDescB}</p>
                 </div>
               </div>
               <CardContent className="space-y-5 pt-5">
-                <LikertItem
-                  title={t.qb1}
-                  value={likertB.imageAccuracy}
-                  labels={
-                    language === "ar"
-                      ? likertLabelsAr.imageAccuracy
-                      : likertLabels.imageAccuracy
-                  }
-                  onChange={(v) =>
-                    setLikertB((x) => ({ ...x, imageAccuracy: v }))
-                  }
-                  rtl={language === "ar"}
-                  sliderHint={t.sliderHint}
-                />
-                <LikertItem
-                  title={t.qb2}
-                  value={likertB.helpfulness}
-                  labels={
-                    language === "ar"
-                      ? likertLabelsAr.helpfulness
-                      : likertLabels.helpfulness
-                  }
-                  onChange={(v) =>
-                    setLikertB((x) => ({ ...x, helpfulness: v }))
-                  }
-                  rtl={language === "ar"}
-                  sliderHint={t.sliderHint}
-                />
-                <LikertItem
-                  title={t.qb3}
-                  value={likertB.likelihood}
-                  labels={
-                    language === "ar"
-                      ? likertLabelsAr.likelihood
-                      : likertLabels.likelihood
-                  }
-                  onChange={(v) => setLikertB((x) => ({ ...x, likelihood: v }))}
-                  rtl={language === "ar"}
-                  sliderHint={t.sliderHint}
-                />
-                <LikertItem
-                  title={t.qb4}
-                  value={likertB.speed}
-                  labels={
-                    language === "ar"
-                      ? likertLabelsAr.speed
-                      : likertLabels.speed
-                  }
-                  onChange={(v) => setLikertB((x) => ({ ...x, speed: v }))}
-                  rtl={language === "ar"}
-                  sliderHint={t.sliderHint}
-                />
-
+                <LikertItem title={t.qb1} value={likertB.imageAccuracy} labels={language === "ar" ? likertLabelsAr.imageAccuracy : likertLabels.imageAccuracy} onChange={(v) => setLikertB((x) => ({ ...x, imageAccuracy: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
+                <LikertItem title={t.qb2} value={likertB.helpfulness} labels={language === "ar" ? likertLabelsAr.helpfulness : likertLabels.helpfulness} onChange={(v) => setLikertB((x) => ({ ...x, helpfulness: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
+                <LikertItem title={t.qb3} value={likertB.likelihood} labels={language === "ar" ? likertLabelsAr.likelihood : likertLabels.likelihood} onChange={(v) => setLikertB((x) => ({ ...x, likelihood: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
+                <LikertItem title={t.qb4} value={likertB.speed} labels={language === "ar" ? likertLabelsAr.speed : likertLabels.speed} onChange={(v) => setLikertB((x) => ({ ...x, speed: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
                 <div className="space-y-1">
-                  <Label className="text-sm font-medium">
-                    {t.additionalComments}
-                  </Label>
-                  <Textarea
-                    value={additionalComments}
-                    onChange={(e) => setAdditionalComments(e.target.value)}
-                    placeholder={t.commentsPlaceholder}
-                    className="rounded-2xl min-h-[100px]"
-                  />
+                  <Label className="text-sm font-medium">{t.additionalComments}</Label>
+                  <Textarea value={additionalComments} onChange={(e) => setAdditionalComments(e.target.value)} placeholder={t.commentsPlaceholder} className="rounded-2xl min-h-[100px]" />
                 </div>
-
-                {!likertBSubmitted ? (
+                {!likertBSubmitted && (
                   <Button
-                    className="w-full rounded-full bg-blue-600 hover:bg-blue-500"
                     onClick={submitLikertB}
                     disabled={likertBSaving || Object.values(likertB).some((v) => v === null)}
+                    className="w-full rounded-full bg-blue-600 hover:bg-blue-500 text-base font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {likertBSaving ? t.saving : t.submit}
                   </Button>
-                ) : null}
+                )}
               </CardContent>
             </Card>
-
-            {likertBSubmitted ? (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl border border-green-200 bg-green-50 p-8 text-center space-y-4"
-              >
-                <div className="text-4xl">🎉</div>
-                <div className="text-xl font-bold text-green-800">{t.thankYou}</div>
-                <p className="text-sm text-green-700">{t.thankYouDesc}</p>
-                <Button
-                  onClick={resetForNewSubmission}
-                  className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-8 py-5 text-base font-semibold"
-                >
-                  {t.doAnother}
-                </Button>
-              </motion.div>
-            ) : (
-              <div className="flex justify-center pt-2">
-                <Button
-                  onClick={() => goToStep(3)}
-                  variant="outline"
-                  className="rounded-2xl px-10 py-6 text-base font-semibold"
-                >
-                  {t.back}
-                </Button>
-              </div>
             )}
+            </div>
           </div>
+        </div>
+
+        {/* Thank you */}
+        {likertBSubmitted && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-green-200 bg-green-50 p-8 text-center space-y-4">
+            <div className="text-4xl">🎉</div>
+            <div className="text-xl font-bold text-green-800">{t.thankYou}</div>
+            <p className="text-sm text-green-700">{t.thankYouDesc}</p>
+            <Button onClick={resetForNewSubmission} className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-8 py-5 text-base font-semibold">
+              {t.doAnother}
+            </Button>
+          </motion.div>
         )}
+
 
         <footer className="text-center text-xs text-muted-foreground py-2">
           {t.footer}
