@@ -1622,23 +1622,23 @@ export default function QatarAACProbePrototype() {
                 </div>
               </div>
               <CardContent className="space-y-4">
-                {SCENARIO_CONFIG[location] && (
+                {selectedLocationId && SCENARIO_CONFIG[selectedLocationId] && (
                   <div className="rounded-2xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800 leading-relaxed">
-                    {SCENARIO_CONFIG[location][language === "ar" ? "ar" : "en"].prompt}
+                    {SCENARIO_CONFIG[selectedLocationId][language === "ar" ? "ar" : "en"].prompt}
                   </div>
                 )}
                 <div className="space-y-1">
                   <Label className="text-sm font-medium">
-                    {SCENARIO_CONFIG[location]
-                      ? SCENARIO_CONFIG[location][language === "ar" ? "ar" : "en"].inputLabel
+                    {selectedLocationId && SCENARIO_CONFIG[selectedLocationId]
+                      ? SCENARIO_CONFIG[selectedLocationId][language === "ar" ? "ar" : "en"].inputLabel
                       : t.quickNote}
                   </Label>
                   <Textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder={
-                      SCENARIO_CONFIG[location]
-                        ? SCENARIO_CONFIG[location][language === "ar" ? "ar" : "en"].placeholder
+                      selectedLocationId && SCENARIO_CONFIG[selectedLocationId]
+                        ? SCENARIO_CONFIG[selectedLocationId][language === "ar" ? "ar" : "en"].placeholder
                         : t.quickNotePlaceholder
                     }
                   />
