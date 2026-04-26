@@ -1367,7 +1367,7 @@ export default function QatarAACProbePrototype() {
             {!profileSubmitted ? (
               <Button
                 onClick={() => setProfileSubmitted(true)}
-                disabled={!profileName.trim() || !selectedLocationId}
+                disabled={!profileName.trim() || !selectedLocationId || !profileCondition}
                 className="w-full rounded-full bg-blue-600 hover:bg-blue-500 py-6 text-base font-semibold shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {t.confirmProfile}
@@ -1584,7 +1584,7 @@ export default function QatarAACProbePrototype() {
                 </div>
               </CardContent>
             </Card>
-            {sentences.length > 0 && (
+            {sentences.length > 0 && sentenceMatch === "yes" && (
               <div className="px-6 pb-5 pt-2">
                 <Button className="w-full rounded-full bg-blue-600 hover:bg-blue-500" onClick={() => setShowEvalA(true)}>
                   {t.nextEvaluate}
@@ -1721,7 +1721,7 @@ export default function QatarAACProbePrototype() {
                 )}
               </CardContent>
             </Card>
-            {verifyImageUrl && (
+            {verifyImageUrl && verifyDecision === "yes" && (
               <div className="px-6 pb-5 pt-2">
                 <Button className="w-full rounded-full bg-blue-600 hover:bg-blue-500" onClick={() => setShowEvalB(true)}>
                   {t.nextEvaluate}
