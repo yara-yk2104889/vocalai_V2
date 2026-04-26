@@ -1331,11 +1331,11 @@ export default function QatarAACProbePrototype() {
             </Card>
 
             <Card className="rounded-none shadow-none border-0">
-              <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
-                <CardTitle className="text-lg">{t.chooseLocation} <span className="text-red-500">*</span></CardTitle>
+              <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-3 flex items-center gap-3">
+                <CardTitle className="text-base">{t.chooseLocation} <span className="text-red-500">*</span></CardTitle>
               </div>
-              <CardContent className="pt-5">
-                <div className="grid gap-3">
+              <CardContent className="pt-3 pb-3">
+                <div className="grid gap-2">
                   {[
                     { id: "pharmacy", emoji: "💊", label: "Pharmacy", arLabel: "صيدلية", desc: t.pharmacyDesc },
                     { id: "cafe", emoji: "☕", label: "Café", arLabel: "مقهى", desc: t.cafeDesc },
@@ -1348,12 +1348,14 @@ export default function QatarAACProbePrototype() {
                         type="button"
                         onClick={() => { if (!profileSubmitted) { setSelectedLocationId(loc.id); setLocation(loc.id); } }}
                         disabled={profileSubmitted}
-                        className={`rounded-2xl border-2 p-4 text-left transition-all space-y-1 ${isSelected ? "border-blue-700 bg-blue-50 ring-2 ring-blue-700/20" : "border-transparent bg-slate-50 hover:border-blue-200 hover:bg-blue-50"} ${profileSubmitted ? "cursor-default" : ""}`}
+                        className={`rounded-2xl border-2 px-3 py-2.5 text-left transition-all flex items-center gap-3 ${isSelected ? "border-blue-700 bg-blue-50 ring-2 ring-blue-700/20" : "border-transparent bg-slate-50 hover:border-blue-200 hover:bg-blue-50"} ${profileSubmitted ? "cursor-default" : ""}`}
                       >
-                        <div className="text-3xl">{loc.emoji}</div>
-                        <div className="font-semibold">{language === "ar" ? loc.arLabel : loc.label}</div>
-                        <p className="text-xs text-muted-foreground">{loc.desc}</p>
-                        {isSelected && <div className="text-xs font-semibold text-blue-700">{t.selectedCheck}</div>}
+                        <span className="text-2xl shrink-0">{loc.emoji}</span>
+                        <div>
+                          <div className="font-semibold text-sm">{language === "ar" ? loc.arLabel : loc.label}</div>
+                          <p className="text-xs text-muted-foreground leading-tight">{loc.desc}</p>
+                        </div>
+                        {isSelected && <Check className="ml-auto h-4 w-4 text-blue-700 shrink-0" />}
                       </button>
                     );
                   })}
