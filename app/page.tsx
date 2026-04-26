@@ -1405,7 +1405,7 @@ const context = useMemo(
                   <p className="text-xs text-muted-foreground mt-0.5">{t.addPhotoDesc}</p>
                 </div>
               </div>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 px-3">
                 <div className="flex rounded-xl border overflow-hidden text-sm font-medium">
                   {(["upload", "sample", "camera"] as const).map((mode) => {
                     const labels = { upload: language === "ar" ? "رفع صورة" : "Upload", sample: language === "ar" ? "أمثلة" : "Samples", camera: language === "ar" ? "كاميرا" : "Camera" };
@@ -1446,7 +1446,7 @@ const context = useMemo(
                           onClick={() => onSelectSample(s.src)}
                           className={`rounded-xl border-2 overflow-hidden text-left transition-all ${imagePreview && imagePreview.length > 100 && imageFile?.name === s.src.split("/").pop() ? "border-blue-700 ring-2 ring-blue-700/20" : "border-transparent hover:border-blue-300"}`}
                         >
-                          <img src={s.src} alt={s.label} className="w-full h-32 object-cover" />
+                          <img src={s.src} alt={s.label} className="w-full aspect-square object-cover" />
                           <div className="px-2 py-1 text-xs font-medium text-slate-600">{language === "ar" ? s.arLabel : s.label}</div>
                         </button>
                       ))
