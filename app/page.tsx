@@ -166,14 +166,14 @@ function toBase64(file: File): Promise<string> {
 }
 
 const api = {
-  async generateImage({ prompt, style }: { prompt: string; style: "realistic" | "cartoon" }) {
+  async generateImage({ prompt, style, location, gender, condition, age }: { prompt: string; style: "realistic" | "cartoon"; location?: string; gender?: string; condition?: string; age?: string }) {
     // SWITCH MODELS HERE!!!
     const response = await fetch("/api/generate-image", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ prompt, style }),
+      body: JSON.stringify({ prompt, style, location, gender, condition, age }),
     });
 
     if (!response.ok) {
@@ -936,7 +936,14 @@ export default function QatarAACProbePrototype() {
     setVerifyDecision(null);
     try {
       const prompt = notes || "User note";
-      const out = await api.generateImage({ prompt, style: imageStyleMode });
+      const out = await api.generateImage({
+        prompt,
+        style: imageStyleMode,
+        location,
+        gender: profileGender,
+        condition: profileCondition,
+        age: profileAge,
+      });
       setVerifyImageUrl(out.url);
     } finally {
       setVerifyLoading(false);
@@ -1279,7 +1286,7 @@ export default function QatarAACProbePrototype() {
         </header>
 
         {/* ── 3-column layout ── */}
-        <div key={sessionKey} className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div key={sessionKey} className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-6 items-start">
 
           {/* Column 1: Profile + Location */}
           <div className="space-y-6">
@@ -1388,8 +1395,15 @@ export default function QatarAACProbePrototype() {
             )}
           </div>
 
-          {/* Column 2: Generate + Evaluate A */}
-          <div className={`space-y-6 transition-opacity duration-300 ${!profileSubmitted ? "opacity-40 pointer-events-none select-none" : ""}`}>
+          {/* Columns 2+3: Tabbed panel */}
+          <div className={`transition-opacity duration-300 ${!profileSubmitted ? "opacity-40 pointer-events-none select-none" : ""}`}>
+          <Tabs defaultValue="text" className="w-full space-y-4">
+            <TabsList className="w-full rounded-2xl">
+              <TabsTrigger value="text" className="flex-1 rounded-xl">{language === "ar" ? "توليد النص" : "Text generation"}</TabsTrigger>
+              <TabsTrigger value="image" className="flex-1 rounded-xl">{language === "ar" ? "توليد الصورة" : "Image generation"}</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="text" className="space-y-6 mt-0">
             <div className="rounded-3xl overflow-hidden shadow-sm border">
             {!showEvalA ? (<>
             <Card className="rounded-none shadow-none border-0 border-b">
@@ -1622,10 +1636,9 @@ export default function QatarAACProbePrototype() {
             </Card>
             )}
             </div>
-          </div>
+            </TabsContent>
 
-          {/* Column 3: Verify + Evaluate B */}
-          <div className={`space-y-6 transition-opacity duration-300 ${!likertASubmitted ? "opacity-40 pointer-events-none select-none" : ""}`}>
+            <TabsContent value="image" className="space-y-6 mt-0">
             <div className="rounded-3xl overflow-hidden shadow-sm border">
             {!showEvalB ? (<>
             <Card className="rounded-none shadow-none border-0 border-b">
@@ -1759,6 +1772,8 @@ export default function QatarAACProbePrototype() {
             </Card>
             )}
             </div>
+            </TabsContent>
+          </Tabs>
           </div>
         </div>
 

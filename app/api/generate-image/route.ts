@@ -7,7 +7,15 @@ const client = new OpenAI({
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { prompt, style } = body;
+    const { prompt, style, location, gender, condition, age } = body;
+
+    const locationLabel: Record<string, string> = { pharmacy: "a pharmacy", cafe: "a café", majlis: "a family majlis (traditional sitting room)" };
+    const contextClues = [
+      location && `Setting: ${locationLabel[location] ?? location}`,
+      gender && `User gender: ${gender}`,
+      condition && `User condition: ${condition}`,
+      age && `User age: ${age}`,
+    ].filter(Boolean).join("; ");
 
     const styleInstructions = style === "cartoon"
       ? `
@@ -24,6 +32,7 @@ export async function POST(req: Request) {
       model: "gpt-image-1",
       prompt: `
             Create a simple visual verification image for this intended message: "${prompt}".
+            ${contextClues ? `Context about the user and setting: ${contextClues}.` : ""}
 
             Requirements:
             - Do NOT add any text, labels, captions, letters, words, speech bubbles, or checkmarks.
