@@ -754,6 +754,7 @@ export default function QatarAACProbePrototype() {
   const [likertBSaving, setLikertBSaving] = useState(false);
   const [profileSubmitted, setProfileSubmitted] = useState(false);
   const [showEvalA, setShowEvalA] = useState(false);
+  const [sessionKey, setSessionKey] = useState(0);
   const [showEvalB, setShowEvalB] = useState(false);
   const [verifyImageUrl, setVerifyImageUrl] = useState("");
   const [imageStyleMode, setImageStyleMode] = useState<"realistic" | "cartoon">("realistic");
@@ -1156,6 +1157,7 @@ export default function QatarAACProbePrototype() {
 
   function resetForNewSubmission() {
     if (cameraOn) stopCamera();
+    setSessionKey((k) => k + 1);
     setParticipantId("");
     setParticipantIdInput("");
     setProfileSubmitted(false);
@@ -1277,7 +1279,7 @@ export default function QatarAACProbePrototype() {
         </header>
 
         {/* ── 3-column layout ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div key={sessionKey} className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
           {/* Column 1: Profile + Location */}
           <div className="space-y-6">
