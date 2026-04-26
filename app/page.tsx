@@ -166,14 +166,14 @@ function toBase64(file: File): Promise<string> {
 }
 
 const api = {
-  async generateImage({ prompt, style, location, gender, condition, age }: { prompt: string; style: "realistic" | "cartoon"; location?: string; gender?: string; condition?: string; age?: string }) {
+  async generateImage({ prompt, style, location, gender, condition, age, scenario }: { prompt: string; style: "realistic" | "cartoon"; location?: string; gender?: string; condition?: string; age?: string; scenario?: string }) {
     // SWITCH MODELS HERE!!!
     const response = await fetch("/api/generate-image", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ prompt, style, location, gender, condition, age }),
+      body: JSON.stringify({ prompt, style, location, gender, condition, age, scenario }),
     });
 
     if (!response.ok) {
@@ -935,6 +935,9 @@ export default function QatarAACProbePrototype() {
     setVerifyLoading(true);
     setVerifyDecision(null);
     try {
+      const scenarioCtx = selectedLocationId && SCENARIO_CONFIG[selectedLocationId]
+        ? SCENARIO_CONFIG[selectedLocationId][language === "ar" ? "ar" : "en"].prompt
+        : undefined;
       const prompt = notes || "User note";
       const out = await api.generateImage({
         prompt,
@@ -943,6 +946,7 @@ export default function QatarAACProbePrototype() {
         gender: profileGender,
         condition: profileCondition,
         age: profileAge,
+        scenario: scenarioCtx,
       });
       setVerifyImageUrl(out.url);
     } finally {
