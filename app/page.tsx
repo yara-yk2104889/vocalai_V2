@@ -20,7 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
@@ -326,13 +325,6 @@ const SAMPLE_IMAGES: Record<
   ],
 };
 
-const PARTNER_ROLE_AR: Record<string, string> = {
-  parent: "والد/ة",
-  caregiver: "مقدم رعاية",
-  teacher: "معلم",
-  slt: "أخصائي نطق",
-  stranger: "غريب / عام",
-};
 
 
 const UI_LABELS = {
@@ -800,12 +792,7 @@ export default function QatarAACProbePrototype() {
   const style = simpleStyle ? "simple" : "rich";
   const t = UI_LABELS[language as "en" | "ar"] ?? UI_LABELS.en;
 
-  const availableGoals = useMemo(
-    () => goalsByLocation[location] || goalsByLocation.pharmacy,
-    [location],
-  );
-
-  const context = useMemo(
+const context = useMemo(
     () => ({
       location,
       partnerRole,
@@ -1448,9 +1435,9 @@ export default function QatarAACProbePrototype() {
                 )}
 
                 {inputMode === "sample" && (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     {(SAMPLE_IMAGES[location] ?? []).length === 0 ? (
-                      <p className="col-span-3 text-sm text-muted-foreground">{language === "ar" ? "لا توجد أمثلة لهذا الموقع." : "No samples for this location."}</p>
+                      <p className="col-span-2 text-sm text-muted-foreground">{language === "ar" ? "لا توجد أمثلة لهذا الموقع." : "No samples for this location."}</p>
                     ) : (
                       (SAMPLE_IMAGES[location] ?? []).map((s) => (
                         <button
@@ -1459,8 +1446,8 @@ export default function QatarAACProbePrototype() {
                           onClick={() => onSelectSample(s.src)}
                           className={`rounded-xl border-2 overflow-hidden text-left transition-all ${imagePreview && imagePreview.length > 100 && imageFile?.name === s.src.split("/").pop() ? "border-blue-700 ring-2 ring-blue-700/20" : "border-transparent hover:border-blue-300"}`}
                         >
-                          <img src={s.src} alt={s.label} className="w-full h-24 object-cover" />
-                          <div className="px-1.5 py-1 text-xs font-medium text-slate-600">{language === "ar" ? s.arLabel : s.label}</div>
+                          <img src={s.src} alt={s.label} className="w-full h-32 object-cover" />
+                          <div className="px-2 py-1 text-xs font-medium text-slate-600">{language === "ar" ? s.arLabel : s.label}</div>
                         </button>
                       ))
                     )}
