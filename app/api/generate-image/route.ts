@@ -43,6 +43,9 @@ export async function POST(req: Request) {
             - A short text label at the bottom is encouraged, as in real AAC cards.
             - Focus on one single concept — no complex scenes.
             - Make it immediately recognizable at a small size.` : `
+            - Do NOT add any text, labels, captions, letters, words, speech bubbles, or checkmarks.
+            - Do NOT format it like an AAC card, flashcard, symbol board, worksheet, or poster.
+            - Do NOT place the concept inside a bordered card or frame.
             - Show only a clean, natural, easy-to-understand visual scene.
             - Make the meaning obvious from the image itself.
             - Keep the composition simple, uncluttered, and child-friendly.
