@@ -38,12 +38,11 @@ export async function POST(req: Request) {
             - Avoid cartoon or illustrated aesthetics.`;
 
     const sharedRequirements = style === "symbolic" ? `
-            - Do NOT add any written text, captions, or speech bubbles.
-            - Focus on a single clear concept that represents the meaning.
-            - Make the symbol immediately recognizable and unambiguous.` : `
-            - Do NOT add any text, labels, captions, letters, words, speech bubbles, or checkmarks.
-            - Do NOT format it like an AAC card, flashcard, symbol board, worksheet, or poster.
-            - Do NOT place the concept inside a bordered card or frame.
+            - Format it like a real AAC symbol card — a single clear symbol centered on a plain white or light background, optionally inside a simple border or frame.
+            - Style it like Boardmaker, SymbolStix, or PCS symbols.
+            - A short text label at the bottom is encouraged, as in real AAC cards.
+            - Focus on one single concept — no complex scenes.
+            - Make it immediately recognizable at a small size.` : `
             - Show only a clean, natural, easy-to-understand visual scene.
             - Make the meaning obvious from the image itself.
             - Keep the composition simple, uncluttered, and child-friendly.
