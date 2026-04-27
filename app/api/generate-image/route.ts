@@ -37,13 +37,10 @@ export async function POST(req: Request) {
             - The scene should look like an actual photograph or high-quality photorealistic render.
             - Avoid cartoon or illustrated aesthetics.`;
 
-    const response = await client.images.generate({
-      model: "gpt-image-1",
-      prompt: `
-            Create a simple visual verification image for this intended message: "${prompt}".
-            ${contextClues ? `Context about the user and setting: ${contextClues}.` : ""}
-
-            Requirements:
+    const sharedRequirements = style === "symbolic" ? `
+            - Do NOT add any written text, captions, or speech bubbles.
+            - Focus on a single clear concept that represents the meaning.
+            - Make the symbol immediately recognizable and unambiguous.` : `
             - Do NOT add any text, labels, captions, letters, words, speech bubbles, or checkmarks.
             - Do NOT format it like an AAC card, flashcard, symbol board, worksheet, or poster.
             - Do NOT place the concept inside a bordered card or frame.
@@ -52,10 +49,17 @@ export async function POST(req: Request) {
             - Keep the composition simple, uncluttered, and child-friendly.
             - Use a plain white or very light background.
             - Focus on the key meaning of the message, not decorative details.
-            - If the message is about wanting or requesting something, show that visually through the scene rather than writing words.
-            ${styleInstructions}
+            - If the message is about wanting or requesting something, show that visually through the scene rather than writing words.`;
 
-            The image should function as a meaning-check image, not as a final AAC symbol.
+    const response = await client.images.generate({
+      model: "gpt-image-1",
+      prompt: `
+            Create a visual image for this intended message: "${prompt}".
+            ${contextClues ? `Context about the user and setting: ${contextClues}.` : ""}
+
+            Requirements:
+            ${sharedRequirements}
+            ${styleInstructions}
             `,
       size: "1024x1024",
     });
