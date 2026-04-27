@@ -165,7 +165,7 @@ function toBase64(file: File): Promise<string> {
 }
 
 const api = {
-  async generateImage({ prompt, style, location, gender, condition, age, scenario }: { prompt: string; style: "realistic" | "cartoon"; location?: string; gender?: string; condition?: string; age?: string; scenario?: string }) {
+  async generateImage({ prompt, style, location, gender, condition, age, scenario }: { prompt: string; style: "realistic" | "cartoon" | "symbolic"; location?: string; gender?: string; condition?: string; age?: string; scenario?: string }) {
     // SWITCH MODELS HERE!!!
     const response = await fetch("/api/generate-image", {
       method: "POST",
@@ -384,6 +384,7 @@ const UI_LABELS = {
     imageStyle: "Image style",
     imageStyleRealistic: "Realistic",
     imageStyleCartoon: "Cartoon",
+    imageStyleSymbolic: "Symbolic",
     doesMatch: "Does this image match the intended meaning?",
     yes: "Yes",
     no: "No",
@@ -556,6 +557,7 @@ const UI_LABELS = {
     imageStyle: "نمط الصورة",
     imageStyleRealistic: "واقعي",
     imageStyleCartoon: "كرتوني",
+    imageStyleSymbolic: "رمزي",
     doesMatch: "هل تطابق هذه الصورة المعنى المقصود؟",
     yes: "نعم",
     no: "لا",
@@ -749,7 +751,7 @@ export default function QatarAACProbePrototype() {
   const [sessionKey, setSessionKey] = useState(0);
   const [showEvalB, setShowEvalB] = useState(false);
   const [verifyImageUrl, setVerifyImageUrl] = useState("");
-  const [imageStyleMode, setImageStyleMode] = useState<"realistic" | "cartoon">("realistic");
+  const [imageStyleMode, setImageStyleMode] = useState<"realistic" | "cartoon" | "symbolic">("realistic");
 
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyDecision, setVerifyDecision] = useState<string | null>(null);
@@ -1668,6 +1670,7 @@ const context = useMemo(
                   <div className="flex rounded-xl border overflow-hidden w-fit">
                     <button type="button" onClick={() => setImageStyleMode("realistic")} className={`px-4 py-2 text-sm font-medium transition-colors ${imageStyleMode === "realistic" ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>📷 {t.imageStyleRealistic}</button>
                     <button type="button" onClick={() => setImageStyleMode("cartoon")} className={`px-4 py-2 text-sm font-medium transition-colors ${imageStyleMode === "cartoon" ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>🎨 {t.imageStyleCartoon}</button>
+                    <button type="button" onClick={() => setImageStyleMode("symbolic")} className={`px-4 py-2 text-sm font-medium transition-colors ${imageStyleMode === "symbolic" ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>🔣 {t.imageStyleSymbolic}</button>
                   </div>
                 </div>
                 <div className="flex gap-2">

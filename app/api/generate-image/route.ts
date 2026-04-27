@@ -24,6 +24,14 @@ export async function POST(req: Request) {
             - Think children's picture book or animated film aesthetic.
             - Characters and objects should be rounded, soft, and approachable.
             - Use vibrant, saturated colors.`
+      : style === "symbolic"
+      ? `
+            - Use a clean AAC symbol style — simple, flat, high-contrast vector-like illustration.
+            - Think Boardmaker, SymbolStix, or PCS (Picture Communication Symbols) aesthetics.
+            - Single central object or scene on a plain white background.
+            - Bold, clear outlines with minimal detail — immediately recognizable at small sizes.
+            - No shadows, gradients, or photorealistic textures.
+            - Use a limited, clean color palette. Each element should be easily distinguishable.`
       : `
             - Use a realistic photographic style — natural lighting, real-world textures and colors.
             - The scene should look like an actual photograph or high-quality photorealistic render.
