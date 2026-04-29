@@ -21,6 +21,7 @@ export async function POST(req: Request) {
       comments_a: body.commentsA,
       verify_decision: body.verifyDecision,
       verify_image_url: body.verifyImageUrl,
+      image_style: body.imageStyle,
       evaluation_b: body.evaluationB,
       additional_comments: body.additionalComments,
       submitted_at: body.submittedAt,

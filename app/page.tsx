@@ -1142,6 +1142,7 @@ const context = useMemo(
           commentsA,
           verifyDecision,
           verifyImageUrl: savedImageUrl,
+          imageStyle: imageStyleMode,
           evaluationB: likertB,
           additionalComments,
           submittedAt: new Date().toISOString(),
