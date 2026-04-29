@@ -759,6 +759,7 @@ export default function QatarAACProbePrototype() {
     { text: string; imageUrl: string }[]
   >([]);
   const [altLoading, setAltLoading] = useState(false);
+  const [imageRefinementKw, setImageRefinementKw] = useState("");
 
   const [kwLoading, setKwLoading] = useState(false);
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -1072,14 +1073,14 @@ const context = useMemo(
     }
   }
 
-  async function fetchAlternatives() {
+  async function fetchAlternatives(refinementKw?: string) {
     setAltLoading(true);
     setAlternatives([]);
     try {
       const res = await fetch("/api/suggest-alternatives", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note: notes, language }),
+        body: JSON.stringify({ note: notes, language, refinementKeywords: refinementKw?.trim() || undefined }),
       });
       const { alternatives: texts } = await res.json();
 
@@ -1179,6 +1180,7 @@ const context = useMemo(
     setVerifyImageUrl("");
     setVerifyDecision(null);
     setAlternatives([]);
+    setImageRefinementKw("");
     setImageStyleMode("realistic");
     setLikertA({ keywordRelevance: null, sentenceUsefulness: null, ease: null, speed: null });
     setLikertB({ imageAccuracy: null, helpfulness: null, likelihood: null, speed: null });
@@ -1697,26 +1699,49 @@ const context = useMemo(
                       <Button className={`rounded-xl ${verifyDecision === "yes" ? "bg-blue-700 hover:bg-blue-600 text-white" : "border border-blue-200 text-blue-700 hover:bg-blue-50 bg-white"}`} onClick={() => setVerifyDecision("yes")}>
                         <Check className="mr-2 h-4 w-4" /> {t.yes}
                       </Button>
-                      <Button className={`rounded-xl ${verifyDecision === "no" ? "bg-blue-800 hover:bg-blue-700 text-white" : "border border-slate-200 text-slate-600 hover:bg-slate-50 bg-white"}`} onClick={() => { setVerifyDecision("no"); fetchAlternatives(); }}>
+                      <Button className={`rounded-xl ${verifyDecision === "no" ? "bg-blue-800 hover:bg-blue-700 text-white" : "border border-slate-200 text-slate-600 hover:bg-slate-50 bg-white"}`} onClick={() => { setVerifyDecision("no"); setAlternatives([]); }}>
                         <X className="mr-2 h-4 w-4" /> {t.no}
                       </Button>
                     </div>
                     {verifyDecision === "no" && (
                       <div className="space-y-3 pt-1">
-                        <div className="text-sm font-medium">{t.pickClosest}</div>
-                        {altLoading ? (
-                          <div className="grid grid-cols-3 gap-3">
-                            {[0, 1, 2].map((i) => <div key={i} className="rounded-2xl border bg-slate-50 animate-pulse aspect-square" />)}
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Add keywords to refine the image (optional)</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              value={imageRefinementKw}
+                              onChange={(e) => setImageRefinementKw(e.target.value)}
+                              placeholder="e.g. water, glass, drink"
+                              className="rounded-xl flex-1"
+                              onKeyDown={(e) => { if (e.key === "Enter") fetchAlternatives(imageRefinementKw); }}
+                            />
+                            <Button
+                              onClick={() => fetchAlternatives(imageRefinementKw)}
+                              disabled={altLoading}
+                              className="rounded-xl bg-blue-600 hover:bg-blue-500"
+                            >
+                              {altLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : "Generate"}
+                            </Button>
                           </div>
-                        ) : (
-                          <div className="grid grid-cols-3 gap-3">
-                            {alternatives.map((alt) => (
-                              <button key={alt.text} onClick={() => { setVerifyImageUrl(alt.imageUrl); setVerifyDecision("yes"); setAlternatives([]); }} className="flex flex-col items-center gap-2 rounded-2xl border p-2 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors">
-                                <img src={alt.imageUrl} alt={alt.text} className="w-full rounded-xl object-cover aspect-square" />
-                                <span className="text-xs text-muted-foreground leading-tight">{alt.text}</span>
-                              </button>
-                            ))}
-                          </div>
+                        </div>
+                        {(altLoading || alternatives.length > 0) && (
+                          <>
+                            <div className="text-sm font-medium">{t.pickClosest}</div>
+                            {altLoading ? (
+                              <div className="grid grid-cols-3 gap-3">
+                                {[0, 1, 2].map((i) => <div key={i} className="rounded-2xl border bg-slate-50 animate-pulse aspect-square" />)}
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-3 gap-3">
+                                {alternatives.map((alt) => (
+                                  <button key={alt.text} onClick={() => { setVerifyImageUrl(alt.imageUrl); setVerifyDecision("yes"); setAlternatives([]); }} className="flex flex-col items-center gap-2 rounded-2xl border p-2 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                                    <img src={alt.imageUrl} alt={alt.text} className="w-full rounded-xl object-cover aspect-square" />
+                                    <span className="text-xs text-muted-foreground leading-tight">{alt.text}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     )}

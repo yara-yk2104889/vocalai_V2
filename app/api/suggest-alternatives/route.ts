@@ -4,12 +4,16 @@ const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(req: Request) {
   try {
-    const { note, language } = await req.json();
+    const { note, language, refinementKeywords } = await req.json();
 
     const langInstruction =
       language === "ar"
         ? "Return all alternative descriptions in Arabic only."
         : "Return all alternative descriptions in English.";
+
+    const refinementInstruction = refinementKeywords
+      ? `The user wants images that incorporate these keywords: "${refinementKeywords}". EVERY alternative description MUST reflect these keywords — treat them as the primary focus.`
+      : "";
 
     const response = await client.chat.completions.create({
       model: "gpt-4o",
@@ -20,7 +24,7 @@ export async function POST(req: Request) {
         },
         {
           role: "user",
-          content: `The user's message: "${note}"\nThe generated image did not match. Suggest 3 alternative visual descriptions. ${langInstruction}`,
+          content: `The user's message: "${note}"\nThe generated image did not match. ${refinementInstruction} Suggest 3 alternative visual descriptions. ${langInstruction}`,
         },
       ],
       response_format: { type: "json_object" },
