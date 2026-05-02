@@ -296,12 +296,12 @@ const SAMPLE_IMAGES: Record<
   { src: string; label: string; arLabel: string }[]
 > = {
   playground: [
-    { src: "/samples/playground/ball.jpg", label: "Ball", arLabel: "كرة" },
+    { src: "/samples/playground/football.png", label: "Football", arLabel: "كرة قدم" },
     { src: "/samples/playground/swing.jpg", label: "Swing", arLabel: "أرجوحة" },
   ],
   classroom: [
-    { src: "/samples/classroom/board.jpg", label: "Whiteboard", arLabel: "لوح أبيض" },
-    { src: "/samples/classroom/book.jpg", label: "Book", arLabel: "كتاب" },
+    { src: "/samples/classroom/whiteboard.webp", label: "Whiteboard", arLabel: "لوح أبيض" },
+    { src: "/samples/classroom/worksheet.webp", label: "Worksheet", arLabel: "ورقة عمل" },
   ],
   majlis: [
     {
@@ -1021,26 +1021,46 @@ const context = useMemo(
     window.speechSynthesis.cancel();
 
     const isArabic = language === "ar";
+    const age = parseInt(profileAge) || 25;
+    const isFemale = profileGender === "female";
+    const isMale = profileGender === "male";
+
+    // Pitch and rate based on age
+    const pitch = age <= 12 ? 1.5 : age <= 17 ? 1.25 : 1.0;
+    const rate = age <= 12 ? 0.85 : 0.9;
+
+    // Ranked voice name lists by gender
+    const femaleVoiceNames = [
+      "Samantha", "Karen", "Moira", "Victoria", "Allison", "Susan",
+      "Zira", "Hazel", "Google UK English Female", "Microsoft Zira",
+      "Microsoft Hazel", "Fiona", "Tessa",
+    ];
+    const maleVoiceNames = [
+      "Daniel", "Alex", "Fred", "Tom", "James", "Google UK English Male",
+      "Microsoft David", "Microsoft Mark", "Lee", "Rishi",
+    ];
 
     function pickVoiceAndSpeak() {
       const utterance = new SpeechSynthesisUtterance(selectedSentence);
-      utterance.rate = 0.9;
-      utterance.pitch = 1;
+      utterance.rate = rate;
+      utterance.pitch = pitch;
       utterance.lang = isArabic ? "ar-SA" : "en-US";
 
       const voices = window.speechSynthesis.getVoices();
 
       if (isArabic) {
-        const preferred = ["Maged", "Laila"];
+        // Laila = female, Maged = male
+        const preferred = isFemale ? ["Laila"] : isMale ? ["Maged"] : ["Laila", "Maged"];
         const voice =
           voices.find((v) => preferred.some((n) => v.name.includes(n))) ||
           voices.find((v) => v.lang.startsWith("ar"));
         if (voice) utterance.voice = voice;
       } else {
-        const preferred = ["Samantha", "Karen", "Daniel", "Moira", "Google UK English Female", "Google US English"];
+        const preferredNames = isFemale ? femaleVoiceNames : isMale ? maleVoiceNames : femaleVoiceNames;
         const voice =
-          voices.find((v) => preferred.some((n) => v.name.includes(n))) ||
-          voices.find((v) => v.lang.startsWith("en") && v.localService);
+          voices.find((v) => preferredNames.some((n) => v.name.includes(n))) ||
+          voices.find((v) => v.lang.startsWith("en") && v.localService) ||
+          voices.find((v) => v.lang.startsWith("en"));
         if (voice) utterance.voice = voice;
       }
 
@@ -1051,7 +1071,6 @@ const context = useMemo(
     if (voices.length > 0) {
       pickVoiceAndSpeak();
     } else {
-      // Voices not loaded yet (common on iOS) — wait for them
       window.speechSynthesis.onvoiceschanged = () => {
         window.speechSynthesis.onvoiceschanged = null;
         pickVoiceAndSpeak();
@@ -1597,10 +1616,13 @@ const context = useMemo(
             <Card className="rounded-none shadow-none border-0">
               <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
                 <span className="text-2xl">📋</span>
-                <div>
+                <div className="flex-1">
                   <CardTitle className="text-lg">{t.rateTitleA}</CardTitle>
                   <p className="text-sm text-muted-foreground mt-0.5">{t.rateDescA}</p>
                 </div>
+                <Button variant="outline" size="sm" className="rounded-xl text-slate-600 border-slate-200 shrink-0" onClick={() => setShowEvalA(false)}>
+                  ← {t.back}
+                </Button>
               </div>
               <CardContent className="space-y-5 pt-5">
                 <LikertItem title={t.qa1} value={likertA.keywordRelevance} labels={language === "ar" ? likertLabelsAr.keywordRelevance : likertLabels.keywordRelevance} onChange={(v) => setLikertA((x) => ({ ...x, keywordRelevance: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
@@ -1757,10 +1779,13 @@ const context = useMemo(
             <Card className="rounded-none shadow-none border-0">
               <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
                 <span className="text-2xl">📊</span>
-                <div>
+                <div className="flex-1">
                   <CardTitle className="text-lg">{t.rateTitleB}</CardTitle>
                   <p className="text-sm text-muted-foreground mt-0.5">{t.rateDescB}</p>
                 </div>
+                <Button variant="outline" size="sm" className="rounded-xl text-slate-600 border-slate-200 shrink-0" onClick={() => setShowEvalB(false)}>
+                  ← {t.back}
+                </Button>
               </div>
               <CardContent className="space-y-5 pt-5">
                 <LikertItem title={t.qb1} value={likertB.imageAccuracy} labels={language === "ar" ? likertLabelsAr.imageAccuracy : likertLabels.imageAccuracy} onChange={(v) => setLikertB((x) => ({ ...x, imageAccuracy: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />

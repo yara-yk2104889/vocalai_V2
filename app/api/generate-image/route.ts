@@ -9,7 +9,11 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { prompt, style, location, gender, condition, age, scenario } = body;
 
-    const locationLabel: Record<string, string> = { pharmacy: "a pharmacy", cafe: "a café", majlis: "a family majlis (traditional sitting room)" };
+    const locationLabel: Record<string, string> = {
+      playground: "a children's playground",
+      classroom: "a school classroom",
+      majlis: "a family majlis (traditional sitting room)",
+    };
     const contextClues = [
       location && `Setting: ${locationLabel[location] ?? location}`,
       scenario && `Scenario: ${scenario}`,
