@@ -984,8 +984,7 @@ const context = useMemo(
 
   async function runSentences() {
     setSentLoading(true);
-    // Record "no" attempt with refinement keywords before resetting
-    if (sentenceMatch === "no" && refinementKw.trim()) {
+    if (refinementKw.trim()) {
       setSentenceMatchHistory((prev) => [...prev, { match: "no", refinementKeywords: refinementKw.trim() }]);
     }
     setSentenceMatch(null);
@@ -1148,7 +1147,9 @@ const context = useMemo(
           scenario: { intention },
           keywords,
           selectedSentence,
-          sentenceMatch: sentenceMatchHistory,
+          sentenceMatch: sentenceMatchHistory.length > 0
+            ? sentenceMatchHistory
+            : [{ match: refinementKw.trim() ? "no" : "yes" }],
           evaluationA: likertA,
           commentsA,
           verifyDecision,
@@ -1568,25 +1569,14 @@ const context = useMemo(
                 {sentences.length > 0 && (
                   <>
                     <Separator />
-                    <div className="space-y-3">
-                      <div className="text-sm font-medium">{t.matchQuestion}</div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">{t.refineLabel}</Label>
                       <div className="flex gap-2">
-                        <Button type="button" variant={sentenceMatch === "yes" ? "default" : "outline"} className="rounded-full" onClick={() => { setSentenceMatch("yes"); setSentenceMatchHistory((prev) => [...prev, { match: "yes" }]); setRefinementKw(""); }}>
-                          <Check className="mr-2 h-4 w-4" /> {t.yes}
-                        </Button>
-                        <Button type="button" variant={sentenceMatch === "no" ? "default" : "outline"} className="rounded-full" onClick={() => setSentenceMatch("no")}>
-                          <X className="mr-2 h-4 w-4" /> {t.no}
+                        <Input value={refinementKw} onChange={(e) => setRefinementKw(e.target.value)} placeholder="e.g. urgent, help, price" className="rounded-xl flex-1" onKeyDown={(e) => { if (e.key === "Enter" && refinementKw.trim()) runSentences(); }} />
+                        <Button onClick={runSentences} disabled={!refinementKw.trim() || sentLoading} className="rounded-xl bg-blue-600 hover:bg-blue-500 shrink-0">
+                          {sentLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : t.regenerate}
                         </Button>
                       </div>
-                      {sentenceMatch === "no" && (
-                        <div className="space-y-2">
-                          <Label>{t.refineLabel}</Label>
-                          <Input value={refinementKw} onChange={(e) => setRefinementKw(e.target.value)} placeholder="e.g. urgent, help, price" />
-                          <Button onClick={runSentences} disabled={!refinementKw.trim() || sentLoading} className="w-full rounded-xl">
-                            {sentLoading ? t.generatingSentences : t.regenerate}
-                          </Button>
-                        </div>
-                      )}
                     </div>
                   </>
                 )}
@@ -1605,7 +1595,7 @@ const context = useMemo(
                 </div>
               </CardContent>
             </Card>
-            {sentences.length > 0 && sentenceMatch === "yes" && (
+            {sentences.length > 0 && (
               <div className="px-6 pb-5 pt-2">
                 <Button className="w-full rounded-full bg-blue-600 hover:bg-blue-500" onClick={() => setShowEvalA(true)}>
                   {t.nextEvaluate}
