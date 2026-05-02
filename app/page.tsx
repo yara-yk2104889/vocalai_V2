@@ -265,15 +265,15 @@ const goalsByLocation: Record<
   string,
   { value: string; label: string; arLabel: string }[]
 > = {
-  pharmacy: [
-    { value: "ask dose", label: "Ask dose", arLabel: "سؤال عن الجرعة" },
-    { value: "refill", label: "Refill", arLabel: "إعادة الصرف" },
-    { value: "request help", label: "Request help", arLabel: "طلب مساعدة" },
+  playground: [
+    { value: "join game", label: "Join game", arLabel: "الانضمام للعبة" },
+    { value: "ask to play", label: "Ask to play", arLabel: "طلب اللعب" },
+    { value: "express feeling", label: "Express feeling", arLabel: "التعبير عن مشاعر" },
   ],
-  cafe: [
-    { value: "order food", label: "Order food", arLabel: "طلب طعام" },
-    { value: "order drink", label: "Order drink", arLabel: "طلب مشروب" },
-    { value: "request help", label: "Request help", arLabel: "طلب مساعدة" },
+  classroom: [
+    { value: "ask for help", label: "Ask for help", arLabel: "طلب المساعدة" },
+    { value: "ask to repeat", label: "Ask to repeat", arLabel: "طلب الإعادة" },
+    { value: "say I don't understand", label: "Say I don't understand", arLabel: "قول لا أفهم" },
   ],
   majlis: [
     { value: "greet", label: "Greet", arLabel: "تحية" },
@@ -295,21 +295,13 @@ const SAMPLE_IMAGES: Record<
   string,
   { src: string; label: string; arLabel: string }[]
 > = {
-  pharmacy: [
-    {
-      src: "/samples/pharmacy/medicine.jpg",
-      label: "Medicine box",
-      arLabel: "علبة دواء",
-    },
-    { src: "/samples/pharmacy/pills.jpg", label: "Pills", arLabel: "حبوب" },
+  playground: [
+    { src: "/samples/playground/ball.jpg", label: "Ball", arLabel: "كرة" },
+    { src: "/samples/playground/swing.jpg", label: "Swing", arLabel: "أرجوحة" },
   ],
-  cafe: [
-    { src: "/samples/cafe/coffee.jpg", label: "Coffee", arLabel: "قهوة" },
-    {
-      src: "/samples/cafe/sandwich.jpg",
-      label: "Sandwich",
-      arLabel: "ساندويش",
-    },
+  classroom: [
+    { src: "/samples/classroom/board.jpg", label: "Whiteboard", arLabel: "لوح أبيض" },
+    { src: "/samples/classroom/book.jpg", label: "Book", arLabel: "كتاب" },
   ],
   majlis: [
     {
@@ -353,12 +345,12 @@ const UI_LABELS = {
     scenarioTitle: "Today's scenario: Out in Doha",
     scenarioDesc:
       "An AAC user needs fast, low-effort support across three real settings.",
-    pharmacyScenario: "Pharmacy counter",
-    pharmacyScenarioDesc:
-      "Point camera at medicine box → get a short sentence about dosage or a refill.",
-    cafeScenario: "Café ordering",
-    cafeScenarioDesc:
-      "Point camera at the menu → order independently with AI-suggested words.",
+    playgroundScenario: "Playground",
+    playgroundScenarioDesc:
+      "Join other children playing a game and ask to take part.",
+    classroomScenario: "Classroom",
+    classroomScenarioDesc:
+      "Ask the teacher for help when you don't understand something.",
     majlisScenario: "Family gathering / majlis",
     majlisScenarioDesc:
       "Prepare greetings and topics beforehand so the user can join conversations naturally.",
@@ -415,8 +407,8 @@ const UI_LABELS = {
     evening: "Evening",
     night: "Night",
     // Step 1 — location options
-    locPharmacy: "Pharmacy",
-    locCafe: "Café",
+    locPlayground: "Playground",
+    locClassroom: "Classroom",
     locMajlis: "Family gathering / majlis",
     // Step 1 — intention options
     intentQuestion: "Question / Request",
@@ -460,8 +452,8 @@ const UI_LABELS = {
     partnerStranger: "Stranger / General public",
     styleSimple: "Simple (short, 4–6 words)",
     styleStandard: "Standard (natural length)",
-    pharmacyDesc: "Ask about medicine or dosage",
-    cafeDesc: "Order food or drinks independently",
+    playgroundDesc: "Join other children in a game",
+    classroomDesc: "Ask the teacher when you don't understand",
     majlisDesc: "Join a family gathering or conversation",
     sliderHint: "Move the slider to rate",
     readyToSpeak: "Ready to speak",
@@ -527,12 +519,12 @@ const UI_LABELS = {
     // Scenario card
     scenarioTitle: "سيناريو اليوم: خارج في الدوحة",
     scenarioDesc: "مستخدم AAC يحتاج إلى دعم سريع وسهل في ثلاثة أماكن حقيقية.",
-    pharmacyScenario: "طاولة الصيدلية",
-    pharmacyScenarioDesc:
-      "وجّه الكاميرا نحو علبة الدواء ← احصل على جملة قصيرة عن الجرعة أو إعادة الصرف.",
-    cafeScenario: "طلب في المقهى",
-    cafeScenarioDesc:
-      "وجّه الكاميرا نحو القائمة ← اطلب باستقلالية بكلمات مقترحة من الذكاء الاصطناعي.",
+    playgroundScenario: "الملعب",
+    playgroundScenarioDesc:
+      "انضم إلى الأطفال الآخرين في لعبة واطلب المشاركة.",
+    classroomScenario: "الفصل الدراسي",
+    classroomScenarioDesc:
+      "اطلب المساعدة من المعلم عندما لا تفهم شيئاً.",
     majlisScenario: "تجمع عائلي / مجلس",
     majlisScenarioDesc:
       "جهّز التحيات والمواضيع مسبقاً ليتمكن المستخدم من المشاركة في المحادثات بشكل طبيعي.",
@@ -588,8 +580,8 @@ const UI_LABELS = {
     evening: "مساء",
     night: "ليل",
     // Step 1 — location options
-    locPharmacy: "صيدلية",
-    locCafe: "مقهى",
+    locPlayground: "ملعب",
+    locClassroom: "فصل دراسي",
     locMajlis: "تجمع عائلي / مجلس",
     // Step 1 — intention options
     intentQuestion: "سؤال / طلب",
@@ -632,8 +624,8 @@ const UI_LABELS = {
     partnerStranger: "غريب / عام",
     styleSimple: "بسيط (قصير، ٤–٦ كلمات)",
     styleStandard: "معتدل (طول طبيعي)",
-    pharmacyDesc: "سؤال عن الدواء أو الجرعة",
-    cafeDesc: "طلب طعام أو مشروبات باستقلالية",
+    playgroundDesc: "الانضمام إلى الأطفال في لعبة",
+    classroomDesc: "سؤال المعلم عند عدم الفهم",
     majlisDesc: "الانضمام إلى تجمع عائلي أو حوار",
     sliderHint: "حرك المتزلق للتقييم",
     readyToSpeak: "جاهز للكلام",
@@ -678,28 +670,28 @@ const UI_LABELS = {
 } as const;
 
 const SCENARIO_CONFIG: Record<string, { en: { prompt: string; inputLabel: string; placeholder: string }; ar: { prompt: string; inputLabel: string; placeholder: string } }> = {
-  cafe: {
+  playground: {
     en: {
-      prompt: "You're at a busy café and the barista is waiting for your order! You'd like to order a drink.",
-      inputLabel: "Which drink would you like to order?",
-      placeholder: "e.g. large iced latte, hot chocolate with cream…",
+      prompt: "You are at the playground and see other children playing a game. You want to join them.",
+      inputLabel: "What would you say to join them?",
+      placeholder: "e.g. can I play, I want to join, my turn…",
     },
     ar: {
-      prompt: "أنت في مقهى مزدحم والبارستا ينتظر طلبك! تريد طلب مشروب.",
-      inputLabel: "أي مشروب تريد أن تطلب؟",
-      placeholder: "مثال: لاتيه مثلج كبير، شوكولاتة ساخنة...",
+      prompt: "أنت في الملعب وترى أطفالاً آخرين يلعبون لعبة. تريد الانضمام إليهم.",
+      inputLabel: "ماذا ستقول للانضمام إليهم؟",
+      placeholder: "مثال: هل أستطيع اللعب، أريد الانضمام، دوري...",
     },
   },
-  pharmacy: {
+  classroom: {
     en: {
-      prompt: "You are at a pharmacy and need medicine for a symptom you're experiencing.",
-      inputLabel: "What symptom do you have, or what medicine do you need?",
-      placeholder: "e.g. headache, cough syrup, fever medication…",
+      prompt: "You are in class and don't understand something the teacher said.",
+      inputLabel: "Type what you would say in this situation",
+      placeholder: "e.g. can you repeat that, I don't understand, help me please…",
     },
     ar: {
-      prompt: "أنت في صيدلية وتحتاج إلى دواء لأحد الأعراض التي تعاني منها.",
-      inputLabel: "ما العرض الذي تعاني منه أو الدواء الذي تحتاجه؟",
-      placeholder: "مثال: صداع، شراب للسعال، دواء للحمى...",
+      prompt: "أنت في الفصل ولم تفهم شيئاً قاله المعلم.",
+      inputLabel: "اكتب ما ستقوله في هذا الموقف",
+      placeholder: "مثال: هل يمكنك الإعادة، لا أفهم، ساعدني من فضلك...",
     },
   },
   majlis: {
@@ -735,7 +727,7 @@ export default function QatarAACProbePrototype() {
     "upload",
   );
   const [imagePreview, setImagePreview] = useState("");
-  const [location, setLocation] = useState("pharmacy");
+  const [location, setLocation] = useState("playground");
   const [goal, setGoal] = useState("ask dose");
   const [freeContext, setFreeContext] = useState("");
   const [intention, setIntention] = useState("question");
@@ -806,7 +798,7 @@ const context = useMemo(
   );
 
   useEffect(() => {
-    const allowed = goalsByLocation[location] || goalsByLocation.pharmacy;
+    const allowed = goalsByLocation[location] || goalsByLocation.playground;
     if (!allowed.some((g) => g.value === goal)) {
       setGoal(allowed[0].value);
     }
@@ -1168,7 +1160,7 @@ const context = useMemo(
     setProfileAge("");
     setProfileGender("");
     setProfileCondition("");
-    setLocation("pharmacy");
+    setLocation("playground");
     setIntention("question");
     setGoal("ask dose");
     setInputMode("upload");
@@ -1340,8 +1332,8 @@ const context = useMemo(
               <CardContent className="pt-3 pb-3">
                 <div className="grid gap-2">
                   {[
-                    { id: "pharmacy", emoji: "💊", label: "Pharmacy", arLabel: "صيدلية", desc: t.pharmacyDesc },
-                    { id: "cafe", emoji: "☕", label: "Café", arLabel: "مقهى", desc: t.cafeDesc },
+                    { id: "playground", emoji: "🛝", label: "Playground", arLabel: "ملعب", desc: t.playgroundDesc },
+                    { id: "classroom", emoji: "🏫", label: "Classroom", arLabel: "فصل دراسي", desc: t.classroomDesc },
                     { id: "majlis", emoji: "🏡", label: "Majlis", arLabel: "مجلس", desc: t.majlisDesc },
                   ].map((loc) => {
                     const isSelected = selectedLocationId === loc.id;
@@ -1501,8 +1493,8 @@ const context = useMemo(
                   <div className="space-y-1">
                     <Label className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {t.locationLabel}</Label>
                     <div className="flex items-center gap-2 rounded-xl border bg-slate-50 px-3 py-2 text-sm text-slate-700">
-                      {{ pharmacy: "💊", cafe: "☕", majlis: "🏡" }[location] ?? "📍"}
-                      <span>{{ pharmacy: t.locPharmacy, cafe: t.locCafe, majlis: t.locMajlis }[location] ?? location}</span>
+                      {{ playground: "🛝", classroom: "🏫", majlis: "🏡" }[location] ?? "📍"}
+                      <span>{{ playground: t.locPlayground, classroom: t.locClassroom, majlis: t.locMajlis }[location] ?? location}</span>
                     </div>
                   </div>
                   <div className="space-y-1">
