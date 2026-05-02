@@ -1616,13 +1616,10 @@ const context = useMemo(
             <Card className="rounded-none shadow-none border-0">
               <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
                 <span className="text-2xl">📋</span>
-                <div className="flex-1">
+                <div>
                   <CardTitle className="text-lg">{t.rateTitleA}</CardTitle>
                   <p className="text-sm text-muted-foreground mt-0.5">{t.rateDescA}</p>
                 </div>
-                <Button variant="outline" size="sm" className="rounded-xl text-slate-600 border-slate-200 shrink-0" onClick={() => setShowEvalA(false)}>
-                  ← {t.back}
-                </Button>
               </div>
               <CardContent className="space-y-5 pt-5">
                 <LikertItem title={t.qa1} value={likertA.keywordRelevance} labels={language === "ar" ? likertLabelsAr.keywordRelevance : likertLabels.keywordRelevance} onChange={(v) => setLikertA((x) => ({ ...x, keywordRelevance: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
@@ -1634,9 +1631,14 @@ const context = useMemo(
                   <Textarea value={commentsA} onChange={(e) => setCommentsA(e.target.value)} placeholder={t.commentsPlaceholder} className="rounded-2xl min-h-[100px]" />
                 </div>
                 {!likertASubmitted ? (
-                  <Button className="w-full rounded-full bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed" onClick={submitLikertA} disabled={Object.values(likertA).some((v) => v === null)}>
-                    {t.submit}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="rounded-full border-slate-200 text-slate-600" onClick={() => setShowEvalA(false)}>
+                      {t.back}
+                    </Button>
+                    <Button className="flex-1 rounded-full bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed" onClick={submitLikertA} disabled={Object.values(likertA).some((v) => v === null)}>
+                      {t.submit}
+                    </Button>
+                  </div>
                 ) : (
                   <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 rounded-2xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700 font-medium">
                     <Check className="h-4 w-4 shrink-0" /> {t.submitted}
@@ -1779,13 +1781,10 @@ const context = useMemo(
             <Card className="rounded-none shadow-none border-0">
               <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
                 <span className="text-2xl">📊</span>
-                <div className="flex-1">
+                <div>
                   <CardTitle className="text-lg">{t.rateTitleB}</CardTitle>
                   <p className="text-sm text-muted-foreground mt-0.5">{t.rateDescB}</p>
                 </div>
-                <Button variant="outline" size="sm" className="rounded-xl text-slate-600 border-slate-200 shrink-0" onClick={() => setShowEvalB(false)}>
-                  ← {t.back}
-                </Button>
               </div>
               <CardContent className="space-y-5 pt-5">
                 <LikertItem title={t.qb1} value={likertB.imageAccuracy} labels={language === "ar" ? likertLabelsAr.imageAccuracy : likertLabels.imageAccuracy} onChange={(v) => setLikertB((x) => ({ ...x, imageAccuracy: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
@@ -1797,13 +1796,18 @@ const context = useMemo(
                   <Textarea value={additionalComments} onChange={(e) => setAdditionalComments(e.target.value)} placeholder={t.commentsPlaceholder} className="rounded-2xl min-h-[100px]" />
                 </div>
                 {!likertBSubmitted && (
-                  <Button
-                    onClick={submitLikertB}
-                    disabled={likertBSaving || Object.values(likertB).some((v) => v === null)}
-                    className="w-full rounded-full bg-blue-600 hover:bg-blue-500 text-base font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {likertBSaving ? t.saving : t.submit}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="rounded-full border-slate-200 text-slate-600" onClick={() => setShowEvalB(false)}>
+                      {t.back}
+                    </Button>
+                    <Button
+                      onClick={submitLikertB}
+                      disabled={likertBSaving || Object.values(likertB).some((v) => v === null)}
+                      className="flex-1 rounded-full bg-blue-600 hover:bg-blue-500 text-base font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {likertBSaving ? t.saving : t.submit}
+                    </Button>
+                  </div>
                 )}
               </CardContent>
             </Card>
