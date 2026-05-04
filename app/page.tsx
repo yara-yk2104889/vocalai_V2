@@ -1376,7 +1376,7 @@ const context = useMemo(
           <div className="space-y-6">
             <div className="rounded-3xl overflow-hidden shadow-sm border">
             <Card className="rounded-none shadow-none border-0 border-b">
-              <div className={`bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3 ${language === "ar" ? "flex-row-reverse" : ""}`}>
+              <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-700 text-white font-bold text-sm">1</div>
                 <div>
                   <CardTitle className="text-lg">{t.selectProfile}</CardTitle>
@@ -1384,7 +1384,7 @@ const context = useMemo(
                 </div>
               </div>
               <CardContent className="space-y-5 pt-5">
-                <div className={`flex flex-wrap gap-4 ${language === "ar" ? "flex-row-reverse" : ""}`}>
+                <div className="flex flex-wrap gap-4">
                   <div className="space-y-1 flex-1 min-w-36">
                     <Label className={language === "ar" ? "block text-right" : ""}>{t.profileNameLabel} <span className="text-red-500">*</span></Label>
                     <Input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder={t.namePlaceholder} disabled={profileSubmitted} />
@@ -1396,8 +1396,8 @@ const context = useMemo(
                   <div className="space-y-1 flex-1 min-w-36">
                     <Label className={language === "ar" ? "block text-right" : ""}>{t.profileGenderLabel}</Label>
                     <Select value={profileGender} onValueChange={setProfileGender} disabled={profileSubmitted}>
-                      <SelectTrigger><SelectValue placeholder={t.selectPlaceholder} /></SelectTrigger>
-                      <SelectContent>
+                      <SelectTrigger dir={language === "ar" ? "rtl" : "ltr"}><SelectValue placeholder={t.selectPlaceholder} /></SelectTrigger>
+                      <SelectContent dir={language === "ar" ? "rtl" : "ltr"}>
                         <SelectItem value="male">{t.genderMale}</SelectItem>
                         <SelectItem value="female">{t.genderFemale}</SelectItem>
                       </SelectContent>
@@ -1406,8 +1406,8 @@ const context = useMemo(
                   <div className="space-y-1 flex-1 min-w-36">
                     <Label className={language === "ar" ? "block text-right" : ""}>{t.profileConditionLabel}</Label>
                     <Select value={profileCondition} onValueChange={setProfileCondition} disabled={profileSubmitted}>
-                      <SelectTrigger><SelectValue placeholder={t.selectPlaceholder} /></SelectTrigger>
-                      <SelectContent>
+                      <SelectTrigger dir={language === "ar" ? "rtl" : "ltr"}><SelectValue placeholder={t.selectPlaceholder} /></SelectTrigger>
+                      <SelectContent dir={language === "ar" ? "rtl" : "ltr"}>
                         <SelectItem value="autism">{t.conditionAutism}</SelectItem>
                         <SelectItem value="als">{t.conditionALS}</SelectItem>
                         <SelectItem value="cerebral-palsy">{t.conditionCerebralPalsy}</SelectItem>
@@ -1440,14 +1440,28 @@ const context = useMemo(
                         type="button"
                         onClick={() => { if (!profileSubmitted) { setSelectedLocationId(loc.id); setLocation(loc.id); } }}
                         disabled={profileSubmitted}
-                        className={`rounded-2xl border-2 px-3 py-2.5 transition-all flex items-center gap-3 ${language === "ar" ? "flex-row-reverse text-right" : "text-left"} ${isSelected ? "border-blue-700 bg-blue-50 ring-2 ring-blue-700/20" : "border-transparent bg-slate-50 hover:border-blue-200 hover:bg-blue-50"} ${profileSubmitted ? "cursor-default" : ""}`}
+                        dir="ltr"
+                        className={`rounded-2xl border-2 px-3 py-2.5 transition-all flex items-center gap-3 ${isSelected ? "border-blue-700 bg-blue-50 ring-2 ring-blue-700/20" : "border-transparent bg-slate-50 hover:border-blue-200 hover:bg-blue-50"} ${profileSubmitted ? "cursor-default" : ""}`}
                       >
-                        <span className="text-2xl shrink-0">{loc.emoji}</span>
-                        <div>
-                          <div className="font-semibold text-sm">{language === "ar" ? loc.arLabel : loc.label}</div>
-                          <p className="text-xs text-muted-foreground leading-tight">{loc.desc}</p>
-                        </div>
-                        {isSelected && <Check className={`${language === "ar" ? "mr-auto" : "ml-auto"} h-4 w-4 text-blue-700 shrink-0`} />}
+                        {language === "ar" ? (
+                          <>
+                            <div className="flex-1 text-right">
+                              <div className="font-semibold text-sm">{loc.arLabel}</div>
+                              <p className="text-xs text-muted-foreground leading-tight">{loc.desc}</p>
+                            </div>
+                            <span className="text-2xl shrink-0">{loc.emoji}</span>
+                            {isSelected && <Check className="ml-auto h-4 w-4 text-blue-700 shrink-0" />}
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-2xl shrink-0">{loc.emoji}</span>
+                            <div className="flex-1">
+                              <div className="font-semibold text-sm">{loc.label}</div>
+                              <p className="text-xs text-muted-foreground leading-tight">{loc.desc}</p>
+                            </div>
+                            {isSelected && <Check className="ml-auto h-4 w-4 text-blue-700 shrink-0" />}
+                          </>
+                        )}
                       </button>
                     );
                   })}
@@ -1483,7 +1497,7 @@ const context = useMemo(
           {/* Columns 2+3: Tabbed panel */}
           <div className={`transition-opacity duration-300 ${!profileSubmitted ? "opacity-40 pointer-events-none select-none" : ""}`}>
           <Tabs defaultValue="text" className="w-full space-y-4">
-            <TabsList className={`w-full rounded-2xl ${language === "ar" ? "flex-row-reverse" : ""}`}>
+            <TabsList className="w-full rounded-2xl">
               <TabsTrigger value="text" className="flex-1 rounded-xl">{language === "ar" ? "توليد النص" : "Text generation"}</TabsTrigger>
               <TabsTrigger value="image" className="flex-1 rounded-xl">{language === "ar" ? "توليد الصورة" : "Image generation"}</TabsTrigger>
             </TabsList>
@@ -1492,7 +1506,7 @@ const context = useMemo(
             <div className="rounded-3xl overflow-hidden shadow-sm border">
             {!showEvalA ? (<>
             <Card className="rounded-none shadow-none border-0 border-b">
-              <div className={`bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3 ${language === "ar" ? "flex-row-reverse" : ""}`}>
+              <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-700 text-white font-bold text-lg">1</div>
                 <div>
                   <CardTitle className="text-base flex items-center gap-2"><ImageIcon className="h-4 w-4" /> {t.addPhotoTitle}</CardTitle>
@@ -1500,7 +1514,7 @@ const context = useMemo(
                 </div>
               </div>
               <CardContent className="space-y-4 px-3">
-                <div className={`flex rounded-xl border overflow-hidden text-sm font-medium ${language === "ar" ? "flex-row-reverse" : ""}`}>
+                <div className="flex rounded-xl border overflow-hidden text-sm font-medium">
                   {(["upload", "sample", "camera"] as const).map((mode) => {
                     const labels = { upload: language === "ar" ? "تحميل صورة" : "Upload", sample: language === "ar" ? "أمثلة" : "Samples", camera: language === "ar" ? "كاميرا" : "Camera" };
                     const icons = { upload: "📁", sample: "🖼️", camera: "📷" };
@@ -1586,10 +1600,10 @@ const context = useMemo(
                   </div>
                 )}
 
-                <div className={`flex gap-3 ${language === "ar" ? "flex-row-reverse" : ""}`}>
+                <div className="flex gap-3">
                   <div className="space-y-1 flex-1">
-                    <Label className={`flex items-center gap-1 ${language === "ar" ? "flex-row-reverse justify-end" : ""}`}><MapPin className="h-4 w-4" /> {t.locationLabel}</Label>
-                    <div className={`flex items-center gap-2 rounded-xl border bg-slate-50 px-3 py-2 text-sm text-slate-700 ${language === "ar" ? "flex-row-reverse" : ""}`}>
+                    <Label className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {t.locationLabel}</Label>
+                    <div className="flex items-center gap-2 rounded-xl border bg-slate-50 px-3 py-2 text-sm text-slate-700">
                       {{ cafe: "☕", playground: "🛝", classroom: "🏫", majlis: "🏡" }[location] ?? "📍"}
                       <span>{{ cafe: t.locCafe, playground: t.locPlayground, classroom: t.locClassroom, majlis: t.locMajlis }[location] ?? location}</span>
                     </div>
@@ -1597,8 +1611,8 @@ const context = useMemo(
                   <div className="space-y-1 flex-1">
                     <Label className={language === "ar" ? "block text-right" : ""}>{t.intentionLabel}</Label>
                     <Select value={intention} onValueChange={setIntention}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
+                      <SelectTrigger dir={language === "ar" ? "rtl" : "ltr"}><SelectValue /></SelectTrigger>
+                      <SelectContent dir={language === "ar" ? "rtl" : "ltr"}>
                         <SelectItem value="question">{t.intentQuestion}</SelectItem>
                         <SelectItem value="conversation">{t.intentConversation}</SelectItem>
                       </SelectContent>
@@ -1610,7 +1624,7 @@ const context = useMemo(
             </Card>
 
             <Card className="rounded-none shadow-none border-0">
-              <div className={`bg-gradient-to-r from-sky-50 to-blue-50 border-b px-6 py-4 flex items-center gap-3 ${language === "ar" ? "flex-row-reverse" : ""}`}>
+              <div className="bg-gradient-to-r from-sky-50 to-blue-50 border-b px-6 py-4 flex items-center gap-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-800 text-white font-bold text-lg">2</div>
                 <div>
                   <CardTitle className="text-base flex items-center gap-2"><Sparkles className="h-4 w-4" /> {t.keywordsTitle}</CardTitle>
@@ -1618,7 +1632,7 @@ const context = useMemo(
                 </div>
               </div>
               <CardContent className="space-y-4">
-                <div className={`flex flex-wrap items-center gap-2 ${language === "ar" ? "flex-row-reverse" : ""}`}>
+                <div className="flex flex-wrap items-center gap-2">
                   <Button onClick={runKeywords} disabled={!imagePreview || kwLoading || sentLoading} className="rounded-full">
                     {kwLoading || sentLoading ? t.generatingSentences : t.generate3Sentences}
                   </Button>
@@ -1648,7 +1662,7 @@ const context = useMemo(
                     <Separator />
                     <div className="space-y-2">
                       <Label className={`text-sm font-medium ${language === "ar" ? "block text-right" : ""}`}>{t.refineLabel}</Label>
-                      <div className={`flex gap-2 ${language === "ar" ? "flex-row-reverse" : ""}`}>
+                      <div className="flex gap-2">
                         <Input value={refinementKw} onChange={(e) => setRefinementKw(e.target.value)} placeholder="e.g. urgent, help, price" className="rounded-xl flex-1" onKeyDown={(e) => { if (e.key === "Enter" && refinementKw.trim()) runSentences(); }} />
                         <Button onClick={runSentences} disabled={!refinementKw.trim() || sentLoading} className="rounded-xl bg-blue-600 hover:bg-blue-500 shrink-0">
                           {sentLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : t.regenerate}
@@ -1661,11 +1675,11 @@ const context = useMemo(
                 <Separator />
 
                 <div className="space-y-2">
-                  <div className={`text-sm font-semibold flex items-center gap-1 ${language === "ar" ? "flex-row-reverse justify-end" : ""}`}>🔊 {t.readyToSpeak}</div>
+                  <div className="text-sm font-semibold flex items-center gap-1"><span>🔊</span><span>{t.readyToSpeak}</span></div>
                   <div className={`rounded-2xl border-2 p-4 text-base font-medium leading-relaxed transition-colors ${selectedSentence ? "border-blue-300 bg-blue-50 text-blue-800" : "border-dashed"}`}>
                     {selectedSentence || <span className="text-muted-foreground text-sm font-normal">{t.selectSentenceHint}</span>}
                   </div>
-                  <div className={`flex gap-2 ${language === "ar" ? "flex-row-reverse" : ""}`}>
+                  <div className="flex gap-2">
                     <Button className="rounded-full" disabled={!selectedSentence} onClick={speakSelectedSentence}><Volume2 className="mr-2 h-4 w-4" /> {t.speak}</Button>
                     <Button variant="secondary" className="rounded-full" onClick={stopSpeaking}><Square className="mr-2 h-4 w-4" /> {t.stop}</Button>
                   </div>
@@ -1722,7 +1736,7 @@ const context = useMemo(
             <div className="rounded-3xl overflow-hidden shadow-sm border">
             {!showEvalB ? (<>
             <Card className="rounded-none shadow-none border-0 border-b">
-              <div className={`bg-gradient-to-r from-slate-100 to-sky-50 border-b px-6 py-4 flex items-center gap-3 ${language === "ar" ? "flex-row-reverse" : ""}`}>
+              <div className="bg-gradient-to-r from-slate-100 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
                 <span className="text-2xl">🔍</span>
                 <div>
                   <CardTitle className="text-lg">{t.verifyTitle}</CardTitle>
@@ -1803,7 +1817,7 @@ const context = useMemo(
                     <button type="button" onClick={() => setImageStyleMode("realistic")} className={`px-4 py-2 text-sm font-medium transition-colors ${imageStyleMode === "realistic" ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>📷 {t.imageStyleRealistic}</button>
                   </div>
                 </div>
-                <div className={`flex gap-2 ${language === "ar" ? "flex-row-reverse" : ""}`}>
+                <div className="flex gap-2">
                   <Button className="rounded-full bg-blue-600 hover:bg-blue-500" onClick={runVerifyImage} disabled={aacSelection.length === 0 || verifyLoading}>
                     {verifyLoading ? "…" : t.generateImage}
                   </Button>
