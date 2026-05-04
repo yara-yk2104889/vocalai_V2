@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     messages: [
       {
         role: "system",
-        content: `Generate short AAC-friendly sentences an AAC user can say. ${langInstruction} ${styleInstruction} ${intentionInstruction}`,
+        content: `Generate short AAC-friendly sentences an AAC user can say. ${langInstruction} ${styleInstruction} ${intentionInstruction} IMPORTANT: Do NOT number the sentences. Return them as plain sentences only — no numbers, no bullet points, no list formatting.`,
       },
       {
         role: "user",
@@ -61,7 +61,7 @@ Do NOT repeat the same idea with slightly different words. Each sentence should 
 
   const sentences = text
     .split("\n")
-    .map((s) => s.replace(/^\d+\.\s*/, "").trim())
+    .map((s) => s.replace(/^[0-9٠-٩]+[.)]\s*/, "").replace(/^[-•*]\s*/, "").trim())
     .filter(Boolean)
     .slice(0, 3);
 

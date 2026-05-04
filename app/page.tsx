@@ -406,10 +406,10 @@ const UI_LABELS = {
     doesMatch: "Does this image match the intended meaning?",
     yes: "Yes",
     no: "No",
-    nextGenerate: "Next: Generate →",
-    nextEvaluate: "Next: Evaluate →",
-    nextVerify: "Next: Verify →",
-    nextRate: "Next: Evaluate →",
+    nextGenerate: "Next: Generate",
+    nextEvaluate: "Next: Evaluate",
+    nextVerify: "Next: Verify",
+    nextRate: "Next: Evaluate",
     back: "← Back",
     // Step 1 — left panel
     addPhotoTitle: "Add photo + context",
@@ -586,15 +586,15 @@ const UI_LABELS = {
     doesMatch: "هل تطابق هذه الصورة المعنى المقصود؟",
     yes: "نعم",
     no: "لا",
-    nextGenerate: "التالي: توليد ←",
-    nextEvaluate: "التالي: تقييم ←",
-    nextVerify: "التالي: تحقق ←",
-    nextRate: "التالي: تقييم ←",
+    nextGenerate: "التالي: توليد",
+    nextEvaluate: "التالي: تقييم",
+    nextVerify: "التالي: تحقق",
+    nextRate: "التالي: تقييم",
     back: "رجوع →",
     // Step 1 — left panel
     addPhotoTitle: "أضف صورة + سياق",
     addPhotoDesc: "حدد المشهد — أين، متى، وماذا تحتاج.",
-    uploadImage: "رفع صورة",
+    uploadImage: "تحميل صورة",
     startCamera: "تشغيل الكاميرا",
     capturePhoto: "التقاط صورة",
     stopCamera: "إيقاف الكاميرا",
@@ -623,7 +623,7 @@ const UI_LABELS = {
     // Step 1 — right panel
     keywordsTitle: "الكلمات ← الجمل",
     keywordsDesc: "الذكاء الاصطناعي يقترح كلمات، ثم 3 خيارات جمل للاختيار.",
-    noKeywords: "لا توجد كلمات بعد. ارفع صورة أو التقط واحدة، ثم ولّد.",
+    noKeywords: "لا توجد كلمات بعد. حمّل صورة أو التقط واحدة، ثم ولّد.",
     addExtraKeywords: "أضف كلمات إضافية لتوليد الجمل",
     keywordsPlaceholder: "",
     generatingSentences: "جارٍ توليد الجمل…",
@@ -1078,19 +1078,11 @@ const context = useMemo(
     window.speechSynthesis.cancel();
 
     const isArabic = language === "ar";
-    const age = parseInt(profileAge) || 25;
     const isFemale = profileGender === "female";
     const isMale = profileGender === "male";
 
-    const isChild = age <= 12;
-    const isTeen = age > 12 && age <= 17;
-
-    // Children: max pitch regardless of gender — no browser has a real child voice,
-    // so we use a female voice base (naturally higher) + push pitch to ceiling for both boys and girls.
-    // Teens: moderate pitch, still prefer gender-matched voice.
-    // Adults: normal pitch, gender-matched voice.
-    const pitch = isChild ? 1.9 : isTeen ? (isFemale ? 1.3 : 1.1) : (isFemale ? 1.05 : 0.95);
-    const rate = isChild ? 0.82 : 0.9;
+    const pitch = isFemale ? 1.2 : 0.9;
+    const rate = 0.9;
 
     const femaleVoiceNames = [
       "Samantha", "Karen", "Moira", "Victoria", "Allison", "Susan",
@@ -1293,10 +1285,20 @@ const context = useMemo(
         >
           <Card className="rounded-3xl shadow-xl border-0">
             <CardHeader className="rounded-t-3xl bg-gradient-to-r from-indigo-500 via-blue-500 to-sky-400 p-8 text-white">
-              <CardTitle className="text-2xl font-bold">{t.welcome}</CardTitle>
-              <CardDescription className="text-blue-200 text-base mt-1">
-                {t.welcomeDesc}
-              </CardDescription>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <CardTitle className="text-2xl font-bold">{t.welcome}</CardTitle>
+                  <CardDescription className="text-blue-200 text-base mt-1">
+                    {t.welcomeDesc}
+                  </CardDescription>
+                </div>
+                <button
+                  onClick={() => setLanguage(language === "en" ? "ar" : "en")}
+                  className="shrink-0 flex items-center gap-1.5 rounded-xl border border-white/30 bg-white/10 px-3 py-1.5 text-sm font-semibold text-white hover:bg-white/20 transition-colors"
+                >
+                  {language === "en" ? "عربي" : "English"}
+                </button>
+              </div>
             </CardHeader>
             <CardContent className="p-8 space-y-6">
               <div className="space-y-2">
@@ -1369,7 +1371,7 @@ const context = useMemo(
           <div className="space-y-6">
             <div className="rounded-3xl overflow-hidden shadow-sm border">
             <Card className="rounded-none shadow-none border-0 border-b">
-              <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
+              <div className={`bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3 ${language === "ar" ? "flex-row-reverse" : ""}`}>
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-700 text-white font-bold text-sm">1</div>
                 <div>
                   <CardTitle className="text-lg">{t.selectProfile}</CardTitle>
@@ -1384,7 +1386,7 @@ const context = useMemo(
                   </div>
                   <div className="space-y-1">
                     <Label>{t.profileAgeLabel}</Label>
-                    <Input type="number" min={1} max={120} value={profileAge} onChange={(e) => setProfileAge(e.target.value)} placeholder={t.agePlaceholder} disabled={profileSubmitted} />
+                    <Input type="text" inputMode="numeric" value={profileAge} onChange={(e) => setProfileAge(e.target.value)} placeholder={t.agePlaceholder} disabled={profileSubmitted} />
                   </div>
                   <div className="space-y-1">
                     <Label>{t.profileGenderLabel}</Label>
@@ -1476,7 +1478,7 @@ const context = useMemo(
           {/* Columns 2+3: Tabbed panel */}
           <div className={`transition-opacity duration-300 ${!profileSubmitted ? "opacity-40 pointer-events-none select-none" : ""}`}>
           <Tabs defaultValue="text" className="w-full space-y-4">
-            <TabsList className="w-full rounded-2xl">
+            <TabsList className={`w-full rounded-2xl ${language === "ar" ? "flex-row-reverse" : ""}`}>
               <TabsTrigger value="text" className="flex-1 rounded-xl">{language === "ar" ? "توليد النص" : "Text generation"}</TabsTrigger>
               <TabsTrigger value="image" className="flex-1 rounded-xl">{language === "ar" ? "توليد الصورة" : "Image generation"}</TabsTrigger>
             </TabsList>
@@ -1485,7 +1487,7 @@ const context = useMemo(
             <div className="rounded-3xl overflow-hidden shadow-sm border">
             {!showEvalA ? (<>
             <Card className="rounded-none shadow-none border-0 border-b">
-              <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
+              <div className={`bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-4 flex items-center gap-3 ${language === "ar" ? "flex-row-reverse" : ""}`}>
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-700 text-white font-bold text-lg">1</div>
                 <div>
                   <CardTitle className="text-base flex items-center gap-2"><ImageIcon className="h-4 w-4" /> {t.addPhotoTitle}</CardTitle>
@@ -1493,9 +1495,9 @@ const context = useMemo(
                 </div>
               </div>
               <CardContent className="space-y-4 px-3">
-                <div className="flex rounded-xl border overflow-hidden text-sm font-medium">
+                <div className={`flex rounded-xl border overflow-hidden text-sm font-medium ${language === "ar" ? "flex-row-reverse" : ""}`}>
                   {(["upload", "sample", "camera"] as const).map((mode) => {
-                    const labels = { upload: language === "ar" ? "رفع صورة" : "Upload", sample: language === "ar" ? "أمثلة" : "Samples", camera: language === "ar" ? "كاميرا" : "Camera" };
+                    const labels = { upload: language === "ar" ? "تحميل صورة" : "Upload", sample: language === "ar" ? "أمثلة" : "Samples", camera: language === "ar" ? "كاميرا" : "Camera" };
                     const icons = { upload: "📁", sample: "🖼️", camera: "📷" };
                     return (
                       <button
@@ -1603,7 +1605,7 @@ const context = useMemo(
             </Card>
 
             <Card className="rounded-none shadow-none border-0">
-              <div className="bg-gradient-to-r from-sky-50 to-blue-50 border-b px-6 py-4 flex items-center gap-3">
+              <div className={`bg-gradient-to-r from-sky-50 to-blue-50 border-b px-6 py-4 flex items-center gap-3 ${language === "ar" ? "flex-row-reverse" : ""}`}>
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-800 text-white font-bold text-lg">2</div>
                 <div>
                   <CardTitle className="text-base flex items-center gap-2"><Sparkles className="h-4 w-4" /> {t.keywordsTitle}</CardTitle>
@@ -1627,7 +1629,7 @@ const context = useMemo(
                       {sentences.map((s) => (
                         <button key={s} onClick={() => setSelectedSentence(s)} className={`w-full rounded-2xl border p-3 ${language === "ar" ? "text-right" : "text-left"} transition ${selectedSentence === s ? "border-blue-700 ring-2 ring-blue-700/20" : "hover:bg-muted"}`}>
                           <div className="text-sm leading-relaxed">{s}</div>
-                          {selectedSentence === s && <div className="mt-2 inline-flex items-center gap-1 text-xs text-primary"><Check className="h-3 w-3" /> {t.sentenceSelected}</div>}
+                          {selectedSentence === s && <div className={`mt-2 flex items-center gap-1 text-xs text-primary ${language === "ar" ? "justify-end" : "justify-start"}`}><Check className="h-3 w-3" /> {t.sentenceSelected}</div>}
                         </button>
                       ))}
                     </div>
