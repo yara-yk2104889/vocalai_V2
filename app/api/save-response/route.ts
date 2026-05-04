@@ -30,12 +30,13 @@ export async function POST(req: Request) {
 
     if (error) {
       console.error("Supabase insert error:", error);
-      return Response.json({ ok: false }, { status: 500 });
+      return Response.json({ ok: false, error: `${error.message} (code: ${error.code})` }, { status: 500 });
     }
 
     return Response.json({ ok: true });
   } catch (err) {
-    console.error("save-response error:", err);
-    return Response.json({ ok: false }, { status: 500 });
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("save-response error:", msg);
+    return Response.json({ ok: false, error: msg }, { status: 500 });
   }
 }

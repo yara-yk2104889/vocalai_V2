@@ -1735,7 +1735,7 @@ const context = useMemo(
                   const scenarios: Record<string, { en: string; ar: string }> = {
                     cafe:       { en: "You are at a café and want to ask for something to drink.", ar: "أنت في مقهى وتريد أن تطلب شيئاً للشرب." },
                     playground: { en: "You see other children playing and want to join them.", ar: "ترى أطفالاً آخرين يلعبون وتريد الانضمام إليهم." },
-                    classroom:  { en: "You are doing your classroom work but need the teacher's help.", ar: "أنت تؤدي عملك في الفصل لكنك تحتاج مساعدة المعلم." },
+                    classroom:  { en: "You are doing your classroom work but need the teacher's help.", ar: "أنت تؤدي عملك في الصف لكنك تحتاج مساعدة المعلم." },
                     majlis:     { en: "You are with guests and want to offer something.", ar: "أنت مع ضيوف وتريد أن تقدم شيئاً." },
                   };
                   const s = selectedLocationId ? scenarios[selectedLocationId] : null;
