@@ -969,9 +969,6 @@ const context = useMemo(
     setVerifyLoading(true);
     setVerifyDecision(null);
     try {
-      const scenarioCtx = selectedLocationId && SCENARIO_CONFIG[selectedLocationId]
-        ? SCENARIO_CONFIG[selectedLocationId][language === "ar" ? "ar" : "en"].prompt
-        : undefined;
       const prompt = notes || "User note";
       const out = await api.generateImage({
         prompt,
@@ -980,7 +977,6 @@ const context = useMemo(
         gender: profileGender,
         condition: profileCondition,
         age: profileAge,
-        scenario: scenarioCtx,
       });
       setVerifyImageUrl(out.url);
     } finally {
@@ -1152,15 +1148,11 @@ const context = useMemo(
       });
       const { alternatives: texts } = await res.json();
 
-      const scenarioCtx = selectedLocationId && SCENARIO_CONFIG[selectedLocationId]
-        ? SCENARIO_CONFIG[selectedLocationId][language === "ar" ? "ar" : "en"].prompt
-        : undefined;
-
       const images = await Promise.all(
         (texts as string[]).map(async (text: string, i: number) => {
           // First alternative includes profile context; the other two are generic
           const contextPayload = i === 0
-            ? { prompt: text, style: imageStyleMode, location, gender: profileGender, condition: profileCondition, age: profileAge, scenario: scenarioCtx }
+            ? { prompt: text, style: imageStyleMode, location, gender: profileGender, condition: profileCondition, age: profileAge }
             : { prompt: text, style: imageStyleMode };
           const r = await fetch("/api/generate-image", {
             method: "POST",
@@ -1829,7 +1821,7 @@ const context = useMemo(
                 )}
               </CardContent>
             </Card>
-            {verifyImageUrl && verifyDecision === "yes" && !verifyNoSelected && (
+            {verifyImageUrl && verifyDecision === "yes" && (
               <div className="px-6 pb-5 pt-2">
                 <Button className="w-full rounded-full bg-blue-600 hover:bg-blue-500" onClick={() => setShowEvalB(true)}>
                   {t.nextEvaluate}

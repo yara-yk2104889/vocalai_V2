@@ -7,7 +7,7 @@ const client = new OpenAI({
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { prompt, style, location, gender, condition, age, scenario } = body;
+    const { prompt, style, location, gender, condition, age } = body;
 
     const locationLabel: Record<string, string> = {
       cafe: "a café",
@@ -17,7 +17,6 @@ export async function POST(req: Request) {
     };
     const contextClues = [
       location && `Setting: ${locationLabel[location] ?? location}`,
-      scenario && `Scenario: ${scenario}`,
       gender && `User gender: ${gender}`,
       condition && `User condition: ${condition}`,
       age && `User age: ${age}`,
