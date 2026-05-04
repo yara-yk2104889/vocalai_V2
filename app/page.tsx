@@ -179,14 +179,14 @@ function toBase64(file: File): Promise<string> {
 }
 
 const api = {
-  async generateImage({ prompt, style, location, gender, condition, age, scenario }: { prompt: string; style: "realistic" | "cartoon" | "symbolic"; location?: string; gender?: string; condition?: string; age?: string; scenario?: string }) {
+  async generateImage({ prompt, style, location, gender, condition, age, language }: { prompt: string; style: "realistic" | "cartoon" | "symbolic"; location?: string; gender?: string; condition?: string; age?: string; language?: string }) {
     // SWITCH MODELS HERE!!!
     const response = await fetch("/api/generate-image", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ prompt, style, location, gender, condition, age, scenario }),
+      body: JSON.stringify({ prompt, style, location, gender, condition, age, language }),
     });
 
     if (!response.ok) {
@@ -679,8 +679,8 @@ const UI_LABELS = {
     rateTitleA: "قيّم اقتراحات الذكاء الاصطناعي",
     rateDescA: "فكّر في مستخدمي AAC الذين تدعمهم",
     qa1: "الجمل المقترحة تطابقت بدقة مع ما أراد مستخدم AAC قوله.",
-    qa2: "الجمل المقترحة سهّلت إيجاد الشيء المناسب للقوله.",
-    qa3: "الجمل المقترحة كانت ملائمة لملف مستخدم AAC.",
+    qa2: "الجمل المقترحة سهّلت إيجاد الشيء المناسب لقوله.",
+    qa3: "الجمل المقترحة كانت ملائمة لمستخدم AAC.",
     qa4: "الجمل المقترحة ناسبت سياق المكان (مجلس، فصل، ملعب، مقهى).",
     qa5: "أستطيع تخيّل أن هذه الأداة ستكون مفيدة لمستخدم AAC أعرفه.",
     // Stage B — image evaluation (step 4)
@@ -987,6 +987,7 @@ const context = useMemo(
         gender: profileGender,
         condition: profileCondition,
         age: profileAge,
+        language,
       });
       setVerifyImageUrl(out.url);
     } finally {
@@ -1152,8 +1153,8 @@ const context = useMemo(
         (texts as string[]).map(async (text: string, i: number) => {
           // First alternative includes profile context; the other two are generic
           const contextPayload = i === 0
-            ? { prompt: text, style: imageStyleMode, location, gender: profileGender, condition: profileCondition, age: profileAge }
-            : { prompt: text, style: imageStyleMode };
+            ? { prompt: text, style: imageStyleMode, location, gender: profileGender, condition: profileCondition, age: profileAge, language }
+            : { prompt: text, style: imageStyleMode, language };
           const r = await fetch("/api/generate-image", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1195,7 +1196,7 @@ const context = useMemo(
         }
       }
 
-      await fetch("/api/save-response", {
+      const saveRes = await fetch("/api/save-response", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1219,10 +1220,14 @@ const context = useMemo(
           submittedAt: new Date().toISOString(),
         }),
       });
+      if (!saveRes.ok) {
+        const errData = await saveRes.json().catch(() => ({}));
+        throw new Error(errData?.error || `Server error ${saveRes.status}`);
+      }
       setLikertBSubmitted(true);
     } catch (err) {
       console.error(err);
-      alert("Could not save — check the server is running.");
+      alert(`Could not save response: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setLikertBSaving(false);
     }
@@ -1379,17 +1384,17 @@ const context = useMemo(
                 </div>
               </div>
               <CardContent className="space-y-5 pt-5">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-1">
-                    <Label>{t.profileNameLabel} <span className="text-red-500">*</span></Label>
+                <div className={`flex flex-wrap gap-4 ${language === "ar" ? "flex-row-reverse" : ""}`}>
+                  <div className="space-y-1 flex-1 min-w-36">
+                    <Label className={language === "ar" ? "block text-right" : ""}>{t.profileNameLabel} <span className="text-red-500">*</span></Label>
                     <Input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder={t.namePlaceholder} disabled={profileSubmitted} />
                   </div>
-                  <div className="space-y-1">
-                    <Label>{t.profileAgeLabel}</Label>
+                  <div className="space-y-1 flex-1 min-w-36">
+                    <Label className={language === "ar" ? "block text-right" : ""}>{t.profileAgeLabel}</Label>
                     <Input type="text" inputMode="numeric" value={profileAge} onChange={(e) => setProfileAge(e.target.value)} placeholder={t.agePlaceholder} disabled={profileSubmitted} />
                   </div>
-                  <div className="space-y-1">
-                    <Label>{t.profileGenderLabel}</Label>
+                  <div className="space-y-1 flex-1 min-w-36">
+                    <Label className={language === "ar" ? "block text-right" : ""}>{t.profileGenderLabel}</Label>
                     <Select value={profileGender} onValueChange={setProfileGender} disabled={profileSubmitted}>
                       <SelectTrigger><SelectValue placeholder={t.selectPlaceholder} /></SelectTrigger>
                       <SelectContent>
@@ -1398,8 +1403,8 @@ const context = useMemo(
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-1">
-                    <Label>{t.profileConditionLabel}</Label>
+                  <div className="space-y-1 flex-1 min-w-36">
+                    <Label className={language === "ar" ? "block text-right" : ""}>{t.profileConditionLabel}</Label>
                     <Select value={profileCondition} onValueChange={setProfileCondition} disabled={profileSubmitted}>
                       <SelectTrigger><SelectValue placeholder={t.selectPlaceholder} /></SelectTrigger>
                       <SelectContent>
@@ -1435,14 +1440,14 @@ const context = useMemo(
                         type="button"
                         onClick={() => { if (!profileSubmitted) { setSelectedLocationId(loc.id); setLocation(loc.id); } }}
                         disabled={profileSubmitted}
-                        className={`rounded-2xl border-2 px-3 py-2.5 ${language === "ar" ? "text-right" : "text-left"} transition-all flex items-center gap-3 ${isSelected ? "border-blue-700 bg-blue-50 ring-2 ring-blue-700/20" : "border-transparent bg-slate-50 hover:border-blue-200 hover:bg-blue-50"} ${profileSubmitted ? "cursor-default" : ""}`}
+                        className={`rounded-2xl border-2 px-3 py-2.5 transition-all flex items-center gap-3 ${language === "ar" ? "flex-row-reverse text-right" : "text-left"} ${isSelected ? "border-blue-700 bg-blue-50 ring-2 ring-blue-700/20" : "border-transparent bg-slate-50 hover:border-blue-200 hover:bg-blue-50"} ${profileSubmitted ? "cursor-default" : ""}`}
                       >
                         <span className="text-2xl shrink-0">{loc.emoji}</span>
                         <div>
                           <div className="font-semibold text-sm">{language === "ar" ? loc.arLabel : loc.label}</div>
                           <p className="text-xs text-muted-foreground leading-tight">{loc.desc}</p>
                         </div>
-                        {isSelected && <Check className="ml-auto h-4 w-4 text-blue-700 shrink-0" />}
+                        {isSelected && <Check className={`${language === "ar" ? "mr-auto" : "ml-auto"} h-4 w-4 text-blue-700 shrink-0`} />}
                       </button>
                     );
                   })}
@@ -1581,16 +1586,16 @@ const context = useMemo(
                   </div>
                 )}
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1">
-                    <Label className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {t.locationLabel}</Label>
-                    <div className="flex items-center gap-2 rounded-xl border bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                <div className={`flex gap-3 ${language === "ar" ? "flex-row-reverse" : ""}`}>
+                  <div className="space-y-1 flex-1">
+                    <Label className={`flex items-center gap-1 ${language === "ar" ? "flex-row-reverse justify-end" : ""}`}><MapPin className="h-4 w-4" /> {t.locationLabel}</Label>
+                    <div className={`flex items-center gap-2 rounded-xl border bg-slate-50 px-3 py-2 text-sm text-slate-700 ${language === "ar" ? "flex-row-reverse" : ""}`}>
                       {{ cafe: "☕", playground: "🛝", classroom: "🏫", majlis: "🏡" }[location] ?? "📍"}
                       <span>{{ cafe: t.locCafe, playground: t.locPlayground, classroom: t.locClassroom, majlis: t.locMajlis }[location] ?? location}</span>
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <Label>{t.intentionLabel}</Label>
+                  <div className="space-y-1 flex-1">
+                    <Label className={language === "ar" ? "block text-right" : ""}>{t.intentionLabel}</Label>
                     <Select value={intention} onValueChange={setIntention}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -1613,7 +1618,7 @@ const context = useMemo(
                 </div>
               </div>
               <CardContent className="space-y-4">
-                <div className="flex flex-wrap items-center gap-2">
+                <div className={`flex flex-wrap items-center gap-2 ${language === "ar" ? "flex-row-reverse" : ""}`}>
                   <Button onClick={runKeywords} disabled={!imagePreview || kwLoading || sentLoading} className="rounded-full">
                     {kwLoading || sentLoading ? t.generatingSentences : t.generate3Sentences}
                   </Button>
@@ -1623,7 +1628,7 @@ const context = useMemo(
                 </div>
 
                 <div className="space-y-2">
-                  <div className="text-sm font-medium">{t.sentenceOptions}</div>
+                  <div className={`text-sm font-medium ${language === "ar" ? "text-right" : ""}`}>{t.sentenceOptions}</div>
                   {sentences.length ? (
                     <div className="space-y-2">
                       {sentences.map((s) => (
@@ -1634,7 +1639,7 @@ const context = useMemo(
                       ))}
                     </div>
                   ) : (
-                    <div className="text-sm text-muted-foreground">{t.noSentences}</div>
+                    <div className={`text-sm text-muted-foreground ${language === "ar" ? "text-right" : ""}`}>{t.noSentences}</div>
                   )}
                 </div>
 
@@ -1642,8 +1647,8 @@ const context = useMemo(
                   <>
                     <Separator />
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium">{t.refineLabel}</Label>
-                      <div className="flex gap-2">
+                      <Label className={`text-sm font-medium ${language === "ar" ? "block text-right" : ""}`}>{t.refineLabel}</Label>
+                      <div className={`flex gap-2 ${language === "ar" ? "flex-row-reverse" : ""}`}>
                         <Input value={refinementKw} onChange={(e) => setRefinementKw(e.target.value)} placeholder="e.g. urgent, help, price" className="rounded-xl flex-1" onKeyDown={(e) => { if (e.key === "Enter" && refinementKw.trim()) runSentences(); }} />
                         <Button onClick={runSentences} disabled={!refinementKw.trim() || sentLoading} className="rounded-xl bg-blue-600 hover:bg-blue-500 shrink-0">
                           {sentLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : t.regenerate}
@@ -1656,11 +1661,11 @@ const context = useMemo(
                 <Separator />
 
                 <div className="space-y-2">
-                  <div className="text-sm font-semibold flex items-center gap-1">🔊 {t.readyToSpeak}</div>
+                  <div className={`text-sm font-semibold flex items-center gap-1 ${language === "ar" ? "flex-row-reverse justify-end" : ""}`}>🔊 {t.readyToSpeak}</div>
                   <div className={`rounded-2xl border-2 p-4 text-base font-medium leading-relaxed transition-colors ${selectedSentence ? "border-blue-300 bg-blue-50 text-blue-800" : "border-dashed"}`}>
                     {selectedSentence || <span className="text-muted-foreground text-sm font-normal">{t.selectSentenceHint}</span>}
                   </div>
-                  <div className="flex gap-2">
+                  <div className={`flex gap-2 ${language === "ar" ? "flex-row-reverse" : ""}`}>
                     <Button className="rounded-full" disabled={!selectedSentence} onClick={speakSelectedSentence}><Volume2 className="mr-2 h-4 w-4" /> {t.speak}</Button>
                     <Button variant="secondary" className="rounded-full" onClick={stopSpeaking}><Square className="mr-2 h-4 w-4" /> {t.stop}</Button>
                   </div>
@@ -1717,7 +1722,7 @@ const context = useMemo(
             <div className="rounded-3xl overflow-hidden shadow-sm border">
             {!showEvalB ? (<>
             <Card className="rounded-none shadow-none border-0 border-b">
-              <div className="bg-gradient-to-r from-slate-100 to-sky-50 border-b px-6 py-4 flex items-center gap-3">
+              <div className={`bg-gradient-to-r from-slate-100 to-sky-50 border-b px-6 py-4 flex items-center gap-3 ${language === "ar" ? "flex-row-reverse" : ""}`}>
                 <span className="text-2xl">🔍</span>
                 <div>
                   <CardTitle className="text-lg">{t.verifyTitle}</CardTitle>
@@ -1735,14 +1740,14 @@ const context = useMemo(
                   };
                   const s = selectedLocationId ? scenarios[selectedLocationId] : null;
                   return s ? (
-                    <div className="rounded-2xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800 leading-relaxed">
+                    <div className={`rounded-2xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800 leading-relaxed ${language === "ar" ? "text-right" : ""}`}>
                       {s[language === "ar" ? "ar" : "en"]}
                     </div>
                   ) : null;
                 })()}
                 {/* Sentence strip */}
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-muted-foreground">{language === "ar" ? "رسالتك" : "Your message"}</Label>
+                  <Label className={`text-xs font-medium text-muted-foreground ${language === "ar" ? "block text-right" : ""}`}>{language === "ar" ? "رسالتك" : "Your message"}</Label>
                   <div className="min-h-[52px] flex flex-wrap gap-1.5 rounded-2xl border-2 border-blue-200 bg-blue-50 p-2">
                     {aacSelection.length === 0 ? (
                       <span className="text-xs text-muted-foreground self-center px-1">{language === "ar" ? "اضغط على البطاقات لبناء رسالتك…" : "Tap tiles below to build your message…"}</span>
@@ -1757,14 +1762,14 @@ const context = useMemo(
                     )}
                   </div>
                   {aacSelection.length > 0 && (
-                    <button type="button" onClick={() => setAacSelection([])} className="text-xs text-red-500 hover:text-red-700">{t.clear}</button>
+                    <button type="button" onClick={() => setAacSelection([])} className={`text-xs text-red-500 hover:text-red-700 ${language === "ar" ? "block w-full text-right" : ""}`}>{t.clear}</button>
                   )}
                 </div>
 
                 {/* AAC Board */}
                 <div className="space-y-3">
                   <div>
-                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{language === "ar" ? "أساسية" : "Core"}</Label>
+                    <Label className={`text-xs font-medium text-muted-foreground uppercase tracking-wide ${language === "ar" ? "block text-right" : ""}`}>{language === "ar" ? "أساسية" : "Core"}</Label>
                     <div className="grid grid-cols-4 gap-1.5 mt-1.5">
                       {AAC_BOARD.core.map((tile) => (
                         <button key={tile.en} type="button" onClick={() => setAacSelection(prev => [...prev, tile])}
@@ -1777,7 +1782,7 @@ const context = useMemo(
                   </div>
                   {location && AAC_BOARD[location] && (
                     <div>
-                      <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{{ cafe: language === "ar" ? "مقهى" : "Café", playground: language === "ar" ? "ملعب" : "Playground", classroom: language === "ar" ? "فصل" : "Classroom", majlis: language === "ar" ? "مجلس" : "Majlis" }[location]}</Label>
+                      <Label className={`text-xs font-medium text-muted-foreground uppercase tracking-wide ${language === "ar" ? "block text-right" : ""}`}>{{ cafe: language === "ar" ? "مقهى" : "Café", playground: language === "ar" ? "ملعب" : "Playground", classroom: language === "ar" ? "فصل" : "Classroom", majlis: language === "ar" ? "مجلس" : "Majlis" }[location]}</Label>
                       <div className="grid grid-cols-4 gap-1.5 mt-1.5">
                         {AAC_BOARD[location].map((tile) => (
                           <button key={tile.en} type="button" onClick={() => setAacSelection(prev => [...prev, tile])}
@@ -1791,14 +1796,14 @@ const context = useMemo(
                   )}
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">{t.imageStyle}</Label>
+                  <Label className={`text-xs text-muted-foreground ${language === "ar" ? "block text-right" : ""}`}>{t.imageStyle}</Label>
                   <div className="flex rounded-xl border overflow-hidden w-fit">
                     <button type="button" onClick={() => setImageStyleMode("symbolic")} className={`px-4 py-2 text-sm font-medium transition-colors ${imageStyleMode === "symbolic" ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>🔣 {t.imageStyleSymbolic}</button>
                     <button type="button" onClick={() => setImageStyleMode("cartoon")} className={`px-4 py-2 text-sm font-medium transition-colors ${imageStyleMode === "cartoon" ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>🎨 {t.imageStyleCartoon}</button>
                     <button type="button" onClick={() => setImageStyleMode("realistic")} className={`px-4 py-2 text-sm font-medium transition-colors ${imageStyleMode === "realistic" ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>📷 {t.imageStyleRealistic}</button>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className={`flex gap-2 ${language === "ar" ? "flex-row-reverse" : ""}`}>
                   <Button className="rounded-full bg-blue-600 hover:bg-blue-500" onClick={runVerifyImage} disabled={aacSelection.length === 0 || verifyLoading}>
                     {verifyLoading ? "…" : t.generateImage}
                   </Button>
