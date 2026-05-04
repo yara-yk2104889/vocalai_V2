@@ -107,6 +107,13 @@ const likertLabels = {
     "4 – Very helpful",
     "5 – Extremely helpful",
   ],
+  agree: [
+    "1 – Strongly disagree",
+    "2 – Disagree",
+    "3 – Neutral",
+    "4 – Agree",
+    "5 – Strongly agree",
+  ],
 };
 
 const likertLabelsAr = {
@@ -152,6 +159,13 @@ const likertLabelsAr = {
     "٣ – محايد",
     "٤ – محتمل",
     "٥ – محتمل جداً",
+  ],
+  agree: [
+    "١ – لا أوافق بشدة",
+    "٢ – لا أوافق",
+    "٣ – محايد",
+    "٤ – أوافق",
+    "٥ – أوافق بشدة",
   ],
 };
 
@@ -265,6 +279,11 @@ const goalsByLocation: Record<
   string,
   { value: string; label: string; arLabel: string }[]
 > = {
+  cafe: [
+    { value: "order food", label: "Order food", arLabel: "طلب طعام" },
+    { value: "order drink", label: "Order drink", arLabel: "طلب مشروب" },
+    { value: "request help", label: "Request help", arLabel: "طلب مساعدة" },
+  ],
   playground: [
     { value: "join game", label: "Join game", arLabel: "الانضمام للعبة" },
     { value: "ask to play", label: "Ask to play", arLabel: "طلب اللعب" },
@@ -295,6 +314,10 @@ const SAMPLE_IMAGES: Record<
   string,
   { src: string; label: string; arLabel: string }[]
 > = {
+  cafe: [
+    { src: "/samples/cafe/coffee.jpg", label: "Coffee", arLabel: "قهوة" },
+    { src: "/samples/cafe/sandwich.jpg", label: "Sandwich", arLabel: "ساندويش" },
+  ],
   playground: [
     { src: "/samples/playground/football.png", label: "Football", arLabel: "كرة قدم" },
     { src: "/samples/playground/swing.jpg", label: "Swing", arLabel: "أرجوحة" },
@@ -345,6 +368,9 @@ const UI_LABELS = {
     scenarioTitle: "Today's scenario: Out in Doha",
     scenarioDesc:
       "An AAC user needs fast, low-effort support across three real settings.",
+    cafeScenario: "Café ordering",
+    cafeScenarioDesc:
+      "Point camera at the menu → order independently with AI-suggested words.",
     playgroundScenario: "Playground",
     playgroundScenarioDesc:
       "Join other children playing a game and ask to take part.",
@@ -371,12 +397,12 @@ const UI_LABELS = {
     generateSentences: "Generate sentences",
     sentenceOptions: "Sentence options",
     quickNote: "Describe your image",
-    generateImage: "Generate verification image",
+    generateImage: "Generate image",
     clearImage: "Clear image",
     imageStyle: "Image style",
     imageStyleRealistic: "Realistic",
     imageStyleCartoon: "Cartoon",
-    imageStyleSymbolic: "Symbolic",
+    imageStyleSymbolic: "AAC-style",
     doesMatch: "Does this image match the intended meaning?",
     yes: "Yes",
     no: "No",
@@ -407,6 +433,7 @@ const UI_LABELS = {
     evening: "Evening",
     night: "Night",
     // Step 1 — location options
+    locCafe: "Café",
     locPlayground: "Playground",
     locClassroom: "Classroom",
     locMajlis: "Family gathering / majlis",
@@ -425,7 +452,7 @@ const UI_LABELS = {
     sentenceSelected: "Selected",
     noSentences: "Generate sentences to see options.",
     matchQuestion: "Does this match your intended meaning?",
-    refineLabel: "Add keywords to improve the suggestions",
+    refineLabel: "If the text did not match, add keywords to improve suggestions:",
     regenerate: "Regenerate",
     profileNameLabel: "Name",
     profileAgeLabel: "Age",
@@ -452,6 +479,7 @@ const UI_LABELS = {
     partnerStranger: "Stranger / General public",
     styleSimple: "Simple (short, 4–6 words)",
     styleStandard: "Standard (natural length)",
+    cafeDesc: "Order food or drinks independently",
     playgroundDesc: "Join other children in a game",
     classroomDesc: "Ask the teacher when you don't understand",
     majlisDesc: "Join a family gathering or conversation",
@@ -469,19 +497,21 @@ const UI_LABELS = {
     verificationImage: "Verification image",
     generateToPreview: "Generate an image to preview it here.",
     // Stage A — keyword + sentence evaluation (step 2)
-    rateTitleA: "Rate the keywords & sentences",
-    rateDescA: "How well did the AI support word and sentence generation?",
-    qa1: "How well did the generated sentences match what you wanted to say?",
-    qa2: "How useful were the sentence options for what you wanted to say?",
-    qa3: "How easy was it to generate a sentence for this situation?",
-    qa4: "How would you rate the speed of the AI output?",
+    rateTitleA: "Rate the AI suggestions",
+    rateDescA: "Think about the AAC users you support",
+    qa1: "The generated sentences accurately matched what the AAC user wanted to say.",
+    qa2: "The generated sentences made it easy to find the right thing to say.",
+    qa3: "The generated sentences were relevant to the AAC user's profile.",
+    qa4: "The generated sentences fit the location context (Majlis, Classroom, Playground, Café).",
+    qa5: "I could imagine this tool being useful for an AAC user I know.",
     // Stage B — image evaluation (step 4)
-    rateTitleB: "Rate the image verification",
-    rateDescB: "How well did the AI image help confirm your intended meaning?",
-    qb1: "How accurately did the image represent your intended meaning?",
-    qb2: "How helpful was the image verification for confirming your intent?",
-    qb3: "How likely are you to use this feature to convey your message?",
-    qb4: "How would you rate the speed of the image generation?",
+    rateTitleB: "Rate the AI image suggestions",
+    rateDescB: "Think about the AAC users you support",
+    qb1: "The image suggestions accurately represented what the AAC user wanted to express.",
+    qb2: "The image suggestions made it easy to find the right picture.",
+    qb3: "The image suggestions reflected the AAC user's profile and appearance.",
+    qb4: "The image suggestions fit the location context (Majlis, Classroom, Playground, Café).",
+    qb5: "I could imagine using AI image suggestions to support an AAC user I know.",
     additionalComments: "Additional comments",
     commentsPlaceholder: "Any other thoughts, reactions, or feedback...",
     saving: "Saving…",
@@ -493,7 +523,7 @@ const UI_LABELS = {
     confirmProfile: "Confirm Profile →",
     profileConfirmed: "Profile confirmed",
     // Footer
-    footer: "Qatar AAC AI Design Probe · Workshop prototype",
+    footer: "VocalAI Workshop · Hamad Bin Khalifa University · 2026",
   },
   ar: {
     // Welcome
@@ -519,6 +549,9 @@ const UI_LABELS = {
     // Scenario card
     scenarioTitle: "سيناريو اليوم: خارج في الدوحة",
     scenarioDesc: "مستخدم AAC يحتاج إلى دعم سريع وسهل في ثلاثة أماكن حقيقية.",
+    cafeScenario: "طلب في المقهى",
+    cafeScenarioDesc:
+      "وجّه الكاميرا نحو القائمة ← اطلب باستقلالية بكلمات مقترحة من الذكاء الاصطناعي.",
     playgroundScenario: "الملعب",
     playgroundScenarioDesc:
       "انضم إلى الأطفال الآخرين في لعبة واطلب المشاركة.",
@@ -544,12 +577,12 @@ const UI_LABELS = {
     generateSentences: "توليد الجمل",
     sentenceOptions: "خيارات الجملة",
     quickNote: "صف صورتك",
-    generateImage: "توليد صورة للتحقق",
+    generateImage: "توليد صورة",
     clearImage: "مسح الصورة",
     imageStyle: "نمط الصورة",
     imageStyleRealistic: "واقعي",
     imageStyleCartoon: "كرتوني",
-    imageStyleSymbolic: "رمزي",
+    imageStyleSymbolic: "نمط AAC",
     doesMatch: "هل تطابق هذه الصورة المعنى المقصود؟",
     yes: "نعم",
     no: "لا",
@@ -580,6 +613,7 @@ const UI_LABELS = {
     evening: "مساء",
     night: "ليل",
     // Step 1 — location options
+    locCafe: "مقهى",
     locPlayground: "ملعب",
     locClassroom: "فصل دراسي",
     locMajlis: "تجمع عائلي / مجلس",
@@ -597,7 +631,7 @@ const UI_LABELS = {
     sentenceSelected: "محددة",
     noSentences: "ولّد جملاً لرؤية الخيارات.",
     matchQuestion: "هل هذا يعكس المعنى المقصود؟",
-    refineLabel: "أضف كلمات لتحسين الاقتراحات",
+    refineLabel: "إن لم يتطابق النص، أضف كلمات لتحسين الاقتراحات:",
     regenerate: "إعادة التوليد",
     profileNameLabel: "الاسم",
     profileAgeLabel: "العمر",
@@ -624,6 +658,7 @@ const UI_LABELS = {
     partnerStranger: "غريب / عام",
     styleSimple: "بسيط (قصير، ٤–٦ كلمات)",
     styleStandard: "معتدل (طول طبيعي)",
+    cafeDesc: "طلب طعام أو مشروبات باستقلالية",
     playgroundDesc: "الانضمام إلى الأطفال في لعبة",
     classroomDesc: "سؤال المعلم عند عدم الفهم",
     majlisDesc: "الانضمام إلى تجمع عائلي أو حوار",
@@ -641,19 +676,21 @@ const UI_LABELS = {
     verificationImage: "صورة التحقق",
     generateToPreview: "ولّد صورة لمعاينتها هنا.",
     // Stage A — keyword + sentence evaluation (step 2)
-    rateTitleA: "قيّم الكلمات والجمل",
-    rateDescA: "كيف دعم الذكاء الاصطناعي توليد الكلمات والجمل؟",
-    qa1: "ما مدى تطابق الجمل المقترحة مع ما أردت قوله؟",
-    qa2: "ما مدى فائدة خيارات الجمل لما أردت قوله؟",
-    qa3: "ما مدى سهولة توليد جملة في هذا الموقف؟",
-    qa4: "كيف تقيّم سرعة مخرجات الذكاء الاصطناعي؟",
+    rateTitleA: "قيّم اقتراحات الذكاء الاصطناعي",
+    rateDescA: "فكّر في مستخدمي AAC الذين تدعمهم",
+    qa1: "الجمل المقترحة تطابقت بدقة مع ما أراد مستخدم AAC قوله.",
+    qa2: "الجمل المقترحة سهّلت إيجاد الشيء المناسب للقوله.",
+    qa3: "الجمل المقترحة كانت ملائمة لملف مستخدم AAC.",
+    qa4: "الجمل المقترحة ناسبت سياق المكان (مجلس، فصل، ملعب، مقهى).",
+    qa5: "أستطيع تخيّل أن هذه الأداة ستكون مفيدة لمستخدم AAC أعرفه.",
     // Stage B — image evaluation (step 4)
-    rateTitleB: "قيّم التحقق بالصورة",
-    rateDescB: "كيف ساعدت صورة الذكاء الاصطناعي في تأكيد معناك المقصود؟",
-    qb1: "ما مدى دقة الصورة في تمثيل معناك المقصود؟",
-    qb2: "ما مدى فائدة التحقق بالصورة في تأكيد قصدك؟",
-    qb3: "ما مدى احتمال استخدامك لهذه الميزة لنقل رسالتك؟",
-    qb4: "كيف تقيّم سرعة توليد الصورة؟",
+    rateTitleB: "قيّم اقتراحات صور الذكاء الاصطناعي",
+    rateDescB: "فكّر في مستخدمي AAC الذين تدعمهم",
+    qb1: "اقتراحات الصور مثّلت بدقة ما أراد مستخدم AAC التعبير عنه.",
+    qb2: "اقتراحات الصور سهّلت إيجاد الصورة المناسبة.",
+    qb3: "اقتراحات الصور عكست ملف مستخدم AAC ومظهره.",
+    qb4: "اقتراحات الصور ناسبت سياق المكان (مجلس، فصل، ملعب، مقهى).",
+    qb5: "أستطيع تخيّل استخدام اقتراحات صور الذكاء الاصطناعي لدعم مستخدم AAC أعرفه.",
     additionalComments: "تعليقات إضافية",
     commentsPlaceholder: "أي أفكار أو ردود فعل أو ملاحظات أخرى...",
     saving: "جارٍ الحفظ…",
@@ -665,11 +702,23 @@ const UI_LABELS = {
     confirmProfile: "تأكيد الملف الشخصي ←",
     profileConfirmed: "تم تأكيد الملف الشخصي",
     // Footer
-    footer: "مسبار تصميم AAC بالذكاء الاصطناعي في قطر · نموذج أولي للورشة",
+    footer: "ورشة VocalAI · جامعة حمد بن خليفة · 2026",
   },
 } as const;
 
 const SCENARIO_CONFIG: Record<string, { en: { prompt: string; inputLabel: string; placeholder: string }; ar: { prompt: string; inputLabel: string; placeholder: string } }> = {
+  cafe: {
+    en: {
+      prompt: "You're at a busy café and the barista is waiting for your order! You'd like to order a drink.",
+      inputLabel: "Which drink would you like to order?",
+      placeholder: "e.g. large iced latte, hot chocolate with cream…",
+    },
+    ar: {
+      prompt: "أنت في مقهى مزدحم والبارستا ينتظر طلبك! تريد طلب مشروب.",
+      inputLabel: "أي مشروب تريد أن تطلب؟",
+      placeholder: "مثال: لاتيه مثلج كبير، شوكولاتة ساخنة...",
+    },
+  },
   playground: {
     en: {
       prompt: "You are at the playground and see other children playing a game. You want to join them.",
@@ -743,10 +792,11 @@ export default function QatarAACProbePrototype() {
   const [sessionKey, setSessionKey] = useState(0);
   const [showEvalB, setShowEvalB] = useState(false);
   const [verifyImageUrl, setVerifyImageUrl] = useState("");
-  const [imageStyleMode, setImageStyleMode] = useState<"realistic" | "cartoon" | "symbolic">("realistic");
+  const [imageStyleMode, setImageStyleMode] = useState<"realistic" | "cartoon" | "symbolic">("symbolic");
 
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyDecision, setVerifyDecision] = useState<string | null>(null);
+  const [verifyNoSelected, setVerifyNoSelected] = useState(false);
   const [alternatives, setAlternatives] = useState<
     { text: string; imageUrl: string }[]
   >([]);
@@ -765,16 +815,18 @@ export default function QatarAACProbePrototype() {
   const [sentenceMatchHistory, setSentenceMatchHistory] = useState<{match: string; refinementKeywords?: string}[]>([]);
 
   const [likertA, setLikertA] = useState<Record<string, number | null>>({
-    keywordRelevance: null,
-    sentenceUsefulness: null,
-    ease: null,
-    speed: null,
+    sentenceAccuracy: null,
+    sentenceEase: null,
+    profileRelevance: null,
+    locationFit: null,
+    usefulnessPotential: null,
   });
   const [likertB, setLikertB] = useState<Record<string, number | null>>({
     imageAccuracy: null,
-    helpfulness: null,
-    likelihood: null,
-    speed: null,
+    imageEase: null,
+    profileReflection: null,
+    locationFit: null,
+    usefulnessPotential: null,
   });
 
   const [cameraOn, setCameraOn] = useState(false);
@@ -1024,11 +1076,16 @@ const context = useMemo(
     const isFemale = profileGender === "female";
     const isMale = profileGender === "male";
 
-    // Pitch and rate based on age
-    const pitch = age <= 12 ? 1.5 : age <= 17 ? 1.25 : 1.0;
-    const rate = age <= 12 ? 0.85 : 0.9;
+    const isChild = age <= 12;
+    const isTeen = age > 12 && age <= 17;
 
-    // Ranked voice name lists by gender
+    // Children: max pitch regardless of gender — no browser has a real child voice,
+    // so we use a female voice base (naturally higher) + push pitch to ceiling for both boys and girls.
+    // Teens: moderate pitch, still prefer gender-matched voice.
+    // Adults: normal pitch, gender-matched voice.
+    const pitch = isChild ? 1.9 : isTeen ? (isFemale ? 1.3 : 1.1) : (isFemale ? 1.05 : 0.95);
+    const rate = isChild ? 0.82 : 0.9;
+
     const femaleVoiceNames = [
       "Samantha", "Karen", "Moira", "Victoria", "Allison", "Susan",
       "Zira", "Hazel", "Google UK English Female", "Microsoft Zira",
@@ -1048,14 +1105,15 @@ const context = useMemo(
       const voices = window.speechSynthesis.getVoices();
 
       if (isArabic) {
-        // Laila = female, Maged = male
-        const preferred = isFemale ? ["Laila"] : isMale ? ["Maged"] : ["Laila", "Maged"];
+        // For Arabic children use Laila (higher pitch) regardless of gender
+        const preferred = isChild ? ["Laila"] : isFemale ? ["Laila"] : isMale ? ["Maged"] : ["Laila", "Maged"];
         const voice =
           voices.find((v) => preferred.some((n) => v.name.includes(n))) ||
           voices.find((v) => v.lang.startsWith("ar"));
         if (voice) utterance.voice = voice;
       } else {
-        const preferredNames = isFemale ? femaleVoiceNames : isMale ? maleVoiceNames : femaleVoiceNames;
+        // For children use female voice as base — pitched up it sounds far more child-like than a deep male voice
+        const preferredNames = isChild ? femaleVoiceNames : isFemale ? femaleVoiceNames : isMale ? maleVoiceNames : femaleVoiceNames;
         const voice =
           voices.find((v) => preferredNames.some((n) => v.name.includes(n))) ||
           voices.find((v) => v.lang.startsWith("en") && v.localService) ||
@@ -1094,12 +1152,20 @@ const context = useMemo(
       });
       const { alternatives: texts } = await res.json();
 
+      const scenarioCtx = selectedLocationId && SCENARIO_CONFIG[selectedLocationId]
+        ? SCENARIO_CONFIG[selectedLocationId][language === "ar" ? "ar" : "en"].prompt
+        : undefined;
+
       const images = await Promise.all(
-        (texts as string[]).map(async (text: string) => {
+        (texts as string[]).map(async (text: string, i: number) => {
+          // First alternative includes profile context; the other two are generic
+          const contextPayload = i === 0
+            ? { prompt: text, style: imageStyleMode, location, gender: profileGender, condition: profileCondition, age: profileAge, scenario: scenarioCtx }
+            : { prompt: text, style: imageStyleMode };
           const r = await fetch("/api/generate-image", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt: text, style: imageStyleMode }),
+            body: JSON.stringify(contextPayload),
           });
           const { url } = await r.json();
           return { text, imageUrl: url as string };
@@ -1192,11 +1258,12 @@ const context = useMemo(
     setSelectedSentence("");
     setVerifyImageUrl("");
     setVerifyDecision(null);
+    setVerifyNoSelected(false);
     setAlternatives([]);
     setImageRefinementKw("");
-    setImageStyleMode("realistic");
-    setLikertA({ keywordRelevance: null, sentenceUsefulness: null, ease: null, speed: null });
-    setLikertB({ imageAccuracy: null, helpfulness: null, likelihood: null, speed: null });
+    setImageStyleMode("symbolic");
+    setLikertA({ sentenceAccuracy: null, sentenceEase: null, profileRelevance: null, locationFit: null, usefulnessPotential: null });
+    setLikertB({ imageAccuracy: null, imageEase: null, profileReflection: null, locationFit: null, usefulnessPotential: null });
     setLikertASubmitted(false);
     setLikertBSubmitted(false);
     setShowEvalA(false);
@@ -1352,6 +1419,7 @@ const context = useMemo(
               <CardContent className="pt-3 pb-3">
                 <div className="grid gap-2">
                   {[
+                    { id: "cafe", emoji: "☕", label: "Café", arLabel: "مقهى", desc: t.cafeDesc },
                     { id: "playground", emoji: "🛝", label: "Playground", arLabel: "ملعب", desc: t.playgroundDesc },
                     { id: "classroom", emoji: "🏫", label: "Classroom", arLabel: "فصل دراسي", desc: t.classroomDesc },
                     { id: "majlis", emoji: "🏡", label: "Majlis", arLabel: "مجلس", desc: t.majlisDesc },
@@ -1363,7 +1431,7 @@ const context = useMemo(
                         type="button"
                         onClick={() => { if (!profileSubmitted) { setSelectedLocationId(loc.id); setLocation(loc.id); } }}
                         disabled={profileSubmitted}
-                        className={`rounded-2xl border-2 px-3 py-2.5 text-left transition-all flex items-center gap-3 ${isSelected ? "border-blue-700 bg-blue-50 ring-2 ring-blue-700/20" : "border-transparent bg-slate-50 hover:border-blue-200 hover:bg-blue-50"} ${profileSubmitted ? "cursor-default" : ""}`}
+                        className={`rounded-2xl border-2 px-3 py-2.5 ${language === "ar" ? "text-right" : "text-left"} transition-all flex items-center gap-3 ${isSelected ? "border-blue-700 bg-blue-50 ring-2 ring-blue-700/20" : "border-transparent bg-slate-50 hover:border-blue-200 hover:bg-blue-50"} ${profileSubmitted ? "cursor-default" : ""}`}
                       >
                         <span className="text-2xl shrink-0">{loc.emoji}</span>
                         <div>
@@ -1461,7 +1529,7 @@ const context = useMemo(
                           key={s.src}
                           type="button"
                           onClick={() => onSelectSample(s.src)}
-                          className={`rounded-xl border-2 overflow-hidden text-left transition-all ${imagePreview && imagePreview.length > 100 && imageFile?.name === s.src.split("/").pop() ? "border-blue-700 ring-2 ring-blue-700/20" : "border-transparent hover:border-blue-300"}`}
+                          className={`rounded-xl border-2 overflow-hidden ${language === "ar" ? "text-right" : "text-left"} transition-all ${imagePreview && imagePreview.length > 100 && imageFile?.name === s.src.split("/").pop() ? "border-blue-700 ring-2 ring-blue-700/20" : "border-transparent hover:border-blue-300"}`}
                         >
                           <img src={s.src} alt={s.label} className="w-full aspect-square object-cover" />
                           <div className="px-2 py-1 text-xs font-medium text-slate-600">{language === "ar" ? s.arLabel : s.label}</div>
@@ -1513,8 +1581,8 @@ const context = useMemo(
                   <div className="space-y-1">
                     <Label className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {t.locationLabel}</Label>
                     <div className="flex items-center gap-2 rounded-xl border bg-slate-50 px-3 py-2 text-sm text-slate-700">
-                      {{ playground: "🛝", classroom: "🏫", majlis: "🏡" }[location] ?? "📍"}
-                      <span>{{ playground: t.locPlayground, classroom: t.locClassroom, majlis: t.locMajlis }[location] ?? location}</span>
+                      {{ cafe: "☕", playground: "🛝", classroom: "🏫", majlis: "🏡" }[location] ?? "📍"}
+                      <span>{{ cafe: t.locCafe, playground: t.locPlayground, classroom: t.locClassroom, majlis: t.locMajlis }[location] ?? location}</span>
                     </div>
                   </div>
                   <div className="space-y-1">
@@ -1555,7 +1623,7 @@ const context = useMemo(
                   {sentences.length ? (
                     <div className="space-y-2">
                       {sentences.map((s) => (
-                        <button key={s} onClick={() => setSelectedSentence(s)} className={`w-full rounded-2xl border p-3 text-left transition ${selectedSentence === s ? "border-blue-700 ring-2 ring-blue-700/20" : "hover:bg-muted"}`}>
+                        <button key={s} onClick={() => setSelectedSentence(s)} className={`w-full rounded-2xl border p-3 ${language === "ar" ? "text-right" : "text-left"} transition ${selectedSentence === s ? "border-blue-700 ring-2 ring-blue-700/20" : "hover:bg-muted"}`}>
                           <div className="text-sm leading-relaxed">{s}</div>
                           {selectedSentence === s && <div className="mt-2 inline-flex items-center gap-1 text-xs text-primary"><Check className="h-3 w-3" /> {t.sentenceSelected}</div>}
                         </button>
@@ -1612,10 +1680,11 @@ const context = useMemo(
                 </div>
               </div>
               <CardContent className="space-y-5 pt-5">
-                <LikertItem title={t.qa1} value={likertA.keywordRelevance} labels={language === "ar" ? likertLabelsAr.keywordRelevance : likertLabels.keywordRelevance} onChange={(v) => setLikertA((x) => ({ ...x, keywordRelevance: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
-                <LikertItem title={t.qa2} value={likertA.sentenceUsefulness} labels={language === "ar" ? likertLabelsAr.sentenceHelpfulness : likertLabels.sentenceHelpfulness} onChange={(v) => setLikertA((x) => ({ ...x, sentenceUsefulness: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
-                <LikertItem title={t.qa3} value={likertA.ease} labels={language === "ar" ? likertLabelsAr.ease : likertLabels.ease} onChange={(v) => setLikertA((x) => ({ ...x, ease: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
-                <LikertItem title={t.qa4} value={likertA.speed} labels={language === "ar" ? likertLabelsAr.speed : likertLabels.speed} onChange={(v) => setLikertA((x) => ({ ...x, speed: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
+                <LikertItem title={t.qa1} value={likertA.sentenceAccuracy} labels={language === "ar" ? likertLabelsAr.agree : likertLabels.agree} onChange={(v) => setLikertA((x) => ({ ...x, sentenceAccuracy: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
+                <LikertItem title={t.qa2} value={likertA.sentenceEase} labels={language === "ar" ? likertLabelsAr.agree : likertLabels.agree} onChange={(v) => setLikertA((x) => ({ ...x, sentenceEase: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
+                <LikertItem title={t.qa3} value={likertA.profileRelevance} labels={language === "ar" ? likertLabelsAr.agree : likertLabels.agree} onChange={(v) => setLikertA((x) => ({ ...x, profileRelevance: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
+                <LikertItem title={t.qa4} value={likertA.locationFit} labels={language === "ar" ? likertLabelsAr.agree : likertLabels.agree} onChange={(v) => setLikertA((x) => ({ ...x, locationFit: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
+                <LikertItem title={t.qa5} value={likertA.usefulnessPotential} labels={language === "ar" ? likertLabelsAr.agree : likertLabels.agree} onChange={(v) => setLikertA((x) => ({ ...x, usefulnessPotential: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
                 <div className="space-y-1">
                   <Label className="text-sm font-medium">{t.additionalComments}</Label>
                   <Textarea value={commentsA} onChange={(e) => setCommentsA(e.target.value)} placeholder={t.commentsPlaceholder} className="rounded-2xl min-h-[100px]" />
@@ -1677,16 +1746,16 @@ const context = useMemo(
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">{t.imageStyle}</Label>
                   <div className="flex rounded-xl border overflow-hidden w-fit">
-                    <button type="button" onClick={() => setImageStyleMode("realistic")} className={`px-4 py-2 text-sm font-medium transition-colors ${imageStyleMode === "realistic" ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>📷 {t.imageStyleRealistic}</button>
-                    <button type="button" onClick={() => setImageStyleMode("cartoon")} className={`px-4 py-2 text-sm font-medium transition-colors ${imageStyleMode === "cartoon" ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>🎨 {t.imageStyleCartoon}</button>
                     <button type="button" onClick={() => setImageStyleMode("symbolic")} className={`px-4 py-2 text-sm font-medium transition-colors ${imageStyleMode === "symbolic" ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>🔣 {t.imageStyleSymbolic}</button>
+                    <button type="button" onClick={() => setImageStyleMode("cartoon")} className={`px-4 py-2 text-sm font-medium transition-colors ${imageStyleMode === "cartoon" ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>🎨 {t.imageStyleCartoon}</button>
+                    <button type="button" onClick={() => setImageStyleMode("realistic")} className={`px-4 py-2 text-sm font-medium transition-colors ${imageStyleMode === "realistic" ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>📷 {t.imageStyleRealistic}</button>
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <Button className="rounded-full bg-blue-600 hover:bg-blue-500" onClick={runVerifyImage} disabled={!notes.trim() || verifyLoading}>
                     {verifyLoading ? "…" : t.generateImage}
                   </Button>
-                  <Button variant="outline" className="rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50" onClick={() => { setVerifyImageUrl(""); setVerifyDecision(null); }} disabled={!verifyImageUrl}>
+                  <Button variant="outline" className="rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50" onClick={() => { setVerifyImageUrl(""); setVerifyDecision(null); setVerifyNoSelected(false); }} disabled={!verifyImageUrl}>
                     {t.clearImage}
                   </Button>
                 </div>
@@ -1706,7 +1775,7 @@ const context = useMemo(
                       <Button className={`rounded-xl ${verifyDecision === "yes" ? "bg-blue-700 hover:bg-blue-600 text-white" : "border border-blue-200 text-blue-700 hover:bg-blue-50 bg-white"}`} onClick={() => setVerifyDecision("yes")}>
                         <Check className="mr-2 h-4 w-4" /> {t.yes}
                       </Button>
-                      <Button className={`rounded-xl ${verifyDecision === "no" ? "bg-blue-800 hover:bg-blue-700 text-white" : "border border-slate-200 text-slate-600 hover:bg-slate-50 bg-white"}`} onClick={() => { setVerifyDecision("no"); setAlternatives([]); }}>
+                      <Button className={`rounded-xl ${verifyDecision === "no" ? "bg-blue-800 hover:bg-blue-700 text-white" : "border border-slate-200 text-slate-600 hover:bg-slate-50 bg-white"}`} onClick={() => { setVerifyDecision("no"); setVerifyNoSelected(true); setAlternatives([]); }}>
                         <X className="mr-2 h-4 w-4" /> {t.no}
                       </Button>
                     </div>
@@ -1760,7 +1829,7 @@ const context = useMemo(
                 )}
               </CardContent>
             </Card>
-            {verifyImageUrl && verifyDecision === "yes" && (
+            {verifyImageUrl && verifyDecision === "yes" && !verifyNoSelected && (
               <div className="px-6 pb-5 pt-2">
                 <Button className="w-full rounded-full bg-blue-600 hover:bg-blue-500" onClick={() => setShowEvalB(true)}>
                   {t.nextEvaluate}
@@ -1777,10 +1846,11 @@ const context = useMemo(
                 </div>
               </div>
               <CardContent className="space-y-5 pt-5">
-                <LikertItem title={t.qb1} value={likertB.imageAccuracy} labels={language === "ar" ? likertLabelsAr.imageAccuracy : likertLabels.imageAccuracy} onChange={(v) => setLikertB((x) => ({ ...x, imageAccuracy: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
-                <LikertItem title={t.qb2} value={likertB.helpfulness} labels={language === "ar" ? likertLabelsAr.helpfulness : likertLabels.helpfulness} onChange={(v) => setLikertB((x) => ({ ...x, helpfulness: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
-                <LikertItem title={t.qb3} value={likertB.likelihood} labels={language === "ar" ? likertLabelsAr.likelihood : likertLabels.likelihood} onChange={(v) => setLikertB((x) => ({ ...x, likelihood: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
-                <LikertItem title={t.qb4} value={likertB.speed} labels={language === "ar" ? likertLabelsAr.speed : likertLabels.speed} onChange={(v) => setLikertB((x) => ({ ...x, speed: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
+                <LikertItem title={t.qb1} value={likertB.imageAccuracy} labels={language === "ar" ? likertLabelsAr.agree : likertLabels.agree} onChange={(v) => setLikertB((x) => ({ ...x, imageAccuracy: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
+                <LikertItem title={t.qb2} value={likertB.imageEase} labels={language === "ar" ? likertLabelsAr.agree : likertLabels.agree} onChange={(v) => setLikertB((x) => ({ ...x, imageEase: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
+                <LikertItem title={t.qb3} value={likertB.profileReflection} labels={language === "ar" ? likertLabelsAr.agree : likertLabels.agree} onChange={(v) => setLikertB((x) => ({ ...x, profileReflection: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
+                <LikertItem title={t.qb4} value={likertB.locationFit} labels={language === "ar" ? likertLabelsAr.agree : likertLabels.agree} onChange={(v) => setLikertB((x) => ({ ...x, locationFit: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
+                <LikertItem title={t.qb5} value={likertB.usefulnessPotential} labels={language === "ar" ? likertLabelsAr.agree : likertLabels.agree} onChange={(v) => setLikertB((x) => ({ ...x, usefulnessPotential: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
                 <div className="space-y-1">
                   <Label className="text-sm font-medium">{t.additionalComments}</Label>
                   <Textarea value={additionalComments} onChange={(e) => setAdditionalComments(e.target.value)} placeholder={t.commentsPlaceholder} className="rounded-2xl min-h-[100px]" />

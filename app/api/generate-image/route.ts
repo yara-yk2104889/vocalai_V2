@@ -10,6 +10,7 @@ export async function POST(req: Request) {
     const { prompt, style, location, gender, condition, age, scenario } = body;
 
     const locationLabel: Record<string, string> = {
+      cafe: "a café",
       playground: "a children's playground",
       classroom: "a school classroom",
       majlis: "a family majlis (traditional sitting room)",
