@@ -706,56 +706,65 @@ const UI_LABELS = {
   },
 } as const;
 
-const SCENARIO_CONFIG: Record<string, { en: { prompt: string; inputLabel: string; placeholder: string }; ar: { prompt: string; inputLabel: string; placeholder: string } }> = {
-  cafe: {
-    en: {
-      prompt: "You're at a busy café and the barista is waiting for your order! You'd like to order a drink.",
-      inputLabel: "Which drink would you like to order?",
-      placeholder: "e.g. large iced latte, hot chocolate with cream…",
-    },
-    ar: {
-      prompt: "أنت في مقهى مزدحم والبارستا ينتظر طلبك! تريد طلب مشروب.",
-      inputLabel: "أي مشروب تريد أن تطلب؟",
-      placeholder: "مثال: لاتيه مثلج كبير، شوكولاتة ساخنة...",
-    },
-  },
-  playground: {
-    en: {
-      prompt: "You are at the playground and see other children playing a game. You want to join them.",
-      inputLabel: "What would you say to join them?",
-      placeholder: "e.g. can I play, I want to join, my turn…",
-    },
-    ar: {
-      prompt: "أنت في الملعب وترى أطفالاً آخرين يلعبون لعبة. تريد الانضمام إليهم.",
-      inputLabel: "ماذا ستقول للانضمام إليهم؟",
-      placeholder: "مثال: هل أستطيع اللعب، أريد الانضمام، دوري...",
-    },
-  },
-  classroom: {
-    en: {
-      prompt: "You are in class and don't understand something the teacher said.",
-      inputLabel: "Type what you would say in this situation",
-      placeholder: "e.g. can you repeat that, I don't understand, help me please…",
-    },
-    ar: {
-      prompt: "أنت في الفصل ولم تفهم شيئاً قاله المعلم.",
-      inputLabel: "اكتب ما ستقوله في هذا الموقف",
-      placeholder: "مثال: هل يمكنك الإعادة، لا أفهم، ساعدني من فضلك...",
-    },
-  },
-  majlis: {
-    en: {
-      prompt: "You are hosting guests in your majlis and would like to offer them something!",
-      inputLabel: "What would you like to offer your guests?",
-      placeholder: "e.g. Arabic coffee, dates, tea, sweets…",
-    },
-    ar: {
-      prompt: "أنت تستضيف ضيوفاً في مجلسك وتريد تقديم شيء لهم!",
-      inputLabel: "ماذا تريد أن تقدم لضيوفك؟",
-      placeholder: "مثال: قهوة عربية، تمر، شاي، حلويات...",
-    },
-  },
+interface AacTile { emoji: string; en: string; ar: string }
+
+const AAC_BOARD: Record<string, AacTile[]> = {
+  core: [
+    { emoji: "🙋", en: "I want", ar: "أريد" },
+    { emoji: "🆘", en: "Help", ar: "مساعدة" },
+    { emoji: "❓", en: "Question", ar: "سؤال" },
+    { emoji: "➕", en: "More", ar: "أكثر" },
+    { emoji: "🛑", en: "Stop", ar: "توقف" },
+    { emoji: "👍", en: "Yes", ar: "نعم" },
+    { emoji: "👎", en: "No", ar: "لا" },
+    { emoji: "😊", en: "Happy", ar: "سعيد" },
+    { emoji: "😢", en: "Sad", ar: "حزين" },
+    { emoji: "🤒", en: "Sick", ar: "مريض" },
+    { emoji: "🏠", en: "Home", ar: "البيت" },
+    { emoji: "🚽", en: "Toilet", ar: "حمام" },
+  ],
+  cafe: [
+    { emoji: "☕", en: "Coffee", ar: "قهوة" },
+    { emoji: "💧", en: "Water", ar: "ماء" },
+    { emoji: "🧃", en: "Juice", ar: "عصير" },
+    { emoji: "🥪", en: "Sandwich", ar: "ساندويش" },
+    { emoji: "🍰", en: "Cake", ar: "كعكة" },
+    { emoji: "📋", en: "Menu", ar: "قائمة" },
+    { emoji: "💰", en: "Pay", ar: "دفع" },
+    { emoji: "🪑", en: "Sit", ar: "اجلس" },
+  ],
+  playground: [
+    { emoji: "⚽", en: "Ball", ar: "كرة" },
+    { emoji: "🛝", en: "Slide", ar: "زحليقة" },
+    { emoji: "🎮", en: "Play", ar: "العب" },
+    { emoji: "🏃", en: "Run", ar: "اركض" },
+    { emoji: "👫", en: "Friends", ar: "أصدقاء" },
+    { emoji: "🎯", en: "Join", ar: "انضم" },
+    { emoji: "🏆", en: "Win", ar: "فوز" },
+    { emoji: "🤝", en: "My turn", ar: "دوري" },
+  ],
+  classroom: [
+    { emoji: "📖", en: "Read", ar: "اقرأ" },
+    { emoji: "✏️", en: "Write", ar: "اكتب" },
+    { emoji: "🤔", en: "Don't understand", ar: "لا أفهم" },
+    { emoji: "🖐️", en: "Ask", ar: "اسأل" },
+    { emoji: "📝", en: "Homework", ar: "واجب" },
+    { emoji: "🔁", en: "Repeat", ar: "أعد" },
+    { emoji: "📚", en: "Book", ar: "كتاب" },
+    { emoji: "🎓", en: "Learn", ar: "تعلّم" },
+  ],
+  majlis: [
+    { emoji: "🍵", en: "Tea", ar: "شاي" },
+    { emoji: "☕", en: "Coffee", ar: "قهوة" },
+    { emoji: "🍬", en: "Sweets", ar: "حلويات" },
+    { emoji: "🗣️", en: "Talk", ar: "تحدث" },
+    { emoji: "👋", en: "Hello", ar: "مرحباً" },
+    { emoji: "🤝", en: "Welcome", ar: "أهلاً" },
+    { emoji: "👨‍👩‍👧", en: "Family", ar: "عائلة" },
+    { emoji: "🎉", en: "Celebrate", ar: "احتفل" },
+  ],
 };
+
 
 export default function QatarAACProbePrototype() {
   const [participantId, setParticipantId] = useState("");
@@ -782,6 +791,7 @@ export default function QatarAACProbePrototype() {
   const [intention, setIntention] = useState("question");
 
   const [notes, setNotes] = useState("");
+  const [aacSelection, setAacSelection] = useState<AacTile[]>([]);
   const [commentsA, setCommentsA] = useState("");
   const [additionalComments, setAdditionalComments] = useState("");
   const [likertASubmitted, setLikertASubmitted] = useState(false);
@@ -969,7 +979,7 @@ const context = useMemo(
     setVerifyLoading(true);
     setVerifyDecision(null);
     try {
-      const prompt = notes || "User note";
+      const prompt = aacSelection.map(t => t.en).join(" ") || notes || "User note";
       const out = await api.generateImage({
         prompt,
         style: imageStyleMode,
@@ -1142,7 +1152,7 @@ const context = useMemo(
       const res = await fetch("/api/suggest-alternatives", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note: notes, language, refinementKeywords: refinementKw?.trim() || undefined }),
+        body: JSON.stringify({ note: aacSelection.map(t => t.en).join(" ") || notes, language, refinementKeywords: refinementKw?.trim() || undefined }),
       });
       const { alternatives: texts } = await res.json();
 
@@ -1266,6 +1276,7 @@ const context = useMemo(
     setFreeContext("");
     setCustomKw("");
     setNotes("");
+    setAacSelection([]);
   }
 
   if (!participantId) {
@@ -1711,27 +1722,55 @@ const context = useMemo(
                 </div>
               </div>
               <CardContent className="space-y-4">
-                {selectedLocationId && SCENARIO_CONFIG[selectedLocationId] && (
-                  <div className="rounded-2xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800 leading-relaxed">
-                    {SCENARIO_CONFIG[selectedLocationId][language === "ar" ? "ar" : "en"].prompt}
-                  </div>
-                )}
+                {/* Sentence strip */}
                 <div className="space-y-1">
-                  <Label className="text-sm font-medium">
-                    {selectedLocationId && SCENARIO_CONFIG[selectedLocationId]
-                      ? SCENARIO_CONFIG[selectedLocationId][language === "ar" ? "ar" : "en"].inputLabel
-                      : t.quickNote}
-                  </Label>
-                  <Textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder={
-                      selectedLocationId && SCENARIO_CONFIG[selectedLocationId]
-                        ? SCENARIO_CONFIG[selectedLocationId][language === "ar" ? "ar" : "en"].placeholder
-                        : t.quickNotePlaceholder
-                    }
-                  />
-                  <p className="text-xs text-muted-foreground">{language === "ar" ? "اكتب ما ستقوله في هذا الموقف" : "Type what you would say in this situation"}</p>
+                  <Label className="text-xs font-medium text-muted-foreground">{language === "ar" ? "رسالتك" : "Your message"}</Label>
+                  <div className="min-h-[52px] flex flex-wrap gap-1.5 rounded-2xl border-2 border-blue-200 bg-blue-50 p-2">
+                    {aacSelection.length === 0 ? (
+                      <span className="text-xs text-muted-foreground self-center px-1">{language === "ar" ? "اضغط على البطاقات لبناء رسالتك…" : "Tap tiles below to build your message…"}</span>
+                    ) : (
+                      aacSelection.map((tile, i) => (
+                        <button key={i} type="button" onClick={() => setAacSelection(prev => prev.filter((_, idx) => idx !== i))}
+                          className="flex flex-col items-center rounded-xl bg-white border border-blue-300 px-2 py-1 hover:bg-red-50 hover:border-red-300 transition-colors">
+                          <span className="text-lg leading-none">{tile.emoji}</span>
+                          <span className="text-[10px] leading-none mt-0.5 text-slate-600">{language === "ar" ? tile.ar : tile.en}</span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                  {aacSelection.length > 0 && (
+                    <button type="button" onClick={() => setAacSelection([])} className="text-xs text-red-500 hover:text-red-700">{t.clear}</button>
+                  )}
+                </div>
+
+                {/* AAC Board */}
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{language === "ar" ? "أساسية" : "Core"}</Label>
+                    <div className="grid grid-cols-4 gap-1.5 mt-1.5">
+                      {AAC_BOARD.core.map((tile) => (
+                        <button key={tile.en} type="button" onClick={() => setAacSelection(prev => [...prev, tile])}
+                          className="flex flex-col items-center rounded-xl border bg-white px-1 py-2 hover:border-blue-400 hover:bg-blue-50 active:scale-95 transition-all">
+                          <span className="text-2xl leading-none">{tile.emoji}</span>
+                          <span className="text-[10px] mt-1 text-slate-600 text-center leading-tight">{language === "ar" ? tile.ar : tile.en}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {location && AAC_BOARD[location] && (
+                    <div>
+                      <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{{ cafe: language === "ar" ? "مقهى" : "Café", playground: language === "ar" ? "ملعب" : "Playground", classroom: language === "ar" ? "فصل" : "Classroom", majlis: language === "ar" ? "مجلس" : "Majlis" }[location]}</Label>
+                      <div className="grid grid-cols-4 gap-1.5 mt-1.5">
+                        {AAC_BOARD[location].map((tile) => (
+                          <button key={tile.en} type="button" onClick={() => setAacSelection(prev => [...prev, tile])}
+                            className="flex flex-col items-center rounded-xl border bg-slate-50 px-1 py-2 hover:border-blue-400 hover:bg-blue-50 active:scale-95 transition-all">
+                            <span className="text-2xl leading-none">{tile.emoji}</span>
+                            <span className="text-[10px] mt-1 text-slate-600 text-center leading-tight">{language === "ar" ? tile.ar : tile.en}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">{t.imageStyle}</Label>
@@ -1742,7 +1781,7 @@ const context = useMemo(
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button className="rounded-full bg-blue-600 hover:bg-blue-500" onClick={runVerifyImage} disabled={!notes.trim() || verifyLoading}>
+                  <Button className="rounded-full bg-blue-600 hover:bg-blue-500" onClick={runVerifyImage} disabled={aacSelection.length === 0 || verifyLoading}>
                     {verifyLoading ? "…" : t.generateImage}
                   </Button>
                   <Button variant="outline" className="rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50" onClick={() => { setVerifyImageUrl(""); setVerifyDecision(null); setVerifyNoSelected(false); }} disabled={!verifyImageUrl}>
