@@ -44,8 +44,8 @@ export async function POST(req: Request) {
     const sharedRequirements = style === "symbolic" ? `
             - Format it like a real AAC symbol card — a single clear symbol centered on a plain white or light background, optionally inside a simple border or frame.
             - Style it like Boardmaker, SymbolStix, or PCS symbols.
-            - A short text label at the bottom is encouraged, as in real AAC cards.
-            - Focus on one single concept — no complex scenes.
+            - The text label at the bottom MUST be a natural, complete phrase expressing the combined meaning — NOT a list of the input words. For example, if the input is "sad don't understand", the label should be "I don't understand", not "Sad Don't understand".
+            - Focus on one single concept or scene — no complex scenes.
             - Make it immediately recognizable at a small size.` : `
             - Do NOT add any text, labels, captions, letters, words, speech bubbles, or checkmarks.
             - Do NOT format it like an AAC card, flashcard, symbol board, worksheet, or poster.
@@ -60,7 +60,10 @@ export async function POST(req: Request) {
     const response = await client.images.generate({
       model: "gpt-image-1",
       prompt: `
-            Create a visual image for this intended message: "${prompt}".
+            The following words are AAC symbol tiles selected by a user to communicate a message: "${prompt}".
+            Interpret them together as a single, coherent communication intent — do NOT treat them as a list or label them word by word.
+            For example: "sad don't understand" means the user is sad because they don't understand something; "I want water" means the user wants a drink of water.
+            Generate a visual image that naturally represents this combined meaning.
             ${contextClues ? `Context about the user and setting: ${contextClues}.` : ""}
 
             Requirements:
