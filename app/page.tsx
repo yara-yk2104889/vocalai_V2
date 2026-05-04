@@ -1101,15 +1101,13 @@ const context = useMemo(
       const voices = window.speechSynthesis.getVoices();
 
       if (isArabic) {
-        // For Arabic children use Laila (higher pitch) regardless of gender
-        const preferred = isChild ? ["Laila"] : isFemale ? ["Laila"] : isMale ? ["Maged"] : ["Laila", "Maged"];
+        const preferred = isFemale ? ["Laila"] : isMale ? ["Maged"] : ["Laila", "Maged"];
         const voice =
           voices.find((v) => preferred.some((n) => v.name.includes(n))) ||
           voices.find((v) => v.lang.startsWith("ar"));
         if (voice) utterance.voice = voice;
       } else {
-        // For children use female voice as base — pitched up it sounds far more child-like than a deep male voice
-        const preferredNames = isChild ? femaleVoiceNames : isFemale ? femaleVoiceNames : isMale ? maleVoiceNames : femaleVoiceNames;
+        const preferredNames = isFemale ? femaleVoiceNames : isMale ? maleVoiceNames : femaleVoiceNames;
         const voice =
           voices.find((v) => preferredNames.some((n) => v.name.includes(n))) ||
           voices.find((v) => v.lang.startsWith("en") && v.localService) ||
@@ -1825,6 +1823,18 @@ const context = useMemo(
               <div className="px-6 pb-5 pt-2">
                 <Button className="w-full rounded-full bg-blue-600 hover:bg-blue-500" onClick={() => setShowEvalB(true)}>
                   {t.nextEvaluate}
+                </Button>
+              </div>
+            )}
+            {verifyDecision === "no" && (
+              <div className="px-6 pb-5 pt-2 space-y-2">
+                <p className="text-xs text-muted-foreground text-center">{language === "ar" ? "لم تتطابق الصورة — يمكنك إرسال الجلسة بدون تقييم الصورة." : "Image didn't match — you can still submit the session without image evaluation."}</p>
+                <Button
+                  className="w-full rounded-full bg-slate-700 hover:bg-slate-600"
+                  onClick={submitLikertB}
+                  disabled={likertBSaving}
+                >
+                  {likertBSaving ? t.saving : t.submit}
                 </Button>
               </div>
             )}
