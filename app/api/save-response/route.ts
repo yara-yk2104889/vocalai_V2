@@ -20,6 +20,7 @@ export async function POST(req: Request) {
       evaluation_a: body.evaluationA,
       comments_a: body.commentsA,
       image_style: body.imageStyle,
+      aac_selection: body.aacSelection,
       image_verify_decision: body.verifyDecision,
       image_url: body.verifyImageUrl,
       evaluation_b: body.evaluationB,

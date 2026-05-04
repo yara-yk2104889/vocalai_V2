@@ -1221,6 +1221,7 @@ const context = useMemo(
           verifyDecision,
           verifyImageUrl: savedImageUrl,
           imageStyle: imageStyleMode,
+          aacSelection: aacSelection.map(t => ({ en: t.en, ar: t.ar })),
           evaluationB: likertB,
           additionalComments,
           submittedAt: new Date().toISOString(),
@@ -1722,6 +1723,21 @@ const context = useMemo(
                 </div>
               </div>
               <CardContent className="space-y-4">
+                {/* Scenario prompt */}
+                {(() => {
+                  const scenarios: Record<string, { en: string; ar: string }> = {
+                    cafe:       { en: "You are at a café and want to ask for something to drink.", ar: "أنت في مقهى وتريد أن تطلب شيئاً للشرب." },
+                    playground: { en: "You see other children playing and want to join them.", ar: "ترى أطفالاً آخرين يلعبون وتريد الانضمام إليهم." },
+                    classroom:  { en: "You are doing your classroom work but need the teacher's help.", ar: "أنت تؤدي عملك في الفصل لكنك تحتاج مساعدة المعلم." },
+                    majlis:     { en: "You are with guests and want to offer something.", ar: "أنت مع ضيوف وتريد أن تقدم شيئاً." },
+                  };
+                  const s = selectedLocationId ? scenarios[selectedLocationId] : null;
+                  return s ? (
+                    <div className="rounded-2xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800 leading-relaxed">
+                      {s[language === "ar" ? "ar" : "en"]}
+                    </div>
+                  ) : null;
+                })()}
                 {/* Sentence strip */}
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-muted-foreground">{language === "ar" ? "رسالتك" : "Your message"}</Label>
