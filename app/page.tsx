@@ -1663,7 +1663,7 @@ const context = useMemo(
                     <div className="space-y-2">
                       <Label className={`text-sm font-medium ${language === "ar" ? "block text-right" : ""}`}>{t.refineLabel}</Label>
                       <div dir={language === "ar" ? "ltr" : undefined} className={`flex gap-2 ${language === "ar" ? "flex-row-reverse" : ""}`}>
-                        <Input dir={language === "ar" ? "rtl" : undefined} value={refinementKw} onChange={(e) => setRefinementKw(e.target.value)} placeholder="e.g. urgent, help, price" className="rounded-xl flex-1" onKeyDown={(e) => { if (e.key === "Enter" && refinementKw.trim()) runSentences(); }} />
+                        <Input dir={language === "ar" ? "rtl" : undefined} value={refinementKw} onChange={(e) => setRefinementKw(e.target.value)} placeholder={language === "ar" ? "مثال: عاجل، مساعدة، سعر" : "e.g. urgent, help, price"} className="rounded-xl flex-1" onKeyDown={(e) => { if (e.key === "Enter" && refinementKw.trim()) runSentences(); }} />
                         <Button onClick={runSentences} disabled={!refinementKw.trim() || sentLoading} className="rounded-xl bg-blue-600 hover:bg-blue-500 shrink-0">
                           {sentLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : t.regenerate}
                         </Button>
@@ -1709,11 +1709,11 @@ const context = useMemo(
                 <LikertItem title={t.qa4} value={likertA.locationFit} labels={language === "ar" ? likertLabelsAr.agree : likertLabels.agree} onChange={(v) => setLikertA((x) => ({ ...x, locationFit: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
                 <LikertItem title={t.qa5} value={likertA.usefulnessPotential} labels={language === "ar" ? likertLabelsAr.agree : likertLabels.agree} onChange={(v) => setLikertA((x) => ({ ...x, usefulnessPotential: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
                 <div className="space-y-1">
-                  <Label className="text-sm font-medium">{t.additionalComments}</Label>
-                  <Textarea value={commentsA} onChange={(e) => setCommentsA(e.target.value)} placeholder={t.commentsPlaceholder} className="rounded-2xl min-h-[100px]" />
+                  <Label className={`text-sm font-medium ${language === "ar" ? "block text-right" : ""}`}>{t.additionalComments}</Label>
+                  <Textarea dir={language === "ar" ? "rtl" : undefined} value={commentsA} onChange={(e) => setCommentsA(e.target.value)} placeholder={t.commentsPlaceholder} className="rounded-2xl min-h-[100px]" />
                 </div>
                 {!likertASubmitted ? (
-                  <div className="flex gap-2">
+                  <div dir={language === "ar" ? "ltr" : undefined} className={`flex gap-2 ${language === "ar" ? "flex-row-reverse" : ""}`}>
                     <Button variant="outline" className="rounded-full border-slate-200 text-slate-600" onClick={() => setShowEvalA(false)}>
                       {t.back}
                     </Button>
@@ -1848,12 +1848,15 @@ const context = useMemo(
                     {verifyDecision === "no" && (
                       <div className="space-y-3 pt-1">
                         <div className="space-y-2">
-                          <Label className="text-sm font-medium">Add keywords to refine the image (optional)</Label>
-                          <div className="flex gap-2">
+                          <Label className={`text-sm font-medium ${language === "ar" ? "block text-right" : ""}`}>
+                            {language === "ar" ? "أضف كلمات لتحسين الصورة (اختياري)" : "Add keywords to refine the image (optional)"}
+                          </Label>
+                          <div dir={language === "ar" ? "ltr" : undefined} className={`flex gap-2 ${language === "ar" ? "flex-row-reverse" : ""}`}>
                             <Input
+                              dir={language === "ar" ? "rtl" : undefined}
                               value={imageRefinementKw}
                               onChange={(e) => setImageRefinementKw(e.target.value)}
-                              placeholder="e.g. water, glass, drink"
+                              placeholder={language === "ar" ? "مثال: ماء، كوب، شراب" : "e.g. water, glass, drink"}
                               className="rounded-xl flex-1"
                               onKeyDown={(e) => { if (e.key === "Enter") fetchAlternatives(imageRefinementKw); }}
                             />
@@ -1862,7 +1865,7 @@ const context = useMemo(
                               disabled={altLoading}
                               className="rounded-xl bg-blue-600 hover:bg-blue-500"
                             >
-                              {altLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : "Generate"}
+                              {altLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : (language === "ar" ? "توليد" : "Generate")}
                             </Button>
                           </div>
                         </div>
@@ -1930,11 +1933,11 @@ const context = useMemo(
                 <LikertItem title={t.qb4} value={likertB.locationFit} labels={language === "ar" ? likertLabelsAr.agree : likertLabels.agree} onChange={(v) => setLikertB((x) => ({ ...x, locationFit: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
                 <LikertItem title={t.qb5} value={likertB.usefulnessPotential} labels={language === "ar" ? likertLabelsAr.agree : likertLabels.agree} onChange={(v) => setLikertB((x) => ({ ...x, usefulnessPotential: v }))} rtl={language === "ar"} sliderHint={t.sliderHint} />
                 <div className="space-y-1">
-                  <Label className="text-sm font-medium">{t.additionalComments}</Label>
-                  <Textarea value={additionalComments} onChange={(e) => setAdditionalComments(e.target.value)} placeholder={t.commentsPlaceholder} className="rounded-2xl min-h-[100px]" />
+                  <Label className={`text-sm font-medium ${language === "ar" ? "block text-right" : ""}`}>{t.additionalComments}</Label>
+                  <Textarea dir={language === "ar" ? "rtl" : undefined} value={additionalComments} onChange={(e) => setAdditionalComments(e.target.value)} placeholder={t.commentsPlaceholder} className="rounded-2xl min-h-[100px]" />
                 </div>
                 {!likertBSubmitted && (
-                  <div className="flex gap-2">
+                  <div dir={language === "ar" ? "ltr" : undefined} className={`flex gap-2 ${language === "ar" ? "flex-row-reverse" : ""}`}>
                     <Button variant="outline" className="rounded-full border-slate-200 text-slate-600" onClick={() => setShowEvalB(false)}>
                       {t.back}
                     </Button>
