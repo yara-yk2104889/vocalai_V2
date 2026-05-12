@@ -413,7 +413,7 @@ const UI_LABELS = {
     imageStyleRealistic: "Realistic",
     imageStyleCartoon: "Cartoon",
     imageStyleSymbolic: "AAC-style",
-    includeConditionLabel: "Include diagnosis in image prompt",
+    includeConditionLabel: "Include user profile in image generation?",
     doesMatch: "Does this image match the intended meaning?",
     yes: "Yes",
     no: "No",
@@ -596,7 +596,7 @@ const UI_LABELS = {
     imageStyleRealistic: "واقعي",
     imageStyleCartoon: "كرتوني",
     imageStyleSymbolic: "نمط AAC",
-    includeConditionLabel: "تضمين التشخيص في مطالبة الصورة",
+    includeConditionLabel: "تضمين ملف المستخدم في توليد الصورة؟",
     doesMatch: "هل تطابق هذه الصورة المعنى المقصود؟",
     yes: "نعم",
     no: "لا",
@@ -830,7 +830,7 @@ export default function QatarAACProbePrototype() {
   const [showEvalB, setShowEvalB] = useState(false);
   const [verifyImageUrl, setVerifyImageUrl] = useState("");
   const [imageStyleMode, setImageStyleMode] = useState<"realistic" | "cartoon" | "symbolic">("symbolic");
-  const [includeCondition, setIncludeCondition] = useState(true);
+  const [includeCondition, setIncludeCondition] = useState(false);
 
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyDecision, setVerifyDecision] = useState<string | null>(null);
@@ -1071,6 +1071,8 @@ const context = useMemo(
 
   async function runSentences() {
     setSentLoading(true);
+    setSentences([]);
+    setSelectedSentence("");
     if (refinementKw.trim()) {
       setSentenceMatchHistory((prev) => [...prev, { match: "no", refinementKeywords: refinementKw.trim() }]);
     }
@@ -1685,8 +1687,8 @@ const context = useMemo(
                   <div className={`text-sm font-medium ${language === "ar" ? "text-right" : ""}`}>{t.sentenceOptions}</div>
                   {sentences.length ? (
                     <div className="space-y-2">
-                      {sentences.map((s) => (
-                        <button key={s} onClick={() => setSelectedSentence(s)} className={`w-full rounded-2xl border p-3 ${language === "ar" ? "text-right" : "text-left"} transition ${selectedSentence === s ? "border-blue-700 ring-2 ring-blue-700/20" : "hover:bg-muted"}`}>
+                      {sentences.map((s, i) => (
+                        <button key={i} onClick={() => setSelectedSentence(s)} className={`w-full rounded-2xl border p-3 ${language === "ar" ? "text-right" : "text-left"} transition ${selectedSentence === s ? "border-blue-700 ring-2 ring-blue-700/20" : "hover:bg-muted"}`}>
                           <div className="text-sm leading-relaxed">{s}</div>
                           {selectedSentence === s && <div className={`mt-2 flex items-center gap-1 text-xs text-primary ${language === "ar" ? "justify-end" : "justify-start"}`}><Check className="h-3 w-3" /> {t.sentenceSelected}</div>}
                         </button>
@@ -1868,7 +1870,7 @@ const context = useMemo(
                 ) : verifyImageUrl ? (
                   <div className="space-y-3">
                     <div className="overflow-hidden rounded-2xl border">
-                      <img src={verifyImageUrl} alt="verification" className="h-auto w-full" />
+                      <img src={verifyImageUrl} alt="verification" className="h-auto w-full max-w-xs mx-auto block" />
                     </div>
                     <div className="text-sm font-medium">{t.doesMatch}</div>
                     <div className="flex gap-2">
@@ -1932,22 +1934,10 @@ const context = useMemo(
                 )}
               </CardContent>
             </Card>
-            {verifyImageUrl && verifyDecision === "yes" && (
+            {verifyImageUrl && verifyDecision && (
               <div className="px-6 pb-5 pt-2">
                 <Button className="w-full rounded-full bg-blue-600 hover:bg-blue-500" onClick={() => setShowEvalB(true)}>
                   {t.nextEvaluate}
-                </Button>
-              </div>
-            )}
-            {verifyDecision === "no" && (
-              <div className="px-6 pb-5 pt-2 space-y-2">
-                <p className="text-xs text-muted-foreground text-center">{language === "ar" ? "لم تتطابق الصورة — يمكنك إرسال الجلسة بدون تقييم الصورة." : "Image didn't match — you can still submit the session without image evaluation."}</p>
-                <Button
-                  className="w-full rounded-full bg-slate-700 hover:bg-slate-600"
-                  onClick={submitLikertB}
-                  disabled={likertBSaving}
-                >
-                  {likertBSaving ? t.saving : t.submit}
                 </Button>
               </div>
             )}
