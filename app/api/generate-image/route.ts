@@ -14,6 +14,7 @@ export async function POST(req: Request) {
       playground: "a children's playground",
       classroom: "a school classroom",
       majlis: "a family majlis (traditional sitting room)",
+      home: "a home",
     };
     const contextClues = [
       location && `Setting: ${locationLabel[location] ?? location}`,

@@ -308,6 +308,12 @@ const goalsByLocation: Record<
       arLabel: "التعبير عن مشاعر",
     },
   ],
+  home: [
+    { value: "request help", label: "Request help", arLabel: "طلب مساعدة" },
+    { value: "express feeling", label: "Express feeling", arLabel: "التعبير عن مشاعر" },
+    { value: "ask for something", label: "Ask for something", arLabel: "طلب شيء" },
+    { value: "say I'm hungry", label: "Say I'm hungry", arLabel: "قول أنا جائع" },
+  ],
 };
 
 const SAMPLE_IMAGES: Record<
@@ -338,6 +344,7 @@ const SAMPLE_IMAGES: Record<
       arLabel: "مجلس عائلي",
     },
   ],
+  home: [],
 };
 
 
@@ -403,6 +410,7 @@ const UI_LABELS = {
     imageStyleRealistic: "Realistic",
     imageStyleCartoon: "Cartoon",
     imageStyleSymbolic: "AAC-style",
+    includeConditionLabel: "Include diagnosis in image prompt",
     doesMatch: "Does this image match the intended meaning?",
     yes: "Yes",
     no: "No",
@@ -437,6 +445,7 @@ const UI_LABELS = {
     locPlayground: "Playground",
     locClassroom: "Classroom",
     locMajlis: "Family gathering / majlis",
+    locHome: "Home",
     // Step 1 — intention options
     intentQuestion: "Question / Request",
     intentConversation: "Conversation",
@@ -457,7 +466,7 @@ const UI_LABELS = {
     profileNameLabel: "Name",
     profileAgeLabel: "Age",
     profileGenderLabel: "Gender",
-    profileConditionLabel: "Condition",
+    profileConditionLabel: "Primary Diagnosis",
     partnerRoleLabel: "Communication partner",
     sentenceStyleLabel: "Sentence style",
     chooseLocation: "Choose a location",
@@ -483,6 +492,7 @@ const UI_LABELS = {
     playgroundDesc: "Join other children in a game",
     classroomDesc: "Ask the teacher when you don't understand",
     majlisDesc: "Join a family gathering or conversation",
+    homeDesc: "Communicate needs and feelings at home",
     sliderHint: "Move the slider to rate",
     readyToSpeak: "Ready to speak",
     selectSentenceHint: "Select a sentence above.",
@@ -583,6 +593,7 @@ const UI_LABELS = {
     imageStyleRealistic: "واقعي",
     imageStyleCartoon: "كرتوني",
     imageStyleSymbolic: "نمط AAC",
+    includeConditionLabel: "تضمين التشخيص في مطالبة الصورة",
     doesMatch: "هل تطابق هذه الصورة المعنى المقصود؟",
     yes: "نعم",
     no: "لا",
@@ -617,6 +628,7 @@ const UI_LABELS = {
     locPlayground: "ملعب",
     locClassroom: "فصل دراسي",
     locMajlis: "تجمع عائلي / مجلس",
+    locHome: "المنزل",
     // Step 1 — intention options
     intentQuestion: "سؤال / طلب",
     intentConversation: "محادثة",
@@ -636,7 +648,7 @@ const UI_LABELS = {
     profileNameLabel: "الاسم",
     profileAgeLabel: "العمر",
     profileGenderLabel: "الجنس",
-    profileConditionLabel: "الحالة",
+    profileConditionLabel: "التشخيص الأساسي",
     partnerRoleLabel: "شريك التواصل",
     sentenceStyleLabel: "أسلوب الجملة",
     chooseLocation: "اختر موقعاً",
@@ -662,6 +674,7 @@ const UI_LABELS = {
     playgroundDesc: "الانضمام إلى الأطفال في لعبة",
     classroomDesc: "سؤال المعلم عند عدم الفهم",
     majlisDesc: "الانضمام إلى تجمع عائلي أو حوار",
+    homeDesc: "التعبير عن الاحتياجات والمشاعر في المنزل",
     sliderHint: "حرك المتزلق للتقييم",
     readyToSpeak: "جاهز للكلام",
     selectSentenceHint: "اختر جملة من الأعلى.",
@@ -763,6 +776,16 @@ const AAC_BOARD: Record<string, AacTile[]> = {
     { emoji: "👨‍👩‍👧", en: "Family", ar: "عائلة" },
     { emoji: "🎉", en: "Celebrate", ar: "احتفل" },
   ],
+  home: [
+    { emoji: "🍽️", en: "Eat", ar: "أكل" },
+    { emoji: "💧", en: "Drink", ar: "شراب" },
+    { emoji: "😴", en: "Sleep", ar: "نوم" },
+    { emoji: "🚽", en: "Toilet", ar: "حمام" },
+    { emoji: "🤕", en: "Hurt", ar: "ألم" },
+    { emoji: "😊", en: "Happy", ar: "سعيد" },
+    { emoji: "😢", en: "Sad", ar: "حزين" },
+    { emoji: "🙏", en: "Help", ar: "مساعدة" },
+  ],
 };
 
 
@@ -776,6 +799,7 @@ export default function QatarAACProbePrototype() {
   const [profileAge, setProfileAge] = useState("");
   const [profileGender, setProfileGender] = useState("");
   const [profileCondition, setProfileCondition] = useState("");
+  const [profileConditionOther, setProfileConditionOther] = useState("");
   const partnerRole = "parent";
   const [language, setLanguage] = useState("en");
   const simpleStyle = true;
@@ -803,6 +827,7 @@ export default function QatarAACProbePrototype() {
   const [showEvalB, setShowEvalB] = useState(false);
   const [verifyImageUrl, setVerifyImageUrl] = useState("");
   const [imageStyleMode, setImageStyleMode] = useState<"realistic" | "cartoon" | "symbolic">("symbolic");
+  const [includeCondition, setIncludeCondition] = useState(true);
 
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyDecision, setVerifyDecision] = useState<string | null>(null);
@@ -985,7 +1010,7 @@ const context = useMemo(
         style: imageStyleMode,
         location,
         gender: profileGender,
-        condition: profileCondition,
+        condition: includeCondition ? (profileCondition === "other" && profileConditionOther.trim() ? profileConditionOther.trim() : profileCondition) : undefined,
         age: profileAge,
         language,
       });
@@ -1153,7 +1178,7 @@ const context = useMemo(
         (texts as string[]).map(async (text: string, i: number) => {
           // First alternative includes profile context; the other two are generic
           const contextPayload = i === 0
-            ? { prompt: text, style: imageStyleMode, location, gender: profileGender, condition: profileCondition, age: profileAge, language }
+            ? { prompt: text, style: imageStyleMode, location, gender: profileGender, condition: includeCondition ? (profileCondition === "other" && profileConditionOther.trim() ? profileConditionOther.trim() : profileCondition) : undefined, age: profileAge, language }
             : { prompt: text, style: imageStyleMode, language };
           const r = await fetch("/api/generate-image", {
             method: "POST",
@@ -1244,6 +1269,7 @@ const context = useMemo(
     setProfileAge("");
     setProfileGender("");
     setProfileCondition("");
+    setProfileConditionOther("");
     setLocation("playground");
     setIntention("question");
     setGoal("ask dose");
@@ -1405,7 +1431,7 @@ const context = useMemo(
                   </div>
                   <div className="space-y-1 flex-1 min-w-36">
                     <Label className={language === "ar" ? "block text-right" : ""}>{t.profileConditionLabel}</Label>
-                    <Select value={profileCondition} onValueChange={setProfileCondition} disabled={profileSubmitted}>
+                    <Select value={profileCondition} onValueChange={(v) => { setProfileCondition(v); setProfileConditionOther(""); }} disabled={profileSubmitted}>
                       <SelectTrigger dir={language === "ar" ? "rtl" : "ltr"} ><SelectValue placeholder={t.selectPlaceholder} /></SelectTrigger>
                       <SelectContent dir={language === "ar" ? "rtl" : "ltr"}>
                         <SelectItem value="autism">{t.conditionAutism}</SelectItem>
@@ -1416,6 +1442,16 @@ const context = useMemo(
                         <SelectItem value="other">{t.conditionOther}</SelectItem>
                       </SelectContent>
                     </Select>
+                    {profileCondition === "other" && (
+                      <Input
+                        dir={language === "ar" ? "rtl" : undefined}
+                        value={profileConditionOther}
+                        onChange={(e) => setProfileConditionOther(e.target.value)}
+                        placeholder={language === "ar" ? "يرجى التحديد..." : "Please specify..."}
+                        className="rounded-xl mt-1"
+                        disabled={profileSubmitted}
+                      />
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -1432,6 +1468,7 @@ const context = useMemo(
                     { id: "playground", emoji: "🛝", label: "Playground", arLabel: "ملعب", desc: t.playgroundDesc },
                     { id: "classroom", emoji: "🏫", label: "Classroom", arLabel: "فصل دراسي", desc: t.classroomDesc },
                     { id: "majlis", emoji: "🏡", label: "Majlis", arLabel: "مجلس", desc: t.majlisDesc },
+                    { id: "home", emoji: "🏠", label: "Home", arLabel: "المنزل", desc: t.homeDesc },
                   ].map((loc) => {
                     const isSelected = selectedLocationId === loc.id;
                     return (
@@ -1604,8 +1641,8 @@ const context = useMemo(
                   <div className="space-y-1 flex-1">
                     <Label dir={language === "ar" ? "ltr" : undefined} className={`flex items-center gap-1 ${language === "ar" ? "flex-row-reverse justify-end" : ""}`}><MapPin className="h-4 w-4" /> {t.locationLabel}</Label>
                     <div dir={language === "ar" ? "ltr" : undefined} className={`flex items-center gap-2 rounded-xl border bg-slate-50 px-3 py-2 text-sm text-slate-700 ${language === "ar" ? "flex-row-reverse" : ""}`}>
-                      {{ cafe: "☕", playground: "🛝", classroom: "🏫", majlis: "🏡" }[location] ?? "📍"}
-                      <span>{{ cafe: t.locCafe, playground: t.locPlayground, classroom: t.locClassroom, majlis: t.locMajlis }[location] ?? location}</span>
+                      {{ cafe: "☕", playground: "🛝", classroom: "🏫", majlis: "🏡", home: "🏠" }[location] ?? "📍"}
+                      <span>{{ cafe: t.locCafe, playground: t.locPlayground, classroom: t.locClassroom, majlis: t.locMajlis, home: t.locHome }[location] ?? location}</span>
                     </div>
                   </div>
                   <div className="space-y-1 flex-1">
@@ -1744,21 +1781,6 @@ const context = useMemo(
                 </div>
               </div>
               <CardContent className="space-y-4">
-                {/* Scenario prompt */}
-                {(() => {
-                  const scenarios: Record<string, { en: string; ar: string }> = {
-                    cafe:       { en: "You are at a café and want to ask for something to drink.", ar: "أنت في مقهى وتريد أن تطلب شيئاً للشرب." },
-                    playground: { en: "You see other children playing and want to join them.", ar: "ترى أطفالاً آخرين يلعبون وتريد الانضمام إليهم." },
-                    classroom:  { en: "You are doing your classroom work but need the teacher's help.", ar: "أنت تؤدي عملك في الصف لكنك تحتاج مساعدة المعلم." },
-                    majlis:     { en: "You are with guests and want to offer something.", ar: "أنت مع ضيوف وتريد أن تقدم شيئاً." },
-                  };
-                  const s = selectedLocationId ? scenarios[selectedLocationId] : null;
-                  return s ? (
-                    <div className={`rounded-2xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800 leading-relaxed ${language === "ar" ? "text-right" : ""}`}>
-                      {s[language === "ar" ? "ar" : "en"]}
-                    </div>
-                  ) : null;
-                })()}
                 {/* Sentence strip */}
                 <div className="space-y-1">
                   <Label className={`text-xs font-medium text-muted-foreground ${language === "ar" ? "block text-right" : ""}`}>{language === "ar" ? "رسالتك" : "Your message"}</Label>
@@ -1796,7 +1818,7 @@ const context = useMemo(
                   </div>
                   {location && AAC_BOARD[location] && (
                     <div>
-                      <Label className={`text-xs font-medium text-muted-foreground uppercase tracking-wide ${language === "ar" ? "block text-right" : ""}`}>{{ cafe: language === "ar" ? "مقهى" : "Café", playground: language === "ar" ? "ملعب" : "Playground", classroom: language === "ar" ? "فصل" : "Classroom", majlis: language === "ar" ? "مجلس" : "Majlis" }[location]}</Label>
+                      <Label className={`text-xs font-medium text-muted-foreground uppercase tracking-wide ${language === "ar" ? "block text-right" : ""}`}>{{ cafe: language === "ar" ? "مقهى" : "Café", playground: language === "ar" ? "ملعب" : "Playground", classroom: language === "ar" ? "فصل" : "Classroom", majlis: language === "ar" ? "مجلس" : "Majlis", home: language === "ar" ? "المنزل" : "Home" }[location]}</Label>
                       <div className="grid grid-cols-4 gap-1.5 mt-1.5">
                         {AAC_BOARD[location].map((tile) => (
                           <button key={tile.en} type="button" onClick={() => setAacSelection(prev => [...prev, tile])}
@@ -1817,6 +1839,15 @@ const context = useMemo(
                     <button type="button" onClick={() => setImageStyleMode("realistic")} className={`px-4 py-2 text-sm font-medium transition-colors ${imageStyleMode === "realistic" ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>📷 {t.imageStyleRealistic}</button>
                   </div>
                 </div>
+                {profileCondition && (
+                  <div className={`space-y-1 ${language === "ar" ? "flex flex-col items-end" : ""}`}>
+                    <Label className={`text-xs text-muted-foreground ${language === "ar" ? "block text-right" : ""}`}>{t.includeConditionLabel}</Label>
+                    <div dir={language === "ar" ? "ltr" : undefined} className={`flex rounded-xl border overflow-hidden w-fit ${language === "ar" ? "flex-row-reverse" : ""}`}>
+                      <button type="button" onClick={() => setIncludeCondition(true)} className={`px-4 py-2 text-sm font-medium transition-colors ${includeCondition ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>{t.yes}</button>
+                      <button type="button" onClick={() => setIncludeCondition(false)} className={`px-4 py-2 text-sm font-medium transition-colors ${!includeCondition ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>{t.no}</button>
+                    </div>
+                  </div>
+                )}
                 <div dir={language === "ar" ? "ltr" : undefined} className={`flex gap-2 ${language === "ar" ? "flex-row-reverse" : ""}`}>
                   <Button className="rounded-full bg-blue-600 hover:bg-blue-500" onClick={runVerifyImage} disabled={aacSelection.length === 0 || verifyLoading}>
                     {verifyLoading ? "…" : t.generateImage}
