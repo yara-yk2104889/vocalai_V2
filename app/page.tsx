@@ -344,7 +344,10 @@ const SAMPLE_IMAGES: Record<
       arLabel: "مجلس عائلي",
     },
   ],
-  home: [],
+  home: [
+    { src: "/samples/home/bed.jpg", label: "Bed", arLabel: "سرير" },
+    { src: "/samples/home/sink.avif", label: "Sink", arLabel: "مغسلة" },
+  ],
 };
 
 
