@@ -1241,7 +1241,10 @@ const context = useMemo(
             : [{ match: refinementKw.trim() ? "no" : "yes" }],
           evaluationA: likertA,
           commentsA,
-          verifyDecision,
+          verifyDecision: {
+            decision: verifyDecision,
+            ...(imageRefinementKw.trim() ? { refinementKeywords: imageRefinementKw.trim() } : {}),
+          },
           verifyImageUrl: savedImageUrl,
           imageStyle: imageStyleMode,
           aacSelection: aacSelection.map(t => ({ en: t.en, ar: t.ar })),
