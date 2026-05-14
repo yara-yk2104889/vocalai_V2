@@ -792,7 +792,7 @@ const AAC_BOARD: Record<string, AacTile[]> = {
   home: [
     { emoji: "🛋️", en: "Relax", ar: "استرح" },
     { emoji: "😴", en: "Sleep", ar: "نوم" },
-    { emoji: "🚽", en: "Toilet", ar: "حمام" },
+    { emoji: "👕", en: "Clothes", ar: "ملابس" },
     { emoji: "🤕", en: "Hurt", ar: "ألم" },
     { emoji: "🎮", en: "Game", ar: "لعبة" },
     { emoji: "📖", en: "Book", ar: "كتاب" },
