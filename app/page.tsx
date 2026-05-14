@@ -179,14 +179,14 @@ function toBase64(file: File): Promise<string> {
 }
 
 const api = {
-  async generateImage({ prompt, style, location, gender, condition, age, language }: { prompt: string; style: "realistic" | "cartoon" | "symbolic"; location?: string; gender?: string; condition?: string; age?: string; language?: string }) {
+  async generateImage({ prompt, style, location, gender, condition, age, language, appearance }: { prompt: string; style: "realistic" | "cartoon" | "symbolic"; location?: string; gender?: string; condition?: string; age?: string; language?: string; appearance?: string }) {
     // SWITCH MODELS HERE!!!
     const response = await fetch("/api/generate-image", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ prompt, style, location, gender, condition, age, language }),
+      body: JSON.stringify({ prompt, style, location, gender, condition, age, language, appearance }),
     });
 
     if (!response.ok) {
@@ -470,6 +470,11 @@ const UI_LABELS = {
     profileAgeLabel: "Age",
     profileGenderLabel: "Gender",
     profileConditionLabel: "Primary Diagnosis",
+    profilePhotoToggle: "Personalize AAC images using my photo",
+    profilePhotoDesc: "Optional: take or upload a photo so generated images visually resemble the user.",
+    profilePhotoAnalyzing: "Analyzing photo…",
+    profilePhotoReady: "Photo analyzed ✓ — images will be personalized",
+    profilePhotoFailed: "Analysis failed — will use profile info instead",
     partnerRoleLabel: "Communication partner",
     sentenceStyleLabel: "Sentence style",
     chooseLocation: "Choose a location",
@@ -652,6 +657,11 @@ const UI_LABELS = {
     profileAgeLabel: "العمر",
     profileGenderLabel: "الجنس",
     profileConditionLabel: "التشخيص الأساسي",
+    profilePhotoToggle: "تخصيص صور AAC باستخدام صورتي",
+    profilePhotoDesc: "اختياري: التقط صورة أو حمّلها لتخصيص الصور المولّدة.",
+    profilePhotoAnalyzing: "جارٍ تحليل الصورة…",
+    profilePhotoReady: "تم تحليل الصورة ✓ — سيتم تخصيص الصور",
+    profilePhotoFailed: "فشل التحليل — سيتم استخدام بيانات الملف الشخصي",
     partnerRoleLabel: "شريك التواصل",
     sentenceStyleLabel: "أسلوب الجملة",
     chooseLocation: "اختر موقعاً",
@@ -876,6 +886,19 @@ export default function QatarAACProbePrototype() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Profile photo personalization
+  const [profilePhotoEnabled, setProfilePhotoEnabled] = useState(false);
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState("");
+  const [profileAppearance, setProfileAppearance] = useState("");
+  const [profileAppearanceLoading, setProfileAppearanceLoading] = useState(false);
+  const [profilePhotoInputMode, setProfilePhotoInputMode] = useState<"upload" | "camera">("upload");
+  const [profilePhotoCameraOn, setProfilePhotoCameraOn] = useState(false);
+  const [profilePhotoCameraStream, setProfilePhotoCameraStream] = useState<MediaStream | null>(null);
+  const [profilePhotoFacingMode, setProfilePhotoFacingMode] = useState<"user" | "environment">("user");
+  const profileVideoRef = useRef<HTMLVideoElement | null>(null);
+  const profileCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const profileFileInputRef = useRef<HTMLInputElement | null>(null);
+
   const style = simpleStyle ? "simple" : "rich";
   const t = UI_LABELS[language as "en" | "ar"] ?? UI_LABELS.en;
 
@@ -903,6 +926,13 @@ const context = useMemo(
       videoRef.current.play().catch(() => {});
     }
   }, [cameraOn, cameraStream]);
+
+  useEffect(() => {
+    if (profilePhotoCameraOn && profilePhotoCameraStream && profileVideoRef.current) {
+      profileVideoRef.current.srcObject = profilePhotoCameraStream;
+      profileVideoRef.current.play().catch(() => {});
+    }
+  }, [profilePhotoCameraOn, profilePhotoCameraStream]);
 
   useEffect(() => {
     return () => {
@@ -1005,6 +1035,65 @@ const context = useMemo(
     setCameraOn(false);
   }
 
+  async function startProfileCamera(facing: "user" | "environment" = profilePhotoFacingMode) {
+    if (profilePhotoCameraStream) {
+      profilePhotoCameraStream.getTracks().forEach((t) => t.stop());
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: false });
+      setProfilePhotoFacingMode(facing);
+      setProfilePhotoCameraStream(stream);
+      setProfilePhotoCameraOn(true);
+    } catch {
+      alert(language === "ar" ? "لم نتمكن من الوصول إلى الكاميرا." : "Could not access the camera.");
+    }
+  }
+
+  function stopProfileCamera() {
+    if (profilePhotoCameraStream) {
+      profilePhotoCameraStream.getTracks().forEach((t) => t.stop());
+    }
+    setProfilePhotoCameraStream(null);
+    setProfilePhotoCameraOn(false);
+  }
+
+  function captureProfilePhoto() {
+    if (!profileVideoRef.current || !profileCanvasRef.current) return;
+    const video = profileVideoRef.current;
+    const canvas = profileCanvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    if (profilePhotoFacingMode === "user") {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL("image/png");
+    stopProfileCamera();
+    setProfilePhotoPreview(dataUrl);
+    analyzeProfilePhoto(dataUrl);
+  }
+
+  async function analyzeProfilePhoto(dataUrl: string) {
+    setProfileAppearanceLoading(true);
+    setProfileAppearance("");
+    try {
+      const res = await fetch("/api/analyze-appearance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: dataUrl }),
+      });
+      const data = await res.json();
+      if (data.appearance) setProfileAppearance(data.appearance);
+    } catch {
+      // Silently fall back to profile-based generation
+    } finally {
+      setProfileAppearanceLoading(false);
+    }
+  }
+
   async function runVerifyImage() {
     setVerifyLoading(true);
     setVerifyDecision(null);
@@ -1018,6 +1107,7 @@ const context = useMemo(
         condition: includeCondition ? (profileCondition === "other" && profileConditionOther.trim() ? profileConditionOther.trim() : profileCondition) : undefined,
         age: profileAge,
         language,
+        appearance: profilePhotoEnabled && profileAppearance ? profileAppearance : undefined,
       });
       setVerifyImageUrl(out.url);
     } finally {
@@ -1156,7 +1246,7 @@ const context = useMemo(
         (texts as string[]).map(async (text: string, i: number) => {
           // First alternative includes profile context; the other two are generic
           const contextPayload = i === 0
-            ? { prompt: text, style: imageStyleMode, location, gender: profileGender, condition: includeCondition ? (profileCondition === "other" && profileConditionOther.trim() ? profileConditionOther.trim() : profileCondition) : undefined, age: profileAge, language }
+            ? { prompt: text, style: imageStyleMode, location, gender: profileGender, condition: includeCondition ? (profileCondition === "other" && profileConditionOther.trim() ? profileConditionOther.trim() : profileCondition) : undefined, age: profileAge, language, appearance: profilePhotoEnabled && profileAppearance ? profileAppearance : undefined }
             : { prompt: text, style: imageStyleMode, language };
           const r = await fetch("/api/generate-image", {
             method: "POST",
@@ -1251,6 +1341,10 @@ const context = useMemo(
     setProfileGender("");
     setProfileCondition("");
     setProfileConditionOther("");
+    setProfilePhotoEnabled(false);
+    setProfilePhotoPreview("");
+    setProfileAppearance("");
+    setProfilePhotoInputMode("upload");
     setLocation("playground");
     setIntention("question");
     setGoal("ask dose");
@@ -1487,6 +1581,103 @@ const context = useMemo(
               </CardContent>
             </Card>
             </div>
+
+            {/* Profile photo personalization toggle */}
+            {!profileSubmitted && (
+              <div className="rounded-2xl border bg-slate-50 p-4 space-y-3">
+                <button
+                  type="button"
+                  onClick={() => { setProfilePhotoEnabled((v) => !v); if (profilePhotoEnabled) { stopProfileCamera(); setProfilePhotoPreview(""); setProfileAppearance(""); } }}
+                  className={`w-full flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${profilePhotoEnabled ? "bg-blue-700 text-white" : "bg-white border text-slate-700 hover:bg-blue-50"}`}
+                >
+                  <span className="text-base">📸</span>
+                  <span className={language === "ar" ? "flex-1 text-right" : "flex-1 text-left"}>{t.profilePhotoToggle}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${profilePhotoEnabled ? "bg-white/20" : "bg-slate-100 text-slate-500"}`}>{profilePhotoEnabled ? t.yes : t.no}</span>
+                </button>
+
+                {profilePhotoEnabled && (
+                  <div className="space-y-3">
+                    <p className={`text-xs text-muted-foreground ${language === "ar" ? "text-right" : ""}`}>{t.profilePhotoDesc}</p>
+
+                    {/* Input mode tabs */}
+                    <div dir={language === "ar" ? "ltr" : undefined} className={`flex rounded-xl border overflow-hidden text-sm font-medium ${language === "ar" ? "flex-row-reverse" : ""}`}>
+                      {(["upload", "camera"] as const).map((mode) => {
+                        const labels = { upload: language === "ar" ? "تحميل" : "Upload", camera: language === "ar" ? "كاميرا" : "Camera" };
+                        const icons = { upload: "📁", camera: "📷" };
+                        return (
+                          <button key={mode} type="button"
+                            onClick={() => { if (mode !== profilePhotoInputMode) { if (profilePhotoInputMode === "camera") stopProfileCamera(); setProfilePhotoInputMode(mode); } }}
+                            className={`flex-1 py-2 flex items-center justify-center gap-1.5 transition-colors ${profilePhotoInputMode === mode ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-blue-50"}`}
+                          >{icons[mode]} {labels[mode]}</button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Upload mode */}
+                    {profilePhotoInputMode === "upload" && !profilePhotoPreview && (
+                      <input ref={profileFileInputRef} type="file" accept="image/*"
+                        className="text-sm w-full"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            const dataUrl = ev.target?.result as string;
+                            setProfilePhotoPreview(dataUrl);
+                            analyzeProfilePhoto(dataUrl);
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    )}
+
+                    {/* Camera mode */}
+                    {profilePhotoInputMode === "camera" && !profilePhotoPreview && (
+                      <div className="space-y-2">
+                        {!profilePhotoCameraOn ? (
+                          <Button type="button" onClick={() => startProfileCamera()} className="rounded-full w-full">
+                            <Camera className="mr-2 h-4 w-4" />{language === "ar" ? "تشغيل الكاميرا" : "Start camera"}
+                          </Button>
+                        ) : (
+                          <div className="relative overflow-hidden rounded-2xl border bg-black">
+                            <video ref={profileVideoRef} autoPlay playsInline muted style={profilePhotoFacingMode === "user" ? { transform: "scaleX(-1)" } : undefined} className="h-auto w-full" />
+                            <div className="absolute bottom-4 inset-x-0 flex items-center justify-center gap-8">
+                              <button type="button" onClick={stopProfileCamera} className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white"><CameraOff className="h-5 w-5" /></button>
+                              <button type="button" onClick={captureProfilePhoto} className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-white/30 backdrop-blur-sm"><div className="h-12 w-12 rounded-full bg-white" /></button>
+                              <button type="button" onClick={() => startProfileCamera(profilePhotoFacingMode === "user" ? "environment" : "user")} className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white"><RefreshCw className="h-5 w-5" /></button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <canvas ref={profileCanvasRef} className="hidden" />
+
+                    {/* Preview + status */}
+                    {profilePhotoPreview && (
+                      <div className="space-y-2">
+                        <img src={profilePhotoPreview} className="rounded-xl w-full max-w-[200px] mx-auto block" alt="profile" />
+                        {profileAppearanceLoading && (
+                          <div className={`flex items-center gap-2 text-xs text-blue-700 ${language === "ar" ? "flex-row-reverse" : ""}`}>
+                            <RefreshCw className="h-3 w-3 animate-spin" />{t.profilePhotoAnalyzing}
+                          </div>
+                        )}
+                        {!profileAppearanceLoading && profileAppearance && (
+                          <p className={`text-xs text-green-700 font-medium ${language === "ar" ? "text-right" : ""}`}>{t.profilePhotoReady}</p>
+                        )}
+                        {!profileAppearanceLoading && profilePhotoPreview && !profileAppearance && (
+                          <p className={`text-xs text-amber-600 ${language === "ar" ? "text-right" : ""}`}>{t.profilePhotoFailed}</p>
+                        )}
+                        <Button variant="destructive" className="rounded-full text-xs h-8"
+                          onClick={() => { setProfilePhotoPreview(""); setProfileAppearance(""); if (profileFileInputRef.current) profileFileInputRef.current.value = ""; }}>
+                          {language === "ar" ? "إزالة الصورة" : "Remove photo"}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {!profileSubmitted ? (
               <Button

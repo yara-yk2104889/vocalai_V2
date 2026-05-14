@@ -7,7 +7,7 @@ const client = new OpenAI({
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { prompt, style, location, gender, condition, age, language } = body;
+    const { prompt, style, location, gender, condition, age, language, appearance } = body;
 
     const locationLabel: Record<string, string> = {
       cafe: "a café",
@@ -21,6 +21,7 @@ export async function POST(req: Request) {
       gender && `User gender: ${gender}`,
       condition && `User condition: ${condition}`,
       age && `User age: ${age}`,
+      appearance && `User appearance: ${appearance}`,
     ].filter(Boolean).join("; ");
 
     const styleInstructions = style === "cartoon"
