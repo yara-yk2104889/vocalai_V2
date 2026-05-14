@@ -70,6 +70,7 @@ export async function POST(req: Request) {
             Generate a visual image that naturally represents this combined meaning.
             ${contextClues ? `Context about the user and setting: ${contextClues}.` : ""}
             ${appearance ? `IMPORTANT — appearance consistency: The character representing the user MUST reflect ALL of the following appearance attributes throughout the entire image: ${appearance}. If a head covering (e.g. hijab) is mentioned, ALL clothing must be consistent with modest dress — covered arms, no exposed hair. Do NOT mix cultural or religious clothing markers with inconsistent attire. Maintain coherent, respectful cultural representation.` : ""}
+            ${condition === "autism" ? `IMPORTANT — facial expressions: Do NOT depict sad, distressed, crying, or negative facial expressions on any character in the image. All characters must have neutral or positive (calm, content, or happy) expressions only.` : ""}
 
             Requirements:
             ${sharedRequirements}

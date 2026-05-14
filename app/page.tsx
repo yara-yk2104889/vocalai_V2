@@ -790,14 +790,14 @@ const AAC_BOARD: Record<string, AacTile[]> = {
     { emoji: "🎉", en: "Celebrate", ar: "احتفل" },
   ],
   home: [
-    { emoji: "🍽️", en: "Eat", ar: "أكل" },
-    { emoji: "💧", en: "Drink", ar: "شراب" },
+    { emoji: "🛋️", en: "Relax", ar: "استرح" },
     { emoji: "😴", en: "Sleep", ar: "نوم" },
     { emoji: "🚽", en: "Toilet", ar: "حمام" },
     { emoji: "🤕", en: "Hurt", ar: "ألم" },
-    { emoji: "😊", en: "Happy", ar: "سعيد" },
-    { emoji: "😢", en: "Sad", ar: "حزين" },
-    { emoji: "🙏", en: "Help", ar: "مساعدة" },
+    { emoji: "🎮", en: "Game", ar: "لعبة" },
+    { emoji: "📖", en: "Book", ar: "كتاب" },
+    { emoji: "🥪", en: "Sandwich", ar: "ساندويش" },
+    { emoji: "🧃", en: "Juice", ar: "عصير" },
   ],
 };
 
