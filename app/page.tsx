@@ -811,6 +811,8 @@ export default function QatarAACProbePrototype() {
   const [inputMode, setInputMode] = useState<"upload" | "sample" | "camera">(
     "upload",
   );
+  const [speakLoading, setSpeakLoading] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [imagePreview, setImagePreview] = useState("");
   const [location, setLocation] = useState("playground");
   const [goal, setGoal] = useState("ask dose");
@@ -1104,67 +1106,38 @@ const context = useMemo(
     }
   }
 
-  function speakSelectedSentence() {
-    if (!selectedSentence || typeof window === "undefined") return;
-    window.speechSynthesis.cancel();
-
-    const isArabic = language === "ar";
-    const isFemale = profileGender === "female";
-    const isMale = profileGender === "male";
-
-    const pitch = isFemale ? 1.2 : 0.9;
-    const rate = 0.9;
-
-    const femaleVoiceNames = [
-      "Samantha", "Karen", "Moira", "Victoria", "Allison", "Susan",
-      "Zira", "Hazel", "Google UK English Female", "Microsoft Zira",
-      "Microsoft Hazel", "Fiona", "Tessa",
-    ];
-    const maleVoiceNames = [
-      "Daniel", "Alex", "Fred", "Tom", "James", "Google UK English Male",
-      "Microsoft David", "Microsoft Mark", "Lee", "Rishi",
-    ];
-
-    function pickVoiceAndSpeak() {
-      const utterance = new SpeechSynthesisUtterance(selectedSentence);
-      utterance.rate = rate;
-      utterance.pitch = pitch;
-      utterance.lang = isArabic ? "ar-SA" : "en-US";
-
-      const voices = window.speechSynthesis.getVoices();
-
-      if (isArabic) {
-        const preferred = isFemale ? ["Laila"] : isMale ? ["Maged"] : ["Laila", "Maged"];
-        const voice =
-          voices.find((v) => preferred.some((n) => v.name.includes(n))) ||
-          voices.find((v) => v.lang.startsWith("ar"));
-        if (voice) utterance.voice = voice;
-      } else {
-        const preferredNames = isFemale ? femaleVoiceNames : isMale ? maleVoiceNames : femaleVoiceNames;
-        const voice =
-          voices.find((v) => preferredNames.some((n) => v.name.includes(n))) ||
-          voices.find((v) => v.lang.startsWith("en") && v.localService) ||
-          voices.find((v) => v.lang.startsWith("en"));
-        if (voice) utterance.voice = voice;
+  async function speakSelectedSentence() {
+    if (!selectedSentence || speakLoading) return;
+    stopSpeaking();
+    setSpeakLoading(true);
+    try {
+      const res = await fetch("/api/speak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: selectedSentence, gender: profileGender, age: profileAge, language }),
+      });
+      if (!res.ok) throw new Error("Speech generation failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        URL.revokeObjectURL(audioRef.current.src);
       }
-
-      window.speechSynthesis.speak(utterance);
-    }
-
-    const voices = window.speechSynthesis.getVoices();
-    if (voices.length > 0) {
-      pickVoiceAndSpeak();
-    } else {
-      window.speechSynthesis.onvoiceschanged = () => {
-        window.speechSynthesis.onvoiceschanged = null;
-        pickVoiceAndSpeak();
-      };
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.play();
+    } catch (err) {
+      console.error(err);
+      alert(language === "ar" ? "فشل توليد الصوت." : "Speech generation failed.");
+    } finally {
+      setSpeakLoading(false);
     }
   }
 
   function stopSpeaking() {
-    if (typeof window !== "undefined") {
-      window.speechSynthesis.cancel();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
     }
   }
 
@@ -1725,8 +1698,8 @@ const context = useMemo(
                     {selectedSentence || <span className="text-muted-foreground text-sm font-normal">{t.selectSentenceHint}</span>}
                   </div>
                   <div dir={language === "ar" ? "ltr" : undefined} className={`flex gap-2 ${language === "ar" ? "flex-row-reverse" : ""}`}>
-                    <Button className="rounded-full" disabled={!selectedSentence} onClick={speakSelectedSentence}><Volume2 className="mr-2 h-4 w-4" /> {t.speak}</Button>
-                    <Button variant="secondary" className="rounded-full" onClick={stopSpeaking}><Square className="mr-2 h-4 w-4" /> {t.stop}</Button>
+                    <Button className="rounded-full" disabled={!selectedSentence || speakLoading} onClick={speakSelectedSentence}>{speakLoading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Volume2 className="mr-2 h-4 w-4" />}{speakLoading ? (language === "ar" ? "جارٍ التوليد…" : "Generating…") : t.speak}</Button>
+                    <Button variant="secondary" className="rounded-full" onClick={stopSpeaking} disabled={speakLoading}><Square className="mr-2 h-4 w-4" /> {t.stop}</Button>
                   </div>
                 </div>
               </CardContent>
