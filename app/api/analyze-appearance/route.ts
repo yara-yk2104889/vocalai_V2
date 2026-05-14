@@ -12,21 +12,30 @@ export async function POST(req: Request) {
 
     const response = await client.chat.completions.create({
       model: "gpt-4o",
-      max_tokens: 120,
+      max_tokens: 160,
       messages: [
         {
           role: "system",
           content: `You extract NON-IDENTIFYING visual appearance attributes from a photo to personalize AAC (Augmentative and Alternative Communication) avatar-style images.
-Focus ONLY on: approximate age group (child/teen/young adult/adult/elderly), apparent gender presentation, hair color and style, skin tone (light/medium/olive/dark), glasses (yes/no), and any clearly visible assistive devices (wheelchair, walker, hearing aids, etc.).
-Do NOT identify the person. Do NOT describe facial features in detail. Do NOT label ethnicity.
-Return ONE concise sentence under 25 words suitable as an image prompt fragment.
-Example: "Young child with short dark curly hair, medium skin tone, wearing glasses, seated in a wheelchair."`,
+
+Focus on:
+- Approximate age group (child/teen/young adult/adult/elderly)
+- Apparent gender presentation
+- Hair color and style, or head covering if present
+- Skin tone (light/medium/olive/dark)
+- Glasses (yes/no)
+- Visible assistive devices (wheelchair, walker, hearing aids, etc.)
+- Clothing style and cultural markers — if the person wears a hijab, niqab, traditional dress, or other culturally significant attire, describe it explicitly (e.g. "wearing a hijab and modest long-sleeved clothing", "wearing a thobe", "wearing traditional embroidered dress"). These cues are critical for respectful, consistent representation.
+
+Do NOT identify the person. Do NOT describe facial features. Do NOT label ethnicity.
+Return ONE concise sentence under 35 words capturing all relevant attributes including cultural/clothing cues.
+Example: "Young woman with olive skin tone wearing a hijab and modest long-sleeved clothing, seated in a wheelchair."`,
         },
         {
           role: "user",
           content: [
             { type: "image_url", image_url: { url: image } },
-            { type: "text", text: "Describe appearance attributes for AAC image personalization. One sentence only." },
+            { type: "text", text: "Describe appearance attributes for AAC image personalization, including any cultural clothing or head coverings. One sentence only." },
           ],
         },
       ],

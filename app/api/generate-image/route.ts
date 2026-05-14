@@ -69,6 +69,7 @@ export async function POST(req: Request) {
             For example: "sad don't understand" means the user is sad because they don't understand something; "I want water" means the user wants a drink of water.
             Generate a visual image that naturally represents this combined meaning.
             ${contextClues ? `Context about the user and setting: ${contextClues}.` : ""}
+            ${appearance ? `IMPORTANT — appearance consistency: The character representing the user MUST reflect ALL of the following appearance attributes throughout the entire image: ${appearance}. If a head covering (e.g. hijab) is mentioned, ALL clothing must be consistent with modest dress — covered arms, no exposed hair. Do NOT mix cultural or religious clothing markers with inconsistent attire. Maintain coherent, respectful cultural representation.` : ""}
 
             Requirements:
             ${sharedRequirements}
