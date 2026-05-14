@@ -1565,20 +1565,24 @@ const context = useMemo(
 
                     {/* Upload mode */}
                     {profilePhotoInputMode === "upload" && !profilePhotoPreview && (
-                      <input ref={profileFileInputRef} type="file" accept="image/*"
-                        className="text-sm w-full"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = (ev) => {
-                            const dataUrl = ev.target?.result as string;
-                            setProfilePhotoPreview(dataUrl);
-                            analyzeProfilePhoto(dataUrl);
-                          };
-                          reader.readAsDataURL(file);
-                        }}
-                      />
+                      <label className="flex items-center justify-center gap-2 w-full rounded-xl border-2 border-dashed border-blue-200 bg-white px-4 py-6 text-sm text-slate-600 cursor-pointer hover:bg-blue-50 hover:border-blue-400 transition-colors">
+                        <span>📁</span>
+                        <span>{language === "ar" ? "اختر صورة من جهازك" : "Choose a photo from your device"}</span>
+                        <input ref={profileFileInputRef} type="file" accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              const dataUrl = ev.target?.result as string;
+                              setProfilePhotoPreview(dataUrl);
+                              analyzeProfilePhoto(dataUrl);
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                        />
+                      </label>
                     )}
 
                     {/* Camera mode */}
