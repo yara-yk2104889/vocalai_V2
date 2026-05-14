@@ -1532,56 +1532,6 @@ const context = useMemo(
               </CardContent>
             </Card>
 
-            <Card className="rounded-none shadow-none border-0">
-              <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-3 flex items-center gap-3">
-                <CardTitle className="text-base">{t.chooseLocation} <span className="text-red-500">*</span></CardTitle>
-              </div>
-              <CardContent className="pt-3 pb-3">
-                <div className="grid gap-2">
-                  {[
-                    { id: "cafe", emoji: "☕", label: "Café", arLabel: "مقهى", desc: t.cafeDesc },
-                    { id: "playground", emoji: "🛝", label: "Playground", arLabel: "ملعب", desc: t.playgroundDesc },
-                    { id: "classroom", emoji: "🏫", label: "Classroom", arLabel: "فصل دراسي", desc: t.classroomDesc },
-                    { id: "majlis", emoji: "🏡", label: "Majlis", arLabel: "مجلس", desc: t.majlisDesc },
-                    { id: "home", emoji: "🏠", label: "Home", arLabel: "المنزل", desc: t.homeDesc },
-                  ].map((loc) => {
-                    const isSelected = selectedLocationId === loc.id;
-                    return (
-                      <button
-                        key={loc.id}
-                        type="button"
-                        onClick={() => { if (!profileSubmitted) { setSelectedLocationId(loc.id); setLocation(loc.id); } }}
-                        disabled={profileSubmitted}
-                        dir="ltr"
-                        className={`rounded-2xl border-2 px-3 py-2.5 transition-all flex items-center gap-3 ${isSelected ? "border-blue-700 bg-blue-50 ring-2 ring-blue-700/20" : "border-transparent bg-slate-50 hover:border-blue-200 hover:bg-blue-50"} ${profileSubmitted ? "cursor-default" : ""}`}
-                      >
-                        {language === "ar" ? (
-                          <>
-                            <div className="flex-1 text-right">
-                              <div className="font-semibold text-sm">{loc.arLabel}</div>
-                              <p className="text-xs text-muted-foreground leading-tight">{loc.desc}</p>
-                            </div>
-                            <span className="text-2xl shrink-0">{loc.emoji}</span>
-                            {isSelected && <Check className="ml-auto h-4 w-4 text-blue-700 shrink-0" />}
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-2xl shrink-0">{loc.emoji}</span>
-                            <div className="flex-1">
-                              <div className="font-semibold text-sm">{loc.label}</div>
-                              <p className="text-xs text-muted-foreground leading-tight">{loc.desc}</p>
-                            </div>
-                            {isSelected && <Check className="ml-auto h-4 w-4 text-blue-700 shrink-0" />}
-                          </>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-            </div>
-
             {/* Profile photo personalization toggle */}
             {!profileSubmitted && (
               <div className="rounded-2xl border bg-slate-50 p-4 space-y-3">
@@ -1678,6 +1628,56 @@ const context = useMemo(
                 )}
               </div>
             )}
+
+            <Card className="rounded-none shadow-none border-0">
+              <div className="bg-gradient-to-r from-blue-50 to-sky-50 border-b px-6 py-3 flex items-center gap-3">
+                <CardTitle className="text-base">{t.chooseLocation} <span className="text-red-500">*</span></CardTitle>
+              </div>
+              <CardContent className="pt-3 pb-3">
+                <div className="grid gap-2">
+                  {[
+                    { id: "cafe", emoji: "☕", label: "Café", arLabel: "مقهى", desc: t.cafeDesc },
+                    { id: "playground", emoji: "🛝", label: "Playground", arLabel: "ملعب", desc: t.playgroundDesc },
+                    { id: "classroom", emoji: "🏫", label: "Classroom", arLabel: "فصل دراسي", desc: t.classroomDesc },
+                    { id: "majlis", emoji: "🏡", label: "Majlis", arLabel: "مجلس", desc: t.majlisDesc },
+                    { id: "home", emoji: "🏠", label: "Home", arLabel: "المنزل", desc: t.homeDesc },
+                  ].map((loc) => {
+                    const isSelected = selectedLocationId === loc.id;
+                    return (
+                      <button
+                        key={loc.id}
+                        type="button"
+                        onClick={() => { if (!profileSubmitted) { setSelectedLocationId(loc.id); setLocation(loc.id); } }}
+                        disabled={profileSubmitted}
+                        dir="ltr"
+                        className={`rounded-2xl border-2 px-3 py-2.5 transition-all flex items-center gap-3 ${isSelected ? "border-blue-700 bg-blue-50 ring-2 ring-blue-700/20" : "border-transparent bg-slate-50 hover:border-blue-200 hover:bg-blue-50"} ${profileSubmitted ? "cursor-default" : ""}`}
+                      >
+                        {language === "ar" ? (
+                          <>
+                            <div className="flex-1 text-right">
+                              <div className="font-semibold text-sm">{loc.arLabel}</div>
+                              <p className="text-xs text-muted-foreground leading-tight">{loc.desc}</p>
+                            </div>
+                            <span className="text-2xl shrink-0">{loc.emoji}</span>
+                            {isSelected && <Check className="ml-auto h-4 w-4 text-blue-700 shrink-0" />}
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-2xl shrink-0">{loc.emoji}</span>
+                            <div className="flex-1">
+                              <div className="font-semibold text-sm">{loc.label}</div>
+                              <p className="text-xs text-muted-foreground leading-tight">{loc.desc}</p>
+                            </div>
+                            {isSelected && <Check className="ml-auto h-4 w-4 text-blue-700 shrink-0" />}
+                          </>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+            </div>
 
             {!profileSubmitted ? (
               <Button
