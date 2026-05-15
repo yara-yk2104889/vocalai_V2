@@ -172,8 +172,21 @@ const likertLabelsAr = {
 function toBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
     reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const MAX = 1024;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.85));
+      };
+      img.src = String(reader.result);
+    };
     reader.readAsDataURL(file);
   });
 }
@@ -1012,7 +1025,7 @@ const context = useMemo(
     }
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    const dataUrl = canvas.toDataURL("image/png");
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
     setImagePreview(dataUrl);
     setImageFile(null);
     setKeywords([]);
@@ -1061,7 +1074,7 @@ const context = useMemo(
       ctx.scale(-1, 1);
     }
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL("image/png");
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
     stopProfileCamera();
     setProfilePhotoPreview(dataUrl);
     analyzeProfilePhoto(dataUrl);
@@ -1628,13 +1641,10 @@ const context = useMemo(
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (!file) return;
-                            const reader = new FileReader();
-                            reader.onload = (ev) => {
-                              const dataUrl = ev.target?.result as string;
+                            toBase64(file).then((dataUrl) => {
                               setProfilePhotoPreview(dataUrl);
                               analyzeProfilePhoto(dataUrl);
-                            };
-                            reader.readAsDataURL(file);
+                            });
                           }}
                         />
                       </label>
