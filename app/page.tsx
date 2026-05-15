@@ -526,7 +526,7 @@ const UI_LABELS = {
     qa1: "The generated sentences accurately matched what the AAC user wanted to say.",
     qa2: "The generated sentences made it easy to find the right thing to say.",
     qa3: "The generated sentences were relevant to the AAC user's profile.",
-    qa4: "The generated sentences fit the location context (Majlis, Classroom, Playground, Café).",
+    qa4: "The generated sentences fit the location context (Majlis, Classroom, Playground, Café, Home).",
     qa5: "I could imagine this tool being useful for an AAC user I know.",
     // Stage B — image evaluation (step 4)
     rateTitleB: "Rate the AI image suggestions",
@@ -534,7 +534,7 @@ const UI_LABELS = {
     qb1: "The image suggestions accurately represented what the AAC user wanted to express.",
     qb2: "The image suggestions made it easy to find the right picture.",
     qb3: "The image suggestions reflected the AAC user's profile and appearance.",
-    qb4: "The image suggestions fit the location context (Majlis, Classroom, Playground, Café).",
+    qb4: "The image suggestions fit the location context (Majlis, Classroom, Playground, Café, Home).",
     qb5: "I could imagine using AI image suggestions to support an AAC user I know.",
     additionalComments: "Additional comments",
     commentsPlaceholder: "Any other thoughts, reactions, or feedback...",
@@ -712,7 +712,7 @@ const UI_LABELS = {
     qa1: "الجمل المقترحة تطابقت بدقة مع ما أراد مستخدم AAC قوله.",
     qa2: "الجمل المقترحة سهّلت إيجاد الشيء المناسب لقوله.",
     qa3: "الجمل المقترحة كانت ملائمة لمستخدم AAC.",
-    qa4: "الجمل المقترحة ناسبت سياق المكان (مجلس، فصل، ملعب، مقهى).",
+    qa4: "الجمل المقترحة ناسبت سياق المكان (مجلس، فصل، ملعب، مقهى، منزل).",
     qa5: "أستطيع تخيّل أن هذه الأداة ستكون مفيدة لمستخدم AAC أعرفه.",
     // Stage B — image evaluation (step 4)
     rateTitleB: "قيّم اقتراحات صور الذكاء الاصطناعي",
@@ -720,7 +720,7 @@ const UI_LABELS = {
     qb1: "اقتراحات الصور مثّلت بدقة ما أراد مستخدم AAC التعبير عنه.",
     qb2: "اقتراحات الصور سهّلت إيجاد الصورة المناسبة.",
     qb3: "اقتراحات الصور عكست ملف مستخدم AAC ومظهره.",
-    qb4: "اقتراحات الصور ناسبت سياق المكان (مجلس، فصل، ملعب، مقهى).",
+    qb4: "اقتراحات الصور ناسبت سياق المكان (مجلس، فصل، ملعب، مقهى، منزل).",
     qb5: "أستطيع تخيّل استخدام اقتراحات صور الذكاء الاصطناعي لدعم مستخدم AAC أعرفه.",
     additionalComments: "تعليقات إضافية",
     commentsPlaceholder: "أي أفكار أو ردود فعل أو ملاحظات أخرى...",
@@ -844,6 +844,7 @@ export default function QatarAACProbePrototype() {
   const [profileSubmitted, setProfileSubmitted] = useState(false);
   const [showEvalA, setShowEvalA] = useState(false);
   const [sessionKey, setSessionKey] = useState(0);
+  const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
   const [generatedImageUrls, setGeneratedImageUrls] = useState<string[]>([]);
   const [showEvalB, setShowEvalB] = useState(false);
   const [verifyImageUrl, setVerifyImageUrl] = useState("");
@@ -1103,7 +1104,7 @@ const context = useMemo(
     const res = await fetch("/api/save-response", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ participantId, ...fields }),
+      body: JSON.stringify({ sessionId, participantId, ...fields }),
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
@@ -1418,6 +1419,7 @@ const context = useMemo(
   function resetForNewSubmission() {
     if (cameraOn) stopCamera();
     setSessionKey((k) => k + 1);
+    setSessionId(crypto.randomUUID());
     setGeneratedImageUrls([]);
     setParticipantId("");
     setParticipantIdInput("");

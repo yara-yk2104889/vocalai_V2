@@ -9,12 +9,13 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    if (!body.participantId) {
-      return Response.json({ ok: false, error: "No participantId" }, { status: 400 });
+    if (!body.sessionId) {
+      return Response.json({ ok: false, error: "No sessionId" }, { status: 400 });
     }
 
     // Build the row with only the fields that were sent in this request
-    const row: Record<string, unknown> = { participant_id: body.participantId };
+    const row: Record<string, unknown> = { session_id: body.sessionId };
+    if (body.participantId !== undefined) row.participant_id = body.participantId;
 
     if (body.profile !== undefined) row.profile = body.profile;
     if (body.location !== undefined) row.location = body.location;
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
 
     const { error } = await supabase
       .from("responses")
-      .upsert(row, { onConflict: "participant_id" });
+      .upsert(row, { onConflict: "session_id" });
 
     if (error) {
       console.error("Supabase upsert error:", error);
