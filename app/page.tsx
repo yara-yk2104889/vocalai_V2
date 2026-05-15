@@ -322,31 +322,23 @@ const SAMPLE_IMAGES: Record<
 > = {
   cafe: [
     { src: "/samples/cafe/coffee.jpg", label: "Coffee", arLabel: "قهوة" },
-    { src: "/samples/cafe/sandwich.jpg", label: "Sandwich", arLabel: "ساندويش" },
+    { src: "/samples/cafe/cookies.jpg", label: "Cookies", arLabel: "بسكويت" },
   ],
   playground: [
     { src: "/samples/playground/football.png", label: "Football", arLabel: "كرة قدم" },
     { src: "/samples/playground/swing.jpg", label: "Swing", arLabel: "أرجوحة" },
   ],
   classroom: [
-    { src: "/samples/classroom/whiteboard.webp", label: "Whiteboard", arLabel: "لوح أبيض" },
-    { src: "/samples/classroom/worksheet.webp", label: "Worksheet", arLabel: "ورقة عمل" },
+    { src: "/samples/classroom/class.jpg", label: "Classroom", arLabel: "فصل دراسي" },
+    { src: "/samples/classroom/homework.jpg", label: "Homework", arLabel: "واجب" },
   ],
   majlis: [
-    {
-      src: "/samples/gathering/coffee.jpg",
-      label: "Coffee gathering",
-      arLabel: "قهوة في التجمع",
-    },
-    {
-      src: "/samples/gathering/family_majlis.webp",
-      label: "Family majlis",
-      arLabel: "مجلس عائلي",
-    },
+    { src: "/samples/majlis/arabiccoffee.jpg", label: "Arabic coffee", arLabel: "قهوة عربية" },
+    { src: "/samples/majlis/majlis.jpg", label: "Majlis", arLabel: "مجلس" },
   ],
   home: [
-    { src: "/samples/home/bed.jpg", label: "Bed", arLabel: "سرير" },
-    { src: "/samples/home/sink.avif", label: "Sink", arLabel: "مغسلة" },
+    { src: "/samples/home/bathroom.jpg", label: "Bathroom", arLabel: "حمام" },
+    { src: "/samples/home/play.jpg", label: "Playing", arLabel: "لعب" },
   ],
 };
 
@@ -413,7 +405,6 @@ const UI_LABELS = {
     imageStyleRealistic: "Realistic",
     imageStyleCartoon: "Cartoon",
     imageStyleSymbolic: "AAC-style",
-    includeConditionLabel: "Include user profile in image generation?",
     doesMatch: "Does this image match the intended meaning?",
     yes: "Yes",
     no: "No",
@@ -601,7 +592,6 @@ const UI_LABELS = {
     imageStyleRealistic: "واقعي",
     imageStyleCartoon: "كرتوني",
     imageStyleSymbolic: "نمط AAC",
-    includeConditionLabel: "تضمين ملف المستخدم في توليد الصورة؟",
     doesMatch: "هل تطابق هذه الصورة المعنى المقصود؟",
     yes: "نعم",
     no: "لا",
@@ -842,7 +832,6 @@ export default function QatarAACProbePrototype() {
   const [showEvalB, setShowEvalB] = useState(false);
   const [verifyImageUrl, setVerifyImageUrl] = useState("");
   const [imageStyleMode, setImageStyleMode] = useState<"realistic" | "cartoon" | "symbolic">("symbolic");
-  const [includeCondition, setIncludeCondition] = useState(false);
 
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyDecision, setVerifyDecision] = useState<string | null>(null);
@@ -1104,7 +1093,7 @@ const context = useMemo(
         style: imageStyleMode,
         location,
         gender: profileGender,
-        condition: includeCondition ? (profileCondition === "other" && profileConditionOther.trim() ? profileConditionOther.trim() : profileCondition) : undefined,
+        condition: profileCondition === "other" && profileConditionOther.trim() ? profileConditionOther.trim() : profileCondition || undefined,
         age: profileAge,
         language,
         appearance: profilePhotoEnabled && profileAppearance ? profileAppearance : undefined,
@@ -1246,7 +1235,7 @@ const context = useMemo(
         (texts as string[]).map(async (text: string, i: number) => {
           // First alternative includes profile context; the other two are generic
           const contextPayload = i === 0
-            ? { prompt: text, style: imageStyleMode, location, gender: profileGender, condition: includeCondition ? (profileCondition === "other" && profileConditionOther.trim() ? profileConditionOther.trim() : profileCondition) : undefined, age: profileAge, language, appearance: profilePhotoEnabled && profileAppearance ? profileAppearance : undefined }
+            ? { prompt: text, style: imageStyleMode, location, gender: profileGender, condition: profileCondition === "other" && profileConditionOther.trim() ? profileConditionOther.trim() : profileCondition || undefined, age: profileAge, language, appearance: profilePhotoEnabled && profileAppearance ? profileAppearance : undefined }
             : { prompt: text, style: imageStyleMode, language };
           const r = await fetch("/api/generate-image", {
             method: "POST",
@@ -2015,15 +2004,6 @@ const context = useMemo(
                     <button type="button" onClick={() => setImageStyleMode("realistic")} className={`px-4 py-2 text-sm font-medium transition-colors ${imageStyleMode === "realistic" ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>📷 {t.imageStyleRealistic}</button>
                   </div>
                 </div>
-                {profileCondition && (
-                  <div className={`space-y-1 ${language === "ar" ? "flex flex-col items-end" : ""}`}>
-                    <Label className={`text-xs text-muted-foreground ${language === "ar" ? "block text-right" : ""}`}>{t.includeConditionLabel}</Label>
-                    <div dir={language === "ar" ? "ltr" : undefined} className={`flex rounded-xl border overflow-hidden w-fit ${language === "ar" ? "flex-row-reverse" : ""}`}>
-                      <button type="button" onClick={() => setIncludeCondition(true)} className={`px-4 py-2 text-sm font-medium transition-colors ${includeCondition ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>{t.yes}</button>
-                      <button type="button" onClick={() => setIncludeCondition(false)} className={`px-4 py-2 text-sm font-medium transition-colors ${!includeCondition ? "bg-blue-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>{t.no}</button>
-                    </div>
-                  </div>
-                )}
                 <div dir={language === "ar" ? "ltr" : undefined} className={`flex gap-2 ${language === "ar" ? "flex-row-reverse" : ""}`}>
                   <Button className="rounded-full bg-blue-600 hover:bg-blue-500" onClick={runVerifyImage} disabled={aacSelection.length === 0 || verifyLoading}>
                     {verifyLoading ? "…" : t.generateImage}
