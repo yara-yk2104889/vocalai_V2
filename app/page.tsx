@@ -1282,15 +1282,24 @@ const context = useMemo(
       window.speechSynthesis.speak(utterance);
     }
 
-    const voices = window.speechSynthesis.getVoices();
-    if (voices.length > 0) {
-      pickVoiceAndSpeak();
-    } else {
-      window.speechSynthesis.onvoiceschanged = () => {
-        window.speechSynthesis.onvoiceschanged = null;
+    // iOS Safari: getVoices() returns [] initially and onvoiceschanged never fires.
+    // Retry up to 20 times with 50ms gaps before giving up and speaking voiceless.
+    function trySpeak(attemptsLeft: number) {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
         pickVoiceAndSpeak();
-      };
+      } else if (attemptsLeft > 0) {
+        setTimeout(() => trySpeak(attemptsLeft - 1), 50);
+      } else {
+        pickVoiceAndSpeak(); // speak with system default
+      }
     }
+
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.onvoiceschanged = null;
+      pickVoiceAndSpeak();
+    };
+    trySpeak(20);
   }
 
   function stopSpeaking() {
