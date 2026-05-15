@@ -226,7 +226,8 @@ const api = {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to generate keywords");
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData?.error || `Keywords API error ${response.status}`);
     }
 
     return response.json();
@@ -268,7 +269,8 @@ const api = {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to generate sentences");
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData?.error || `Sentences API error ${response.status}`);
     }
 
     return response.json();
@@ -1142,8 +1144,9 @@ const context = useMemo(
       setSentences(sentOut.sentences || []);
       setSelectedSentence(sentOut.sentences?.[0] || "");
     } catch (error) {
-      console.error(error);
-      alert("Generation failed.");
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error("runKeywords error:", msg);
+      alert(`Generation failed: ${msg}`);
     } finally {
       setKwLoading(false);
       setSentLoading(false);
@@ -1178,8 +1181,9 @@ const context = useMemo(
       setSentences(out.sentences || []);
       setSelectedSentence(out.sentences?.[0] || "");
     } catch (error) {
-      console.error(error);
-      alert("Sentence generation failed.");
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error("runSentences error:", msg);
+      alert(`Sentence generation failed: ${msg}`);
     } finally {
       setSentLoading(false);
     }
