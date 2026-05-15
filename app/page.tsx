@@ -844,6 +844,7 @@ export default function QatarAACProbePrototype() {
   const [profileSubmitted, setProfileSubmitted] = useState(false);
   const [showEvalA, setShowEvalA] = useState(false);
   const [sessionKey, setSessionKey] = useState(0);
+  const [generatedImageUrls, setGeneratedImageUrls] = useState<string[]>([]);
   const [showEvalB, setShowEvalB] = useState(false);
   const [verifyImageUrl, setVerifyImageUrl] = useState("");
   const [imageStyleMode, setImageStyleMode] = useState<"realistic" | "cartoon" | "symbolic">("symbolic");
@@ -1098,6 +1099,18 @@ const context = useMemo(
     }
   }
 
+  async function savePartial(fields: Record<string, unknown>) {
+    const res = await fetch("/api/save-response", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ participantId, ...fields }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.error || `Server error ${res.status}`);
+    }
+  }
+
   async function runVerifyImage() {
     setVerifyLoading(true);
     setVerifyDecision(null);
@@ -1114,6 +1127,7 @@ const context = useMemo(
         appearance: profilePhotoEnabled && profileAppearance ? profileAppearance : undefined,
       });
       setVerifyImageUrl(out.url);
+      setGeneratedImageUrls(prev => [...prev, out.url]);
     } finally {
       setVerifyLoading(false);
     }
@@ -1334,6 +1348,7 @@ const context = useMemo(
           return { text, imageUrl: url as string };
         }),
       );
+      setGeneratedImageUrls(prev => [...prev, ...images.map(img => img.imageUrl)]);
       setAlternatives(images);
     } catch (err) {
       console.error("fetchAlternatives error:", err);
@@ -1343,60 +1358,54 @@ const context = useMemo(
   }
 
   function submitLikertA() {
-    // Just mark stage A as done — data is held in state until the final save
     setLikertASubmitted(true);
+    savePartial({
+      scenario: { intention },
+      keywords,
+      selectedSentence,
+      sentenceMatch: sentenceMatchHistory.length > 0
+        ? sentenceMatchHistory
+        : [{ match: refinementKw.trim() ? "no" : "yes" }],
+      evaluationA: likertA,
+      commentsA,
+    }).catch(() => {});
   }
 
   async function submitLikertB() {
     setLikertBSaving(true);
     try {
-      // Upload image to Supabase Storage if one exists
-      let savedImageUrl = verifyImageUrl;
-      if (verifyImageUrl) {
-        try {
-          const uploadRes = await fetch("/api/upload-image", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ imageUrl: verifyImageUrl }),
-          });
-          const uploadData = await uploadRes.json();
-          if (uploadData.url) savedImageUrl = uploadData.url;
-        } catch {
-          // Non-fatal — fall back to original URL
-        }
-      }
+      // Upload all generated images to Supabase Storage
+      const uploadedUrls = await Promise.all(
+        generatedImageUrls.map(async (url) => {
+          if (!url.startsWith("data:")) return url; // already a stored URL
+          try {
+            const uploadRes = await fetch("/api/upload-image", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ imageUrl: url }),
+            });
+            const uploadData = await uploadRes.json();
+            return uploadData.url || url;
+          } catch {
+            return url; // fall back to base64
+          }
+        })
+      );
 
-      const saveRes = await fetch("/api/save-response", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          participantId,
-          profile: { name: profileName, age: profileAge, gender: profileGender, condition: profileCondition, language },
-          location,
-          scenario: { intention },
-          keywords,
-          selectedSentence,
-          sentenceMatch: sentenceMatchHistory.length > 0
-            ? sentenceMatchHistory
-            : [{ match: refinementKw.trim() ? "no" : "yes" }],
-          evaluationA: likertA,
-          commentsA,
-          verifyDecision: {
-            decision: verifyDecision,
-            ...(imageRefinementKw.trim() ? { refinementKeywords: imageRefinementKw.trim() } : {}),
-          },
-          verifyImageUrl: savedImageUrl,
-          imageStyle: imageStyleMode,
-          aacSelection: aacSelection.map(t => ({ en: t.en, ar: t.ar })),
-          evaluationB: likertB,
-          additionalComments,
-          submittedAt: new Date().toISOString(),
-        }),
+      await savePartial({
+        imageUrls: uploadedUrls,
+        imageStyle: imageStyleMode,
+        aacSelection: aacSelection.map(t => ({ en: t.en, ar: t.ar })),
+        verifyDecision: {
+          decision: verifyDecision,
+          ...(imageRefinementKw.trim() ? { refinementKeywords: imageRefinementKw.trim() } : {}),
+        },
+        // keep image_url pointing to the final chosen image for backward compat
+        verifyImageUrl: uploadedUrls[generatedImageUrls.indexOf(verifyImageUrl)] ?? uploadedUrls[uploadedUrls.length - 1] ?? verifyImageUrl,
+        evaluationB: likertB,
+        additionalComments,
+        submittedAt: new Date().toISOString(),
       });
-      if (!saveRes.ok) {
-        const errData = await saveRes.json().catch(() => ({}));
-        throw new Error(errData?.error || `Server error ${saveRes.status}`);
-      }
       setLikertBSubmitted(true);
     } catch (err) {
       console.error(err);
@@ -1409,6 +1418,7 @@ const context = useMemo(
   function resetForNewSubmission() {
     if (cameraOn) stopCamera();
     setSessionKey((k) => k + 1);
+    setGeneratedImageUrls([]);
     setParticipantId("");
     setParticipantIdInput("");
     setProfileSubmitted(false);
@@ -1759,7 +1769,14 @@ const context = useMemo(
 
             {!profileSubmitted ? (
               <Button
-                onClick={() => setProfileSubmitted(true)}
+                onClick={() => {
+                  setProfileSubmitted(true);
+                  savePartial({
+                    participantId,
+                    profile: { name: profileName, age: profileAge, gender: profileGender, condition: profileCondition === "other" && profileConditionOther.trim() ? profileConditionOther.trim() : profileCondition, language },
+                    location,
+                  }).catch(() => {});
+                }}
                 disabled={!profileName.trim() || !selectedLocationId || !profileCondition}
                 className="w-full rounded-full bg-blue-600 hover:bg-blue-500 py-6 text-base font-semibold shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
               >
@@ -2034,7 +2051,7 @@ const context = useMemo(
                 {/* Sentence strip */}
                 <div className="space-y-1">
                   <Label className={`text-xs font-medium text-muted-foreground ${language === "ar" ? "block text-right" : ""}`}>{language === "ar" ? "رسالتك" : "Your message"}</Label>
-                  <div className="min-h-[52px] flex flex-wrap gap-1.5 rounded-2xl border-2 border-blue-200 bg-blue-50 p-2">
+                  <div className={`min-h-[52px] flex flex-wrap gap-1.5 rounded-2xl border-2 border-blue-200 bg-blue-50 p-2 ${language === "ar" ? "flex-row-reverse" : ""}`}>
                     {aacSelection.length === 0 ? (
                       <span className="text-xs text-muted-foreground self-center px-1">{language === "ar" ? "اضغط على البطاقات لبناء رسالتك…" : "Tap tiles below to build your message…"}</span>
                     ) : (
