@@ -1458,7 +1458,7 @@ const context = useMemo(
   if (!participantId) {
     return (
       <div
-        className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-sky-50 to-indigo-50 flex items-center justify-center p-6"
+        className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-sky-50 to-indigo-50 flex items-start justify-center px-6 pt-8 pb-6"
         dir={language === "ar" ? "rtl" : "ltr"}
       >
         <motion.div

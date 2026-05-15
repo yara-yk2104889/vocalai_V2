@@ -7,7 +7,7 @@ const client = new OpenAI({
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { prompt, style, location, gender, condition, age, language, appearance } = body;
+    const { prompt, style, location, gender, condition, age, appearance } = body;
 
     const locationLabel: Record<string, string> = {
       cafe: "a café",
@@ -46,9 +46,7 @@ export async function POST(req: Request) {
     const sharedRequirements = style === "symbolic" ? `
             - Format it like a real AAC symbol card — a single clear symbol centered on a plain white or light background, optionally inside a simple border or frame.
             - Style it like Boardmaker, SymbolStix, or PCS symbols.
-            - The text label at the bottom MUST be a natural, complete phrase expressing the combined meaning — NOT a list of the input words. For example, if the input is "sad don't understand", the label should be "I don't understand", not "Sad Don't understand".
-            - The text label MUST be written in ${language === "ar" ? "Arabic" : "English"} only.${language === "ar" ? `
-            - CRITICAL for Arabic text: every word's letters MUST be fully connected and joined as in standard handwritten Arabic — do NOT render disconnected, isolated, or broken letters. Use correct Arabic cursive script (النسخ العربي) with proper letter joining. For example "مساعدة" must appear as one fully joined word, not "م س ا ع د ة". Use a clean, bold, easy-to-read Arabic font with no letter-spacing gaps.` : ""}
+            - Do NOT include any text, letters, words, labels, or captions anywhere in the image.
             - Focus on one single concept or scene — no complex scenes.
             - Make it immediately recognizable at a small size.` : `
             - Do NOT add any text, labels, captions, letters, words, speech bubbles, or checkmarks.
