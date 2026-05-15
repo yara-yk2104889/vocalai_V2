@@ -1,3 +1,7 @@
+// OpenAI TTS route — disabled. Re-enable by removing these block comments
+// and wiring up the frontend (see commented-out speakSelectedSentence in page.tsx).
+
+/*
 import OpenAI from "openai";
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -112,3 +116,4 @@ export async function POST(req: Request) {
     return Response.json({ error: message }, { status: 500 });
   }
 }
+*/
