@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Card,
   CardContent,
@@ -1550,15 +1550,24 @@ const context = useMemo(
       className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-sky-50 to-indigo-50 p-4 md:p-5"
       dir={language === "ar" ? "rtl" : "ltr"}
     >
-      {showTabWarning && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md">
-          <div className={`flex items-center gap-3 rounded-2xl bg-red-600 px-4 py-3.5 text-sm text-white shadow-lg ${language === "ar" ? "flex-row-reverse text-right" : ""}`}>
-            <X className="h-4 w-4 shrink-0" />
-            <span className="flex-1">{language === "ar" ? "يرجى إرسال تقييم توليد النص أولاً قبل المتابعة." : "Please submit the text generation review before moving on."}</span>
-            <button onClick={() => setShowTabWarning(false)} className="shrink-0 opacity-70 hover:opacity-100">✕</button>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showTabWarning && (
+          <motion.div
+            initial={{ opacity: 0, y: -40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -40 }}
+            transition={{ type: "spring", stiffness: 300, damping: 28 }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md"
+          >
+            <div className={`flex items-center gap-3 rounded-2xl bg-red-50 border border-red-300 px-4 py-3.5 text-sm text-red-700 shadow-md ${language === "ar" ? "flex-row-reverse text-right" : ""}`}>
+              <span className="flex-1">{language === "ar" ? "يرجى إرسال تقييم توليد النص أولاً قبل المتابعة." : "Please submit the text generation review before moving on."}</span>
+              <button onClick={() => setShowTabWarning(false)} className="shrink-0 opacity-60 hover:opacity-100 transition-opacity">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
