@@ -1550,6 +1550,15 @@ const context = useMemo(
       className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-sky-50 to-indigo-50 p-4 md:p-5"
       dir={language === "ar" ? "rtl" : "ltr"}
     >
+      {showTabWarning && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md">
+          <div className={`flex items-center gap-3 rounded-2xl bg-red-600 px-4 py-3.5 text-sm text-white shadow-lg ${language === "ar" ? "flex-row-reverse text-right" : ""}`}>
+            <X className="h-4 w-4 shrink-0" />
+            <span className="flex-1">{language === "ar" ? "يرجى إرسال تقييم توليد النص أولاً قبل المتابعة." : "Please submit the text generation review before moving on."}</span>
+            <button onClick={() => setShowTabWarning(false)} className="shrink-0 opacity-70 hover:opacity-100">✕</button>
+          </div>
+        </div>
+      )}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -1821,12 +1830,6 @@ const context = useMemo(
               <TabsTrigger value="text" className="flex-1 rounded-xl">{language === "ar" ? "توليد النص" : "Text generation"}</TabsTrigger>
               <TabsTrigger value="image" className="flex-1 rounded-xl">{language === "ar" ? "توليد الصورة" : "Image generation"}</TabsTrigger>
             </TabsList>
-            {showTabWarning && (
-              <div className={`flex items-center gap-2 rounded-2xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 font-medium ${language === "ar" ? "flex-row-reverse text-right" : ""}`}>
-                <X className="h-4 w-4 shrink-0" />
-                {language === "ar" ? "يرجى إرسال تقييم توليد النص أولاً قبل المتابعة." : "Please submit the text generation review before moving on."}
-              </div>
-            )}
 
             <TabsContent value="text" className="space-y-6 mt-0">
             <div className="rounded-3xl overflow-hidden shadow-sm border">
