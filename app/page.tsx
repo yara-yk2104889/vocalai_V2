@@ -846,6 +846,8 @@ export default function QatarAACProbePrototype() {
   const [sessionKey, setSessionKey] = useState(0);
   const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
   const [generatedImageUrls, setGeneratedImageUrls] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState("text");
+  const [showTabWarning, setShowTabWarning] = useState(false);
   const [showEvalB, setShowEvalB] = useState(false);
   const [verifyImageUrl, setVerifyImageUrl] = useState("");
   const [imageStyleMode, setImageStyleMode] = useState<"realistic" | "cartoon" | "symbolic">("symbolic");
@@ -1098,6 +1100,15 @@ const context = useMemo(
     } finally {
       setProfileAppearanceLoading(false);
     }
+  }
+
+  function handleTabChange(val: string) {
+    if (val === "image" && sentences.length > 0 && !likertASubmitted) {
+      setShowTabWarning(true);
+      return;
+    }
+    setShowTabWarning(false);
+    setActiveTab(val);
   }
 
   async function savePartial(fields: Record<string, unknown>) {
@@ -1360,6 +1371,7 @@ const context = useMemo(
 
   function submitLikertA() {
     setLikertASubmitted(true);
+    setShowTabWarning(false);
     savePartial({
       scenario: { intention },
       keywords,
@@ -1421,6 +1433,8 @@ const context = useMemo(
     setSessionKey((k) => k + 1);
     setSessionId(crypto.randomUUID());
     setGeneratedImageUrls([]);
+    setActiveTab("text");
+    setShowTabWarning(false);
     setParticipantId("");
     setParticipantIdInput("");
     setProfileSubmitted(false);
@@ -1802,11 +1816,17 @@ const context = useMemo(
 
           {/* Columns 2+3: Tabbed panel */}
           <div className={`transition-opacity duration-300 ${!profileSubmitted ? "opacity-40 pointer-events-none select-none" : ""}`}>
-          <Tabs defaultValue="text" className="w-full space-y-4">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full space-y-4">
             <TabsList dir={language === "ar" ? "ltr" : undefined} className={`w-full rounded-2xl ${language === "ar" ? "flex-row-reverse" : ""}`}>
               <TabsTrigger value="text" className="flex-1 rounded-xl">{language === "ar" ? "توليد النص" : "Text generation"}</TabsTrigger>
               <TabsTrigger value="image" className="flex-1 rounded-xl">{language === "ar" ? "توليد الصورة" : "Image generation"}</TabsTrigger>
             </TabsList>
+            {showTabWarning && (
+              <div className={`flex items-center gap-2 rounded-2xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 font-medium ${language === "ar" ? "flex-row-reverse text-right" : ""}`}>
+                <X className="h-4 w-4 shrink-0" />
+                {language === "ar" ? "يرجى إرسال تقييم توليد النص أولاً قبل المتابعة." : "Please submit the text generation review before moving on."}
+              </div>
+            )}
 
             <TabsContent value="text" className="space-y-6 mt-0">
             <div className="rounded-3xl overflow-hidden shadow-sm border">

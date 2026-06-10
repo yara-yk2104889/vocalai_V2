@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     // Build the row with only the fields that were sent in this request
     const row: Record<string, unknown> = { session_id: body.sessionId };
     if (body.participantId !== undefined) row.participant_id = body.participantId;
-
+ 
     if (body.profile !== undefined) row.profile = body.profile;
     if (body.location !== undefined) row.location = body.location;
     if (body.scenario !== undefined) row.scenario = body.scenario;
