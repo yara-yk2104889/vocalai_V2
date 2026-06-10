@@ -2157,6 +2157,11 @@ const context = useMemo(
                 ) : verifyImageUrl ? (
                   <div className="space-y-3">
                     <div className="overflow-hidden rounded-2xl border">
+                      {aacSelection.length > 0 && (
+                        <div className={`bg-slate-50 border-b px-4 py-2 text-sm font-medium text-slate-700 ${language === "ar" ? "text-right" : "text-center"}`}>
+                          {aacSelection.map(t => language === "ar" ? t.ar : t.en).join(" · ")}
+                        </div>
+                      )}
                       <img src={verifyImageUrl} alt="verification" className="h-auto w-full max-w-xs mx-auto block" />
                     </div>
                     <div className="text-sm font-medium">{t.doesMatch}</div>
@@ -2291,60 +2296,58 @@ const context = useMemo(
   );
 }
 
+const LIKERT_OPTIONS_EN = [
+  { value: 1, label: "Strongly\nDisagree", color: "#ef4444" },
+  { value: 2, label: "Disagree",           color: "#f97316" },
+  { value: 3, label: "Neutral",            color: "#eab308" },
+  { value: 4, label: "Agree",              color: "#4ade80" },
+  { value: 5, label: "Strongly\nAgree",    color: "#22c55e" },
+];
+const LIKERT_OPTIONS_AR = [
+  { value: 1, label: "لا أوافق\nبشدة",  color: "#ef4444" },
+  { value: 2, label: "لا أوافق",        color: "#f97316" },
+  { value: 3, label: "محايد",           color: "#eab308" },
+  { value: 4, label: "أوافق",           color: "#4ade80" },
+  { value: 5, label: "أوافق\nبشدة",     color: "#22c55e" },
+];
+
 function LikertItem({
   title,
   value,
-  labels,
   onChange,
-  min = 1,
-  max = 5,
   rtl = false,
-  sliderHint = "Move the slider to rate",
 }: {
   title: string;
   value: number | null;
-  labels: string[];
+  labels?: string[];
   onChange: (v: number) => void;
   min?: number;
   max?: number;
   rtl?: boolean;
   sliderHint?: string;
 }) {
-  const ticks = Array.from({ length: max - min + 1 }, (_, i) => min + i);
-  const sliderMin = min - 1;
-  const display = value ?? sliderMin;
+  const options = rtl ? LIKERT_OPTIONS_AR : LIKERT_OPTIONS_EN;
   return (
-    <div className={`space-y-2 rounded-2xl border p-4 ${value === null ? "border-dashed border-blue-200 bg-blue-50/40" : ""}`} dir={rtl ? "rtl" : "ltr"}>
-      <div className="text-sm font-medium">{title}</div>
-      <div className="flex items-center gap-4">
-        <Badge className="rounded-full" variant={value === null ? "outline" : "secondary"}>
-          {value ?? "—"}
-        </Badge>
-        <div className="flex-1 space-y-1">
-          <Slider
-            value={[display]}
-            min={sliderMin}
-            max={max}
-            step={1}
-            onValueChange={(v) => { const n = v?.[0] ?? sliderMin; if (n >= min) onChange(n); }}
-            className="w-full"
-            dir={rtl ? "rtl" : "ltr"}
-          />
-          <div className="flex justify-between px-2.5 text-xs text-muted-foreground">
-            <span className="invisible select-none">0</span>
-            {ticks.map((n) => (
-              <span
-                key={n}
-                className={n === value ? "font-semibold text-blue-700" : ""}
-              >
-                {n}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="text-xs text-muted-foreground">
-        {value !== null ? labels[value - 1] : sliderHint}
+    <div className={`space-y-3 rounded-2xl border p-4 ${value === null ? "border-dashed border-blue-200 bg-blue-50/40" : "border-slate-200"}`}>
+      <div className={`text-sm font-medium ${rtl ? "text-right" : ""}`}>{title}</div>
+      <div className="flex justify-between gap-1" dir="ltr">
+        {options.map((opt) => {
+          const selected = value === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => onChange(opt.value)}
+              className="flex flex-col items-center gap-2 flex-1 group"
+            >
+              <span className="text-[10px] text-center text-muted-foreground leading-tight whitespace-pre-line">{opt.label}</span>
+              <div
+                className={`w-6 h-6 rounded-full border-2 transition-all duration-150 ${selected ? "scale-110 shadow-sm" : "bg-white group-hover:scale-105"}`}
+                style={{ borderColor: opt.color, backgroundColor: selected ? opt.color : "white" }}
+              />
+            </button>
+          );
+        })}
       </div>
     </div>
   );
