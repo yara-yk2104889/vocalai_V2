@@ -844,7 +844,7 @@ export default function QatarAACProbePrototype() {
   const [profileSubmitted, setProfileSubmitted] = useState(false);
   const [showEvalA, setShowEvalA] = useState(false);
   const [sessionKey, setSessionKey] = useState(0);
-  const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
+  const [sessionId, setSessionId] = useState(() => typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
   const [generatedImageUrls, setGeneratedImageUrls] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("text");
   const [showTabWarning, setShowTabWarning] = useState(false);
@@ -1431,7 +1431,7 @@ const context = useMemo(
   function resetForNewSubmission() {
     if (cameraOn) stopCamera();
     setSessionKey((k) => k + 1);
-    setSessionId(crypto.randomUUID());
+    setSessionId(typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
     setGeneratedImageUrls([]);
     setActiveTab("text");
     setShowTabWarning(false);
