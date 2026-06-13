@@ -846,6 +846,7 @@ export default function QatarAACProbePrototype() {
   const [sessionKey, setSessionKey] = useState(0);
   const [sessionId, setSessionId] = useState(() => typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
   const [generatedImageUrls, setGeneratedImageUrls] = useState<string[]>([]);
+  const [imageCaption, setImageCaption] = useState("");
   const [activeTab, setActiveTab] = useState("text");
   const [showTabWarning, setShowTabWarning] = useState(false);
   const [showEvalB, setShowEvalB] = useState(false);
@@ -1126,20 +1127,30 @@ const context = useMemo(
   async function runVerifyImage() {
     setVerifyLoading(true);
     setVerifyDecision(null);
+    setImageCaption("");
     try {
       const prompt = aacSelection.map(t => t.en).join(" ") || notes || "User note";
-      const out = await api.generateImage({
-        prompt,
-        style: imageStyleMode,
-        location,
-        gender: profileGender,
-        condition: profileCondition === "other" && profileConditionOther.trim() ? profileConditionOther.trim() : profileCondition || undefined,
-        age: profileAge,
-        language,
-        appearance: profilePhotoEnabled && profileAppearance ? profileAppearance : undefined,
-      });
+      const words = aacSelection.map(t => language === "ar" ? t.ar : t.en).join(" ") || notes || prompt;
+      const [out, captionRes] = await Promise.all([
+        api.generateImage({
+          prompt,
+          style: imageStyleMode,
+          location,
+          gender: profileGender,
+          condition: profileCondition === "other" && profileConditionOther.trim() ? profileConditionOther.trim() : profileCondition || undefined,
+          age: profileAge,
+          language,
+          appearance: profilePhotoEnabled && profileAppearance ? profileAppearance : undefined,
+        }),
+        fetch("/api/caption", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ words, language }),
+        }).then(r => r.json()).catch(() => ({ caption: null })),
+      ]);
       setVerifyImageUrl(out.url);
       setGeneratedImageUrls(prev => [...prev, out.url]);
+      if (captionRes.caption) setImageCaption(captionRes.caption);
     } finally {
       setVerifyLoading(false);
     }
@@ -1459,6 +1470,7 @@ const context = useMemo(
     setSentences([]);
     setSelectedSentence("");
     setVerifyImageUrl("");
+    setImageCaption("");
     setVerifyDecision(null);
     setVerifyNoSelected(false);
     setAlternatives([]);
@@ -2157,9 +2169,9 @@ const context = useMemo(
                 ) : verifyImageUrl ? (
                   <div className="space-y-3">
                     <div className="overflow-hidden rounded-2xl border">
-                      {aacSelection.length > 0 && (
-                        <div className={`bg-slate-50 border-b px-4 py-2 text-sm font-medium text-slate-700 ${language === "ar" ? "text-right" : "text-center"}`}>
-                          {aacSelection.map(t => language === "ar" ? t.ar : t.en).join(" · ")}
+                      {imageCaption && (
+                        <div className={`bg-slate-50 border-b px-4 py-2 text-sm font-medium text-slate-700 ${language === "ar" ? "text-right" : "text-center"}`} dir={language === "ar" ? "rtl" : "ltr"}>
+                          {imageCaption}
                         </div>
                       )}
                       <img src={verifyImageUrl} alt="verification" className="h-auto w-full max-w-xs mx-auto block" />
@@ -2276,16 +2288,32 @@ const context = useMemo(
         </div>
 
         {/* Thank you */}
-        {likertBSubmitted && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-green-200 bg-green-50 p-8 text-center space-y-4">
-            <div className="text-4xl">🎉</div>
-            <div className="text-xl font-bold text-green-800">{t.thankYou}</div>
-            <p className="text-sm text-green-700">{t.thankYouDesc}</p>
-            <Button onClick={resetForNewSubmission} className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-8 py-5 text-base font-semibold">
-              {t.doAnother}
-            </Button>
-          </motion.div>
-        )}
+        <AnimatePresence>
+          {likertBSubmitted && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-6"
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.92, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.92, y: 20 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="w-full max-w-sm rounded-3xl bg-white shadow-2xl p-8 text-center space-y-4"
+              >
+                <div className="text-5xl">🎉</div>
+                <div className="text-xl font-bold text-green-800">{t.thankYou}</div>
+                <p className="text-sm text-slate-500">{t.thankYouDesc}</p>
+                <Button onClick={resetForNewSubmission} className="rounded-2xl bg-blue-700 hover:bg-blue-600 px-8 py-5 text-base font-semibold w-full">
+                  {t.doAnother}
+                </Button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
 
         <footer className="text-center text-xs text-muted-foreground py-2">
@@ -2326,7 +2354,7 @@ function LikertItem({
   rtl?: boolean;
   sliderHint?: string;
 }) {
-  const options = rtl ? LIKERT_OPTIONS_AR : LIKERT_OPTIONS_EN;
+  const options = rtl ? [...LIKERT_OPTIONS_AR].reverse() : LIKERT_OPTIONS_EN;
   return (
     <div className={`space-y-3 rounded-2xl border p-4 ${value === null ? "border-dashed border-blue-200 bg-blue-50/40" : "border-slate-200"}`}>
       <div className={`text-sm font-medium ${rtl ? "text-right" : ""}`}>{title}</div>
