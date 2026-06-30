@@ -1,8 +1,7 @@
 import OpenAI from "openai";
 
-const client = new OpenAI();
-
 export async function POST(req: Request) {
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const { sentence } = await req.json();
 
   const result = await client.chat.completions.create({
