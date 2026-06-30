@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# tts sample output folders
+/tts-samples
+/tts-samples-LONG
+/tts-samples-soniox

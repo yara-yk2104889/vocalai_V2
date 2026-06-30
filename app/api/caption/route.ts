@@ -12,13 +12,13 @@ export async function POST(req: Request) {
 
     const response = await client.chat.completions.create({
       model: "gpt-4o-mini",
-      max_tokens: 20,
+      max_tokens: 40,
       messages: [
         {
           role: "system",
-          content: `Turn these AAC symbol words into one short, natural sentence. Use only simple, common words. Maximum 7 words. No punctuation at the end. ${language === "ar" ? "Reply in Arabic only." : "Reply in English only."}`,
+          content: `You are an AAC caption helper. The user selected these symbol tiles in order: you must form a grammatically correct sentence using ONLY those words — do not add, remove, or replace any content words. You may only add minimal grammar words (like "to", "and") if needed to connect the given words. Keep it short. No punctuation at the end. ${language === "ar" ? "Reply in Arabic only." : "Reply in English only."}`,
         },
-        { role: "user", content: words },
+        { role: "user", content: `Tiles: ${words}` },
       ],
     });
 

@@ -1,100 +1,138 @@
 import OpenAI from "openai";
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { prompt, style, location, gender, condition, age, appearance } = body;
-
-    const locationLabel: Record<string, string> = {
-      cafe: "a café",
-      playground: "a children's playground",
-      classroom: "a school classroom",
-      majlis: "a family majlis (traditional sitting room)",
-      home: "a home",
+    const {
+      prompt,
+      style,
+      location,
+      gender,
+      condition,
+      age,
+      appearance,
+      importantPeople,
+      count: rawCount,
+    } = body as {
+      prompt: string;
+      style: "realistic" | "cartoon" | "symbolic";
+      location?: string;
+      gender?: string;
+      condition?: string;
+      age?: string;
+      appearance?: string;
+      importantPeople?: { name: string; description: string }[];
+      count?: number;
     };
-    const contextClues = [
-      location && `Setting: ${locationLabel[location] ?? location}`,
-      gender && `User gender: ${gender}`,
+
+    const count = Math.min(Math.max(1, rawCount ?? 1), 4);
+
+    const contextParts = [
+      location  && `Setting: ${location}`,
+      gender    && `User gender: ${gender}`,
       condition && `User condition: ${condition}`,
-      age && `User age: ${age}`,
+      age       && `User age: ${age}`,
       appearance && `User appearance: ${appearance}`,
-    ].filter(Boolean).join("; ");
+    ].filter(Boolean) as string[];
 
-    const styleInstructions = style === "cartoon"
-      ? `
-            - Use a bright, friendly cartoon illustration style — bold outlines, flat colors, cheerful and expressive.
-            - Think children's picture book or animated film aesthetic.
-            - Characters and objects should be rounded, soft, and approachable.
-            - Use vibrant, saturated colors.`
-      : style === "symbolic"
-      ? `
-            - Use a clean AAC symbol style — simple, flat, high-contrast vector-like illustration.
-            - Think Boardmaker, SymbolStix, or PCS (Picture Communication Symbols) aesthetics.
-            - Single central object or scene on a plain white background.
-            - Bold, clear outlines with minimal detail — immediately recognizable at small sizes.
-            - No shadows, gradients, or photorealistic textures.
-            - Use a limited, clean color palette. Each element should be easily distinguishable.`
-      : `
-            - Use a realistic photographic style — natural lighting, real-world textures and colors.
-            - The scene should look like an actual photograph or high-quality photorealistic render.
-            - Avoid cartoon or illustrated aesthetics.`;
+    const peopleDesc =
+      (importantPeople ?? [])
+        .map(p => `${p.name}: ${p.description}`)
+        .join("; ");
 
-    const sharedRequirements = style === "symbolic" ? `
-            - Format it like a real AAC symbol card — a single clear symbol centered on a plain white or light background, optionally inside a simple border or frame.
-            - Style it like Boardmaker, SymbolStix, or PCS symbols.
-            - Do NOT include any text, letters, words, labels, or captions anywhere in the image.
-            - Focus on one single concept or scene — no complex scenes.
-            - Make it immediately recognizable at a small size.` : `
-            - Do NOT add any text, labels, captions, letters, words, speech bubbles, or checkmarks.
-            - Do NOT format it like an AAC card, flashcard, symbol board, worksheet, or poster.
-            - Do NOT place the concept inside a bordered card or frame.
-            - Show only a clean, natural, easy-to-understand visual scene.
-            - Make the meaning obvious from the image itself.
-            - Keep the composition simple, uncluttered, and child-friendly.
-            - Use a plain white or very light background.
-            - Focus on the key meaning of the message, not decorative details.
-            - If the message is about wanting or requesting something, show that visually through the scene rather than writing words.`;
+    const contextClues = contextParts.join("; ");
 
-    const response = await client.images.generate({
-      model: "gpt-image-1",
-      prompt: `
-            The following words are AAC symbol tiles selected by a user to communicate a message: "${prompt}".
-            Interpret them together as a single, coherent communication intent — do NOT treat them as a list or label them word by word.
-            For example: "sad don't understand" means the user is sad because they don't understand something; "I want water" means the user wants a drink of water.
-            Generate a visual image that naturally represents this combined meaning.
-            ${contextClues ? `Context about the user and setting: ${contextClues}.` : ""}
-            ${appearance ? `IMPORTANT — appearance consistency: The character representing the user MUST reflect ALL of the following appearance attributes throughout the entire image: ${appearance}. If a head covering (e.g. hijab) is mentioned, ALL clothing must be consistent with modest dress — covered arms, no exposed hair. Do NOT mix cultural or religious clothing markers with inconsistent attire. Maintain coherent, respectful cultural representation.` : ""}
-            ${condition === "autism" ? `IMPORTANT — facial expressions: Do NOT depict sad, distressed, crying, or negative facial expressions on any character in the image. All characters must have neutral or positive (calm, content, or happy) expressions only.` : ""}
+    const styleInstructions =
+      style === "cartoon"
+        ? `
+          - Bright, friendly cartoon illustration — bold outlines, flat colors, cheerful and expressive.
+          - Children's picture book or animated film aesthetic.
+          - Rounded, soft, approachable characters and objects.
+          - Vibrant, saturated colors.`
+        : style === "symbolic"
+        ? `
+          - Clean AAC symbol style — simple, flat, high-contrast, vector-like illustration.
+          - Boardmaker / SymbolStix / PCS aesthetics.
+          - Single central object or scene on a plain white background.
+          - Bold, clear outlines with minimal detail — immediately recognizable at small sizes.
+          - No shadows, gradients, or photorealistic textures.
+          - Limited, clean color palette.`
+        : `
+          - Realistic photographic style — natural lighting, real-world textures and colors.
+          - Looks like an actual photograph or high-quality photorealistic render.
+          - Avoid cartoon or illustrated aesthetics.`;
 
-            Requirements:
-            ${sharedRequirements}
-            ${styleInstructions}
-            `,
-      size: "1024x1024",
-    });
+    const sharedRequirements =
+      style === "symbolic"
+        ? `
+          - Format like a real AAC symbol card — a single clear symbol centered on a plain white or light background.
+          - Do NOT include any text, letters, words, labels, or captions anywhere in the image.
+          - Focus on one single concept or scene.
+          - Immediately recognizable at small size.`
+        : `
+          - Do NOT add any text, labels, captions, letters, words, or speech bubbles.
+          - Do NOT format as an AAC card, flashcard, symbol board, worksheet, or poster.
+          - Show only a clean, natural, easy-to-understand visual scene.
+          - Keep the composition simple, uncluttered, and child-friendly.
+          - Use a plain white or very light background.
+          - Focus on the key meaning — not decorative details.`;
 
-    const imageBase64 = response.data?.[0]?.b64_json;
+    const appearanceRule = appearance
+      ? `IMPORTANT — appearance consistency: The character representing the user MUST reflect ALL of the following attributes throughout: ${appearance}. If a head covering (e.g. hijab) is mentioned, ALL clothing must be consistent with modest dress — covered arms, no exposed hair. Maintain coherent, respectful cultural representation.`
+      : "";
 
-    if (!imageBase64) {
-      return new Response(
-        JSON.stringify({ error: "No image returned from OpenAI" }),
-        { status: 500, headers: { "Content-Type": "application/json" } },
-      );
-    }
+    const autismRule =
+      condition === "autism"
+        ? `IMPORTANT — facial expressions: Do NOT depict sad, distressed, crying, or negative facial expressions on any character. All characters must have neutral or positive (calm, content, or happy) expressions only.`
+        : "";
 
-    const imageUrl = `data:image/png;base64,${imageBase64}`;
+    const peopleRule = peopleDesc
+      ? `Important people in the user's life (match their appearance when depicted): ${peopleDesc}.`
+      : "";
 
-    return Response.json({ url: imageUrl });
+    const fullPrompt = `
+The following words are AAC symbol tiles selected by a user to communicate a message: "${prompt}".
+Interpret them together as a single, coherent communication intent — do NOT treat them as a list or label them word by word.
+For example: "sad don't understand" means the user is sad because they don't understand something; "I want water" means the user wants a drink of water.
+Generate a visual image that naturally represents this combined meaning.
+${contextClues ? `Context about the user and setting: ${contextClues}.` : ""}
+${appearanceRule}
+${autismRule}
+${peopleRule}
+
+Requirements:
+${sharedRequirements}
+${styleInstructions}
+`.trim();
+
+    // Generate `count` images in parallel
+    const results = await Promise.all(
+      Array.from({ length: count }, () =>
+        client.images.generate({
+          model: "gpt-image-1",
+          prompt: fullPrompt,
+          size: "1024x1024",
+        })
+      )
+    );
+
+    const urls = results
+      .map(r => {
+        const b64 = r.data?.[0]?.b64_json;
+        return b64 ? `data:image/png;base64,${b64}` : null;
+      })
+      .filter((u): u is string => u !== null);
+
+    // Return both `urls` (new) and `url` (legacy compat)
+    return Response.json({ urls, url: urls[0] ?? null });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error("Generate image route error:", message);
+    console.error("generate-image error:", message);
     return new Response(
       JSON.stringify({ error: message }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }
