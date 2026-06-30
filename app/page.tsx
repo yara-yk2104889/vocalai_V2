@@ -25,6 +25,7 @@ interface AacTile {
   emoji: string;
   en: string;
   ar: string;
+  imageUrl?: string; // custom photo or generated image
 }
 
 interface GeneratedImage {
@@ -270,6 +271,23 @@ export default function AACApp() {
   // ── Recent generations
   const [recentGenerations, setRecentGenerations] = useState<RecentGeneration[]>([]);
 
+  // ── Custom tiles
+  const [customTiles, setCustomTiles] = useState<Record<string, AacTile[]>>({});
+
+  // ── Customise Board modal
+  const [showCustomiseModal, setShowCustomiseModal]   = useState(false);
+  const [customCategory, setCustomCategory]           = useState(CATEGORIES[0].id);
+  const [customIconType, setCustomIconType]           = useState<"emoji" | "photo" | "generated">("emoji");
+  const [customEmoji, setCustomEmoji]                 = useState("");
+  const [customImageUrl, setCustomImageUrl]           = useState("");
+  const [customLabelEn, setCustomLabelEn]             = useState("");
+  const [customLabelAr, setCustomLabelAr]             = useState("");
+  const [customCameraOn, setCustomCameraOn]           = useState(false);
+  const [customCameraStream, setCustomCameraStream]   = useState<MediaStream | null>(null);
+  const customVideoRef  = useRef<HTMLVideoElement>(null);
+  const customCanvasRef = useRef<HTMLCanvasElement>(null);
+  const customFileRef   = useRef<HTMLInputElement>(null);
+
   // ── Parent tab
   const [parentTab, setParentTab] = useState<"profile" | "people" | "history">("profile");
 
@@ -340,6 +358,13 @@ export default function AACApp() {
   }, [personCameraOn, personCameraStream]);
 
   useEffect(() => {
+    if (customCameraOn && customCameraStream && customVideoRef.current) {
+      customVideoRef.current.srcObject = customCameraStream;
+      customVideoRef.current.play().catch(() => {});
+    }
+  }, [customCameraOn, customCameraStream]);
+
+  useEffect(() => {
     return () => {
       profileCameraStream?.getTracks().forEach(t => t.stop());
       personCameraStream?.getTracks().forEach(t => t.stop());
@@ -367,11 +392,30 @@ export default function AACApp() {
   }
 
   function getTilesForCategory(cat: string): AacTile[] {
-    if (cat !== "people") return TILES[cat] ?? [];
-    return [
-      ...TILES.people,
-      ...importantPeople.map(p => ({ emoji: "👤", en: p.name, ar: p.name })),
-    ];
+    const base = cat !== "people"
+      ? TILES[cat] ?? []
+      : [...TILES.people, ...importantPeople.map(p => ({ emoji: "👤", en: p.name, ar: p.name }))];
+    return [...base, ...(customTiles[cat] ?? [])];
+  }
+
+  function addCustomTile() {
+    if ((!customEmoji && !customImageUrl) || !customLabelEn.trim()) return;
+    const tile: AacTile = {
+      emoji: customIconType === "emoji" ? customEmoji : "",
+      en: customLabelEn.trim(),
+      ar: customLabelAr.trim() || customLabelEn.trim(),
+      imageUrl: customIconType !== "emoji" ? customImageUrl : undefined,
+    };
+    setCustomTiles(prev => ({ ...prev, [customCategory]: [...(prev[customCategory] ?? []), tile] }));
+    setCustomEmoji(""); setCustomImageUrl(""); setCustomLabelEn(""); setCustomLabelAr("");
+    setCustomIconType("emoji"); setShowCustomiseModal(false);
+    stopCustomCamera();
+  }
+
+  function stopCustomCamera() {
+    customCameraStream?.getTracks().forEach(t => t.stop());
+    setCustomCameraStream(null);
+    setCustomCameraOn(false);
   }
 
   function addTile(tile: AacTile) {
@@ -636,6 +680,198 @@ export default function AACApp() {
         )}
       </AnimatePresence>
 
+      {/* ── Customise Board Modal ── */}
+      <AnimatePresence>
+        {showCustomiseModal && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm px-4 pb-4 sm:pb-0"
+          >
+            <motion.div
+              initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
+              className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                <h2 className="font-bold text-lg text-slate-800">
+                  {isRTL ? "تخصيص اللوحة" : "Customise Board"}
+                </h2>
+                <button onClick={() => { setShowCustomiseModal(false); stopCustomCamera(); }}
+                  className="p-2 rounded-xl hover:bg-slate-100 transition-colors">
+                  <X className="h-5 w-5 text-slate-500" />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-5 max-h-[75vh] overflow-y-auto" style={{ scrollbarWidth: "none" } as CSSProperties}>
+
+                {/* 1. Category */}
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-slate-700">{isRTL ? "الفئة" : "Category"}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {CATEGORIES.map(cat => (
+                      <button key={cat.id} onClick={() => setCustomCategory(cat.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${CATEGORY_COLORS[cat.id] ?? ""} ${customCategory === cat.id ? "ring-2 ring-blue-500 ring-offset-1" : ""} text-slate-700`}>
+                        {isRTL ? cat.arLabel : cat.enLabel}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 2. Icon type */}
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-slate-700">{isRTL ? "نوع الأيقونة" : "Icon type"}</p>
+                  <div className="flex rounded-2xl overflow-hidden border border-slate-200">
+                    {([
+                      { id: "emoji",     en: "🔤 Emoji",     ar: "🔤 رمز"      },
+                      { id: "photo",     en: "📷 Photo",     ar: "📷 صورة"     },
+                      { id: "generated", en: "🖼️ Generated", ar: "🖼️ مُولَّد" },
+                    ] as const).map(opt => (
+                      <button key={opt.id} onClick={() => { setCustomIconType(opt.id); setCustomImageUrl(""); stopCustomCamera(); }}
+                        className={`flex-1 py-2 text-xs font-semibold transition-colors ${customIconType === opt.id ? "bg-blue-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>
+                        {isRTL ? opt.ar : opt.en}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 3. Icon content */}
+                {customIconType === "emoji" && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-slate-700">{isRTL ? "أدخل الرمز التعبيري" : "Enter emoji"}</p>
+                    <Input
+                      value={customEmoji}
+                      onChange={e => setCustomEmoji(e.target.value)}
+                      placeholder="e.g. 🌟"
+                      className="rounded-xl text-2xl text-center h-14"
+                    />
+                  </div>
+                )}
+
+                {customIconType === "photo" && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-slate-700">{isRTL ? "الصورة" : "Photo"}</p>
+                    {customImageUrl ? (
+                      <div className="space-y-2">
+                        <img src={customImageUrl} className="w-20 h-20 rounded-2xl object-cover border" alt="custom" />
+                        <button onClick={() => setCustomImageUrl("")}
+                          className="text-xs text-red-500 hover:underline">
+                          {isRTL ? "إزالة" : "Remove"}
+                        </button>
+                      </div>
+                    ) : customCameraOn ? (
+                      <div className="space-y-2">
+                        <div className="relative rounded-2xl overflow-hidden border bg-black">
+                          <video ref={customVideoRef} autoPlay playsInline muted style={{ transform: "scaleX(-1)" }} className="w-full" />
+                          <div className="absolute bottom-3 inset-x-0 flex items-center justify-center gap-4">
+                            <button onClick={stopCustomCamera}
+                              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white">
+                              <CameraOff className="h-5 w-5" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (!customVideoRef.current || !customCanvasRef.current) return;
+                                const c = customCanvasRef.current;
+                                const v = customVideoRef.current;
+                                c.width = v.videoWidth; c.height = v.videoHeight;
+                                const ctx = c.getContext("2d")!;
+                                ctx.translate(c.width, 0); ctx.scale(-1, 1);
+                                ctx.drawImage(v, 0, 0);
+                                setCustomImageUrl(c.toDataURL("image/jpeg", 0.85));
+                                stopCustomCamera();
+                              }}
+                              className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-white/30 backdrop-blur-sm">
+                              <div className="h-12 w-12 rounded-full bg-white" />
+                            </button>
+                          </div>
+                        </div>
+                        <canvas ref={customCanvasRef} className="hidden" />
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <label className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-blue-200 bg-blue-50/50 text-sm text-slate-600 cursor-pointer hover:bg-blue-50 transition-colors">
+                          📁 {isRTL ? "تحميل" : "Upload"}
+                          <input ref={customFileRef} type="file" accept="image/*" className="hidden"
+                            onChange={async e => {
+                              const f = e.target.files?.[0]; if (!f) return;
+                              setCustomImageUrl(await toBase64(f));
+                            }} />
+                        </label>
+                        <button
+                          onClick={async () => {
+                            try {
+                              const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+                              setCustomCameraStream(stream); setCustomCameraOn(true);
+                            } catch { alert("Could not access camera."); }
+                          }}
+                          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-slate-200 bg-white text-sm text-slate-600 hover:bg-slate-50 transition-colors">
+                          <Camera className="h-4 w-4" /> {isRTL ? "كاميرا" : "Camera"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {customIconType === "generated" && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-slate-700">{isRTL ? "اختر صورة مُولَّدة" : "Pick a generated image"}</p>
+                    {recentGenerations.flatMap(g => g.images).length === 0 ? (
+                      <p className="text-xs text-slate-400">{isRTL ? "لا توجد صور بعد — ولّد صورة أولاً" : "No generated images yet — generate one first"}</p>
+                    ) : (
+                      <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto" style={{ scrollbarWidth: "none" } as CSSProperties}>
+                        {recentGenerations.flatMap(g => g.images).map((url, i) => (
+                          <button key={i} onClick={() => setCustomImageUrl(url)}
+                            className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${customImageUrl === url ? "border-blue-500 ring-2 ring-blue-300" : "border-transparent hover:border-blue-300"}`}>
+                            <img src={url} className="w-full h-full object-cover" alt="" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 4. Labels */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">{isRTL ? "الاسم (EN) *" : "Label (EN) *"}</Label>
+                    <Input value={customLabelEn} onChange={e => setCustomLabelEn(e.target.value)}
+                      placeholder="e.g. Star" className="rounded-xl" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">{isRTL ? "الاسم (AR)" : "Label (AR)"}</Label>
+                    <Input dir="rtl" value={customLabelAr} onChange={e => setCustomLabelAr(e.target.value)}
+                      placeholder="مثال: نجمة" className="rounded-xl" />
+                  </div>
+                </div>
+
+                {/* Preview */}
+                {(customEmoji || customImageUrl) && customLabelEn && (
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-500">{isRTL ? "معاينة" : "Preview"}</p>
+                    <div className={`w-20 h-20 rounded-xl border-2 flex flex-col items-center justify-center p-1 ${CATEGORY_COLORS[customCategory] ?? "bg-slate-50 border-slate-200"}`}>
+                      {customImageUrl
+                        ? <img src={customImageUrl} className="w-10 h-10 object-cover rounded-lg" alt="" />
+                        : <span className="text-3xl">{customEmoji}</span>
+                      }
+                      <span className="text-[9px] font-semibold text-slate-700 text-center leading-tight mt-1 w-full truncate px-0.5">
+                        {customLabelEn}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  className="w-full rounded-full bg-blue-600 hover:bg-blue-700 py-6 font-bold"
+                  disabled={(!customEmoji && !customImageUrl) || !customLabelEn.trim()}
+                  onClick={addCustomTile}
+                >
+                  {isRTL ? "إضافة إلى اللوحة" : "Add to Board"}
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ══════════════════ CHILD MODE ══════════════════ */}
       {mode === "child" && (
         <div className="flex flex-col h-screen overflow-hidden">
@@ -706,7 +942,10 @@ export default function AACApp() {
                     transition={{ type: "spring", stiffness: 400, damping: 20 }}
                     className="inline-flex flex-col items-center rounded-xl bg-white border border-blue-200 shadow-sm px-2 py-1 shrink-0"
                   >
-                    {tile.emoji && <span className="text-lg leading-none">{tile.emoji}</span>}
+                    {tile.imageUrl
+                      ? <img src={tile.imageUrl} className="w-7 h-7 object-cover rounded-md" alt={tile.en} />
+                      : tile.emoji && <span className="text-lg leading-none">{tile.emoji}</span>
+                    }
                     <span className="text-[10px] text-slate-700 font-semibold leading-tight mt-0.5">
                       {isRTL ? tile.ar : tile.en}
                     </span>
@@ -788,10 +1027,13 @@ export default function AACApp() {
                             <button
                               key={i}
                               onClick={() => addTile(tile)}
-                              className={`w-full aspect-square rounded-xl border-2 ${colors} flex flex-col items-center justify-center p-0.5 active:scale-90 transition-all shadow-sm`}
+                              className={`w-full aspect-square rounded-xl border-2 ${colors} flex flex-col items-center justify-center p-1 active:scale-90 transition-all shadow-sm overflow-hidden`}
                             >
-                              <span className="text-base leading-none">{tile.emoji}</span>
-                              <span className="text-[8px] font-semibold text-slate-700 text-center leading-tight mt-0.5 w-full truncate px-0.5">
+                              {tile.imageUrl
+                                ? <img src={tile.imageUrl} className="w-3/4 h-3/4 object-cover rounded-lg" alt={tile.en} />
+                                : <span className="text-3xl leading-none">{tile.emoji}</span>
+                              }
+                              <span className="text-xs font-semibold text-slate-700 text-center leading-tight mt-1 w-full truncate px-0.5">
                                 {isRTL ? tile.ar : tile.en}
                               </span>
                             </button>
@@ -816,10 +1058,13 @@ export default function AACApp() {
                         <button
                           key={i}
                           onClick={() => addTile(tile)}
-                          className={`w-full aspect-square rounded-2xl border-2 ${colors} flex flex-col items-center justify-center p-1 active:scale-90 transition-all shadow-sm`}
+                          className={`w-full aspect-square rounded-2xl border-2 ${colors} flex flex-col items-center justify-center p-1 active:scale-90 transition-all shadow-sm overflow-hidden`}
                         >
-                          <span className="text-xl leading-none">{tile.emoji}</span>
-                          <span className="text-[9px] font-semibold text-slate-700 text-center leading-tight mt-0.5 w-full truncate px-0.5">
+                          {tile.imageUrl
+                            ? <img src={tile.imageUrl} className="w-3/4 h-3/4 object-cover rounded-lg" alt={tile.en} />
+                            : <span className="text-3xl leading-none">{tile.emoji}</span>
+                          }
+                          <span className="text-xs font-semibold text-slate-700 text-center leading-tight mt-1 w-full truncate px-0.5">
                             {isRTL ? tile.ar : tile.en}
                           </span>
                         </button>
@@ -1018,11 +1263,11 @@ export default function AACApp() {
               {isRTL ? "الرئيسية" : "Home"}
             </button>
             <button
-              onClick={() => { setShowPinModal(true); setPinInput(""); setPinError(false); }}
+              onClick={() => { setShowCustomiseModal(true); setCustomImageUrl(""); setCustomEmoji(""); setCustomLabelEn(""); setCustomLabelAr(""); }}
               className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-600 font-semibold text-sm transition-colors border border-slate-200"
             >
               <Settings className="h-4 w-4" />
-              {isRTL ? "إعدادات" : "Settings"}
+              {isRTL ? "تخصيص اللوحة" : "Customise Board"}
             </button>
           </div>
         </div>
