@@ -3,6 +3,7 @@ import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
+  ArrowRight,
   Camera,
   CameraOff,
   ChevronLeft,
@@ -276,6 +277,10 @@ export default function AACApp() {
 
   // ── Customise Board modal
   const [showCustomiseModal, setShowCustomiseModal]   = useState(false);
+  const [showEmojiInput, setShowEmojiInput]           = useState(false);
+  const [emojiInputText, setEmojiInputText]           = useState("");
+  const [emojiInputLabel, setEmojiInputLabel]         = useState("");
+  const emojiInputRef = useRef<HTMLInputElement>(null);
   const [customCategory, setCustomCategory]           = useState(CATEGORIES[0].id);
   const [customIconType, setCustomIconType]           = useState<"emoji" | "photo" | "generated">("emoji");
   const [customEmoji, setCustomEmoji]                 = useState("");
@@ -416,6 +421,14 @@ export default function AACApp() {
     customCameraStream?.getTracks().forEach(t => t.stop());
     setCustomCameraStream(null);
     setCustomCameraOn(false);
+  }
+
+  function submitEmojiInput() {
+    const emoji = emojiInputText.trim();
+    const label = emojiInputLabel.trim() || emoji;
+    if (!emoji) return;
+    addTile({ emoji, en: label, ar: label });
+    setEmojiInputText(""); setEmojiInputLabel(""); setShowEmojiInput(false);
   }
 
   function addTile(tile: AacTile) {
@@ -741,7 +754,7 @@ export default function AACApp() {
                     <Input
                       value={customEmoji}
                       onChange={e => setCustomEmoji(e.target.value)}
-                      placeholder="e.g. 🌟"
+                      placeholder={isRTL ? "مثال: 🌟" : "e.g. 🌟"}
                       className="rounded-xl text-2xl text-center h-14"
                     />
                   </div>
@@ -834,7 +847,7 @@ export default function AACApp() {
                   <div className="space-y-1">
                     <Label className="text-xs">{isRTL ? "الاسم (EN) *" : "Label (EN) *"}</Label>
                     <Input value={customLabelEn} onChange={e => setCustomLabelEn(e.target.value)}
-                      placeholder="e.g. Star" className="rounded-xl" />
+                      placeholder={isRTL ? "مثال: نجمة" : "e.g. Star"} className="rounded-xl" />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">{isRTL ? "الاسم (AR)" : "Label (AR)"}</Label>
@@ -920,9 +933,42 @@ export default function AACApp() {
 
           {/* ── Sentence builder bar ── */}
           <div
-            dir="ltr"
             className="shrink-0 bg-white border-b border-slate-100 px-3 py-2.5 flex items-stretch gap-2 shadow-sm"
           >
+            {/* Emoji keyboard button + inline input */}
+            <button
+              onClick={() => { setShowEmojiInput(v => !v); setTimeout(() => emojiInputRef.current?.focus(), 50); }}
+              className={`shrink-0 w-12 min-h-[56px] rounded-2xl border-2 flex items-center justify-center transition-all text-xl ${showEmojiInput ? "bg-yellow-50 border-yellow-300" : "bg-slate-50 border-slate-200 hover:bg-yellow-50 hover:border-yellow-200"}`}
+              aria-label="Emoji keyboard"
+            >
+              😊
+            </button>
+            <AnimatePresence>
+              {showEmojiInput && (
+                <motion.div
+                  initial={{ width: 0, opacity: 0 }} animate={{ width: "auto", opacity: 1 }} exit={{ width: 0, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="shrink-0 flex items-center gap-1.5 overflow-hidden"
+                >
+                  <input
+                    ref={emojiInputRef}
+                    value={emojiInputText}
+                    onChange={e => setEmojiInputText(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && submitEmojiInput()}
+                    placeholder="😄"
+                    className="w-24 min-h-[56px] text-2xl text-center border-2 border-yellow-200 bg-yellow-50 rounded-2xl px-2 outline-none focus:border-yellow-400"
+                  />
+                  <button
+                    onClick={submitEmojiInput}
+                    disabled={!emojiInputText.trim()}
+                    className="shrink-0 min-h-[56px] px-3 rounded-2xl bg-yellow-400 hover:bg-yellow-500 disabled:opacity-30 font-bold text-white text-sm transition-colors"
+                  >
+                    {isRTL ? "إضافة" : "Add"}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Word strip — tap to speak */}
             <button
               onClick={speakSentence}
@@ -962,7 +1008,10 @@ export default function AACApp() {
                 className="w-12 h-full min-h-[56px] rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 disabled:opacity-30 flex items-center justify-center transition-colors"
                 aria-label={isRTL ? "حذف آخر كلمة" : "Delete last"}
               >
-                <ArrowLeft className="h-5 w-5 text-slate-600" />
+                {isRTL
+                  ? <ArrowRight className="h-5 w-5 text-slate-600" />
+                  : <ArrowLeft className="h-5 w-5 text-slate-600" />
+                }
               </button>
               <button
                 onClick={clearAll}
@@ -994,7 +1043,7 @@ export default function AACApp() {
 
               {/* Category headers — always visible, one per column */}
               <div
-                className={`shrink-0 flex gap-1.5 p-2 border-b border-slate-100 bg-white ${isRTL ? "flex-row-reverse" : ""}`}
+                className="shrink-0 flex gap-1.5 p-2 border-b border-slate-100 bg-white"
               >
                 {CATEGORIES.map(cat => {
                   const colors = CATEGORY_COLORS[cat.id] ?? "bg-slate-50 border-slate-200";
@@ -1018,7 +1067,7 @@ export default function AACApp() {
               >
                 {expandedCategory === null ? (
                   /* Home: 7-column preview, 4 tiles per column going top-to-bottom */
-                  <div className={`flex gap-1.5 ${isRTL ? "flex-row-reverse" : ""}`}>
+                  <div className="flex gap-1.5">
                     {CATEGORIES.map(cat => {
                       const colors = CATEGORY_COLORS[cat.id] ?? "bg-slate-50 hover:bg-slate-100 border-slate-200";
                       return (
@@ -1094,7 +1143,7 @@ export default function AACApp() {
             </div>
 
             {/* Right: image panel — ~30% of area */}
-            <div className="flex flex-col border-l border-slate-100 bg-slate-50 overflow-hidden" style={{ flex: 3 }}>
+            <div className="flex flex-col border-x border-slate-100 bg-slate-50 overflow-hidden" style={{ flex: 3 }}>
               {/* Mode + style selectors */}
               <div className="shrink-0 p-2 border-b border-slate-100 bg-white space-y-1.5">
                 <div className="flex rounded-xl overflow-hidden border border-slate-200">
@@ -1153,20 +1202,32 @@ export default function AACApp() {
 
                 {/* Loading */}
                 {isGenerating && (
-                  <div className="space-y-2">
-                    {(imageMode === "story" ? [0, 1, 2] : [0]).map(i => (
-                      <div
-                        key={i}
-                        className="rounded-2xl aspect-square flex flex-col items-center justify-center gap-2"
-                        style={{ background: "linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%)" }}
-                      >
-                        <RefreshCw className="h-6 w-6 text-blue-400 animate-spin" />
-                        <span className="text-[10px] text-blue-400 font-semibold">
-                          {isRTL ? "جارٍ التوليد…" : "Generating…"}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                  imageMode === "story" ? (
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {[0, 1, 2, 3].map(i => (
+                        <div
+                          key={i}
+                          className="rounded-2xl aspect-square flex flex-col items-center justify-center gap-1.5"
+                          style={{ background: "linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%)" }}
+                        >
+                          <RefreshCw className="h-5 w-5 text-blue-400 animate-spin" />
+                          <span className="text-[9px] text-blue-400 font-semibold">
+                            {isRTL ? "جارٍ التوليد…" : "Generating…"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div
+                      className="rounded-2xl aspect-square flex flex-col items-center justify-center gap-2"
+                      style={{ background: "linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%)" }}
+                    >
+                      <RefreshCw className="h-6 w-6 text-blue-400 animate-spin" />
+                      <span className="text-[10px] text-blue-400 font-semibold">
+                        {isRTL ? "جارٍ التوليد…" : "Generating…"}
+                      </span>
+                    </div>
+                  )
                 )}
 
                 {/* Caption */}
@@ -1182,57 +1243,28 @@ export default function AACApp() {
                 {/* Images */}
                 {!isGenerating && generatedImages.length > 0 && (
                   imageMode === "story" ? (
-                    /* ── Story carousel ── */
-                    <div className="space-y-2">
-                      {/* Scene label */}
-                      {generatedImages[storyIndex]?.label && (
-                        <p className="text-[9px] text-slate-500 font-semibold text-center leading-tight px-1">
-                          {generatedImages[storyIndex].label}
-                        </p>
-                      )}
-                      {/* Image + arrows */}
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => setStoryIndex(i => Math.max(0, i - 1))}
-                          disabled={storyIndex === 0}
-                          className="shrink-0 p-1 rounded-xl bg-white border border-slate-200 shadow-sm disabled:opacity-20 transition-opacity"
-                        >
-                          <ChevronLeft className="h-4 w-4 text-slate-600" />
-                        </button>
+                    /* ── Story 2×2 grid ── */
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {generatedImages.map((img, i) => (
                         <motion.div
-                          key={storyIndex}
-                          initial={{ opacity: 0, x: 12 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          className="flex-1 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-white"
+                          key={i}
+                          initial={{ opacity: 0, scale: 0.92 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: i * 0.05 }}
+                          className="rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-white flex flex-col"
                         >
                           <img
-                            src={generatedImages[storyIndex].url}
-                            alt={generatedImages[storyIndex].label ?? caption}
+                            src={img.url}
+                            alt={img.label ?? caption}
                             className="w-full aspect-square object-cover"
                           />
+                          {img.label && (
+                            <p className="text-[8px] font-semibold text-slate-500 text-center px-1 py-0.5 leading-tight truncate">
+                              {img.label}
+                            </p>
+                          )}
                         </motion.div>
-                        <button
-                          onClick={() => setStoryIndex(i => Math.min(generatedImages.length - 1, i + 1))}
-                          disabled={storyIndex === generatedImages.length - 1}
-                          className="shrink-0 p-1 rounded-xl bg-white border border-slate-200 shadow-sm disabled:opacity-20 transition-opacity"
-                        >
-                          <ChevronRight className="h-4 w-4 text-slate-600" />
-                        </button>
-                      </div>
-                      {/* Dot indicators */}
-                      <div className="flex items-center justify-center gap-1.5">
-                        {generatedImages.map((_, i) => (
-                          <button
-                            key={i}
-                            onClick={() => setStoryIndex(i)}
-                            className={`rounded-full transition-all ${
-                              i === storyIndex
-                                ? "w-3 h-3 bg-blue-600"
-                                : "w-2 h-2 bg-slate-300 hover:bg-slate-400"
-                            }`}
-                          />
-                        ))}
-                      </div>
+                      ))}
                     </div>
                   ) : (
                     /* ── Single image ── */
@@ -1254,21 +1286,23 @@ export default function AACApp() {
           </div>
 
           {/* ── Bottom bar ── */}
-          <div dir="ltr" className="shrink-0 bg-white border-t border-slate-100 px-4 py-3 flex items-center justify-end gap-2">
-            <button
-              onClick={() => setExpandedCategory(null)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-700 font-semibold text-sm transition-colors border border-blue-200"
-            >
-              <Home className="h-4 w-4" />
-              {isRTL ? "الرئيسية" : "Home"}
-            </button>
-            <button
-              onClick={() => { setShowCustomiseModal(true); setCustomImageUrl(""); setCustomEmoji(""); setCustomLabelEn(""); setCustomLabelAr(""); }}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-600 font-semibold text-sm transition-colors border border-slate-200"
-            >
-              <Settings className="h-4 w-4" />
-              {isRTL ? "تخصيص اللوحة" : "Customise Board"}
-            </button>
+          <div className="shrink-0 bg-white border-t border-slate-100 px-4 py-3 flex items-center gap-2">
+            <div className="flex items-center gap-2" style={isRTL ? { marginRight: "auto" } : { marginLeft: "auto" }}>
+              <button
+                onClick={() => setExpandedCategory(null)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-700 font-semibold text-sm transition-colors border border-blue-200"
+              >
+                <Home className="h-4 w-4" />
+                {isRTL ? "الرئيسية" : "Home"}
+              </button>
+              <button
+                onClick={() => { setShowCustomiseModal(true); setCustomImageUrl(""); setCustomEmoji(""); setCustomLabelEn(""); setCustomLabelAr(""); }}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-600 font-semibold text-sm transition-colors border border-slate-200"
+              >
+                <Settings className="h-4 w-4" />
+                {isRTL ? "تخصيص اللوحة" : "Customise Board"}
+              </button>
+            </div>
           </div>
         </div>
       )}
