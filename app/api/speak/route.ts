@@ -1,113 +1,66 @@
-// OpenAI TTS route — disabled. Re-enable by removing these block comments
-// and wiring up the frontend (see commented-out speakSelectedSentence in page.tsx).
+import { GoogleGenAI } from "@google/genai";
 
-/*
-import OpenAI from "openai";
+function pcmToWav(pcmBuffer: Buffer): Buffer {
+  const sampleRate   = 24000;
+  const bitsPerSample = 16;
+  const channels     = 1;
+  const byteRate     = (sampleRate * channels * bitsPerSample) / 8;
+  const blockAlign   = (channels * bitsPerSample) / 8;
+  const header       = Buffer.alloc(44);
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  header.write("RIFF", 0);
+  header.writeUInt32LE(36 + pcmBuffer.length, 4);
+  header.write("WAVE", 8);
+  header.write("fmt ", 12);
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(channels, 22);
+  header.writeUInt32LE(sampleRate, 24);
+  header.writeUInt32LE(byteRate, 28);
+  header.writeUInt16LE(blockAlign, 32);
+  header.writeUInt16LE(bitsPerSample, 34);
+  header.write("data", 36);
+  header.writeUInt32LE(pcmBuffer.length, 40);
 
-// Maps profile to the most fitting OpenAI TTS voice + optional instructions
-function resolveVoice(
-  gender: string,
-  age: string,
-  language: string,
-): { voice: "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer" | "coral" | "sage" | "ash"; instructions: string } {
-  const ageNum = parseInt(age, 10);
-  const isChild = !isNaN(ageNum) && ageNum < 13;
-  const isTeen = !isNaN(ageNum) && ageNum >= 13 && ageNum < 18;
-  const isFemale = gender === "female";
-  const isMale = gender === "male";
-  const isArabic = language === "ar";
-
-  if (isChild && isFemale) {
-    return {
-      voice: "nova",
-      instructions: isArabic
-        ? "تحدثي بصوت طفولي ناعم ومشرق ومبهج. وتير بطيئة وواضحة."
-        : "Speak in a soft, bright, cheerful child-like voice. Slow and clear pace.",
-    };
-  }
-  if (isChild && isMale) {
-    return {
-      voice: "fable",
-      instructions: isArabic
-        ? "تحدث بصوت طفولي حيوي ومرح. وتيرة بطيئة وواضحة."
-        : "Speak in an energetic, playful child-like voice. Slow and clear pace.",
-    };
-  }
-  if (isChild) {
-    return {
-      voice: "nova",
-      instructions: isArabic
-        ? "تحدث بصوت طفولي لطيف وواضح."
-        : "Speak in a gentle, clear child-like voice.",
-    };
-  }
-  if (isTeen && isFemale) {
-    return {
-      voice: "nova",
-      instructions: isArabic
-        ? "صوت شبابي هادئ وطبيعي."
-        : "Calm, natural youthful female voice.",
-    };
-  }
-  if (isTeen && isMale) {
-    return {
-      voice: "echo",
-      instructions: isArabic
-        ? "صوت شبابي هادئ وطبيعي."
-        : "Calm, natural youthful male voice.",
-    };
-  }
-  if (isFemale) {
-    return {
-      voice: "nova",
-      instructions: isArabic
-        ? "صوت نسائي هادئ وطبيعي ودافئ."
-        : "Calm, warm, natural adult female delivery.",
-    };
-  }
-  if (isMale) {
-    return {
-      voice: "onyx",
-      instructions: isArabic
-        ? "صوت رجالي هادئ وعميق وطبيعي."
-        : "Calm, deep, natural adult male delivery.",
-    };
-  }
-  // Neutral default
-  return {
-    voice: "alloy",
-    instructions: isArabic
-      ? "صوت هادئ وواضح وطبيعي."
-      : "Calm, clear, natural voice.",
-  };
+  return Buffer.concat([header, pcmBuffer]);
 }
 
 export async function POST(req: Request) {
   try {
-    const { text, gender, age, language } = await req.json();
+    const { text, gender, language } = await req.json();
 
     if (!text?.trim()) {
       return Response.json({ error: "No text provided" }, { status: 400 });
     }
 
-    const { voice, instructions } = resolveVoice(gender ?? "", age ?? "", language ?? "en");
+    const voice = gender === "male" ? "Fenrir" : "Aoede";
 
-    const mp3 = await client.audio.speech.create({
-      model: "gpt-4o-mini-tts",
-      voice,
-      input: text,
-      instructions,
-      response_format: "mp3",
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash-preview-tts",
+      contents: [{ role: "user", parts: [{ text: `Read aloud exactly as written: ${text}` }] }],
+      config: {
+        responseModalities: ["AUDIO"],
+        speechConfig: {
+          voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } },
+        },
+      },
     });
 
-    const buffer = Buffer.from(await mp3.arrayBuffer());
+    const audioData =
+      response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
 
-    return new Response(buffer, {
+    if (!audioData) {
+      return Response.json({ error: "No audio returned from Gemini" }, { status: 500 });
+    }
+
+    const wav = pcmToWav(Buffer.from(audioData, "base64"));
+
+    return new Response(wav, {
       headers: {
-        "Content-Type": "audio/mpeg",
-        "Content-Length": String(buffer.byteLength),
+        "Content-Type": "audio/wav",
+        "Content-Length": String(wav.byteLength),
       },
     });
   } catch (error) {
@@ -116,4 +69,3 @@ export async function POST(req: Request) {
     return Response.json({ error: message }, { status: 500 });
   }
 }
-*/

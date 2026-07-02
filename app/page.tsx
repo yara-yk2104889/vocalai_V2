@@ -480,15 +480,30 @@ export default function AACApp() {
     setCaption("");
   }
 
-  function speakSentence() {
+  async function speakSentence() {
     if (selectedTiles.length === 0 || typeof window === "undefined") return;
     const text = selectedTiles.map(t => isRTL ? t.ar : t.en).join(" ");
     try {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = isRTL ? "ar-SA" : "en-US";
-      window.speechSynthesis.speak(utterance);
-    } catch { /* silent */ }
+      const res = await fetch("/api/speak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, gender: profile.gender, language }),
+      });
+      if (!res.ok) throw new Error("TTS failed");
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.onended = () => URL.revokeObjectURL(url);
+      audio.play();
+    } catch {
+      // fallback to Web Speech API
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = isRTL ? "ar-SA" : "en-US";
+        window.speechSynthesis.speak(utterance);
+      } catch { /* silent */ }
+    }
   }
 
   const profileContext = {
