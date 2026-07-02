@@ -489,14 +489,17 @@ export default function AACApp() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, gender: profile.gender, language }),
       });
-      if (!res.ok) throw new Error("TTS failed");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `HTTP ${res.status}`);
+      }
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
       const audio = new Audio(url);
       audio.onended = () => URL.revokeObjectURL(url);
-      audio.play();
-    } catch {
-      // fallback to Web Speech API
+      await audio.play();
+    } catch (e) {
+      console.error("[Gemini TTS] failed, falling back to Web Speech:", e);
       try {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
