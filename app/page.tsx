@@ -312,6 +312,37 @@ export default function AACApp() {
 
   // ─── Effects ──────────────────────────────────────────────────────────────
 
+  // ── localStorage: load on mount ──────────────────────────────────────────
+  useEffect(() => {
+    try {
+      const savedProfile  = localStorage.getItem("vocalai_profile");
+      const savedPeople   = localStorage.getItem("vocalai_people");
+      const savedTiles    = localStorage.getItem("vocalai_custom_tiles");
+      const savedLanguage = localStorage.getItem("vocalai_language");
+      if (savedProfile)  setProfile(JSON.parse(savedProfile));
+      if (savedPeople)   setImportantPeople(JSON.parse(savedPeople));
+      if (savedTiles)    setCustomTiles(JSON.parse(savedTiles));
+      if (savedLanguage) setLanguage(savedLanguage as "en" | "ar");
+    } catch { /* corrupted data — start fresh */ }
+  }, []);
+
+  // ── localStorage: save on change ─────────────────────────────────────────
+  useEffect(() => {
+    localStorage.setItem("vocalai_profile", JSON.stringify(profile));
+  }, [profile]);
+
+  useEffect(() => {
+    localStorage.setItem("vocalai_people", JSON.stringify(importantPeople));
+  }, [importantPeople]);
+
+  useEffect(() => {
+    localStorage.setItem("vocalai_custom_tiles", JSON.stringify(customTiles));
+  }, [customTiles]);
+
+  useEffect(() => {
+    localStorage.setItem("vocalai_language", language);
+  }, [language]);
+
   useEffect(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(async (pos) => {
