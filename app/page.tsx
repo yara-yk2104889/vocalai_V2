@@ -65,6 +65,7 @@ interface RecentGeneration {
 
 const TILES: Record<string, AacTile[]> = {
   core: [
+    { emoji: "👋", en: "Hello",    ar: "مرحبا"  },
     { emoji: "🙋", en: "I want",   ar: "أريد"   },
     { emoji: "🆘", en: "Help",     ar: "مساعدة" },
     { emoji: "❓", en: "Question", ar: "سؤال"   },
@@ -77,6 +78,7 @@ const TILES: Record<string, AacTile[]> = {
     { emoji: "🤒", en: "Sick",     ar: "مريض"   },
     { emoji: "🏠", en: "Home",     ar: "البيت"  },
     { emoji: "🚽", en: "Toilet",   ar: "الحمام" },
+    { emoji: "👋", en: "Bye",      ar: "وداعاً" },
   ],
   food: [
     { emoji: "🍎", en: "Apple",      ar: "تفاحة"    },

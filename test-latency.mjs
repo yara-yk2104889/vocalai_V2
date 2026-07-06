@@ -93,7 +93,7 @@ async function latencyElevenLabs() {
 
 async function latencyHamsa() {
   console.log("\n── Hamsa (Jobs API — measures job submit time only) ─────────");
-  const apiKey = process.env.HAMSA_API;
+  const apiKey = process.env.HAMSA_API_KEY;
   const headers = { "Authorization": `Token ${apiKey}`, "Content-Type": "application/json" };
 
   // Get project ID

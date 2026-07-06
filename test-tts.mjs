@@ -120,7 +120,7 @@ async function testElevenLabs() {
 
 async function testHamsa() {
   console.log("\n── Hamsa TTS (Jobs API) ─────────────────────────────────────");
-  const apiKey = process.env.HAMSA_API;
+  const apiKey = process.env.HAMSA_API_KEY;
   const headers = { "Authorization": `Token ${apiKey}`, "Content-Type": "application/json" };
 
   // 1. Get project ID from API key
