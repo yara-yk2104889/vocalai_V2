@@ -154,13 +154,13 @@ const TILES: Record<string, AacTile[]> = {
     { emoji: "🙏", en: "Please",    ar: "من فضلك"    },
   ],
   phrases: [
-    { emoji: "🪪", en: "__my_name__",          ar: "__my_name__"          },
-    { emoji: "🤝", en: "Nice to meet you",     ar: "Nice to meet you"     },
-    { emoji: "🙂", en: "How are you?",         ar: "How are you?"         },
-    { emoji: "🙏", en: "Thank you",            ar: "Thank you"            },
-    { emoji: "😊", en: "You're welcome",       ar: "You're welcome"       },
-    { emoji: "🆘", en: "I need help please",   ar: "I need help please"   },
-    { emoji: "🔁", en: "Can you repeat that?", ar: "Can you repeat that?" },
+    { emoji: "🪪", en: "__my_name__",          ar: "__my_name__"             },
+    { emoji: "🤝", en: "Nice to meet you",     ar: "سعيد بلقائك"            },
+    { emoji: "🙂", en: "How are you?",         ar: "كيف حالك؟"              },
+    { emoji: "🙏", en: "Thank you",            ar: "شكراً"                  },
+    { emoji: "😊", en: "You're welcome",       ar: "عفواً"                  },
+    { emoji: "🆘", en: "I need help please",   ar: "أحتاج مساعدة من فضلك"  },
+    { emoji: "🔁", en: "Can you repeat that?", ar: "هل يمكنك إعادة ذلك؟"   },
   ],
 };
 
@@ -479,7 +479,7 @@ export default function AACApp() {
       const name = profile.name.trim();
       base = (TILES.phrases ?? []).map(t =>
         t.en === "__my_name__"
-          ? { emoji: t.emoji, en: name ? `My name is ${name}` : "My name is…", ar: name ? `My name is ${name}` : "My name is…" }
+          ? { emoji: t.emoji, en: name ? `My name is ${name}` : "My name is…", ar: name ? `اسمي ${name}` : "اسمي…" }
           : t
       );
     } else {
