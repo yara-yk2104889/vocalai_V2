@@ -16,6 +16,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import Cropper from "react-easy-crop";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -223,6 +224,28 @@ function toBase64(file: File): Promise<string> {
   });
 }
 
+async function getCroppedImg(
+  src: string,
+  pixelCrop: { x: number; y: number; width: number; height: number },
+): Promise<string> {
+  const img = await new Promise<HTMLImageElement>((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = rej;
+    i.src = src;
+  });
+  const canvas = document.createElement("canvas");
+  const SIZE = 512;
+  canvas.width = SIZE;
+  canvas.height = SIZE;
+  canvas.getContext("2d")!.drawImage(
+    img,
+    pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height,
+    0, 0, SIZE, SIZE,
+  );
+  return canvas.toDataURL("image/jpeg", 0.88);
+}
+
 function uid(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
   return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
@@ -288,6 +311,11 @@ export default function AACApp() {
   const [customLabelEn, setCustomLabelEn]             = useState("");
   const [customLabelAr, setCustomLabelAr]             = useState("");
   const [customCameraOn, setCustomCameraOn]           = useState(false);
+  const [showCropModal, setShowCropModal]             = useState(false);
+  const [cropSrc, setCropSrc]                         = useState("");
+  const [cropPos, setCropPos]                         = useState({ x: 0, y: 0 });
+  const [cropZoom, setCropZoom]                       = useState(1);
+  const [croppedAreaPx, setCroppedAreaPx]             = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const [customCameraStream, setCustomCameraStream]   = useState<MediaStream | null>(null);
   const customVideoRef  = useRef<HTMLVideoElement>(null);
   const customCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -295,6 +323,9 @@ export default function AACApp() {
 
   // ── Parent tab
   const [parentTab, setParentTab] = useState<"profile" | "people" | "history">("profile");
+
+  const PRESET_CONDITIONS = ["autism", "cerebral-palsy", "down-syndrome", "aphasia", "als", "other", ""];
+  const isOtherCondition = !PRESET_CONDITIONS.includes(profile.condition) || profile.condition === "other";
 
   // ── Camera refs — profile
   const profileVideoRef  = useRef<HTMLVideoElement>(null);
@@ -742,6 +773,63 @@ export default function AACApp() {
         )}
       </AnimatePresence>
 
+      {/* ── Crop Modal ── */}
+      <AnimatePresence>
+        {showCropModal && cropSrc && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex flex-col bg-black"
+          >
+            {/* Cropper area */}
+            <div className="relative flex-1">
+              <Cropper
+                image={cropSrc}
+                crop={cropPos}
+                zoom={cropZoom}
+                aspect={1}
+                onCropChange={setCropPos}
+                onZoomChange={setCropZoom}
+                onCropComplete={(_, px) => setCroppedAreaPx(px)}
+              />
+            </div>
+
+            {/* Zoom slider */}
+            <div className="shrink-0 bg-black px-6 pt-4 pb-2 flex items-center gap-3">
+              <span className="text-white text-xs opacity-60">🔍</span>
+              <input
+                type="range" min={1} max={3} step={0.01}
+                value={cropZoom}
+                onChange={e => setCropZoom(Number(e.target.value))}
+                className="flex-1 accent-blue-500"
+              />
+              <span className="text-white text-xs opacity-60">🔎</span>
+            </div>
+
+            {/* Actions */}
+            <div className="shrink-0 bg-black px-6 pb-6 pt-2 flex gap-3">
+              <button
+                onClick={() => { setShowCropModal(false); setCropSrc(""); }}
+                className="flex-1 py-3 rounded-2xl bg-white/10 text-white font-semibold text-sm"
+              >
+                {isRTL ? "إلغاء" : "Cancel"}
+              </button>
+              <button
+                onClick={async () => {
+                  if (!croppedAreaPx) return;
+                  const cropped = await getCroppedImg(cropSrc, croppedAreaPx);
+                  setCustomImageUrl(cropped);
+                  setShowCropModal(false);
+                  setCropSrc("");
+                }}
+                className="flex-1 py-3 rounded-2xl bg-blue-600 text-white font-bold text-sm"
+              >
+                {isRTL ? "اقتصاص" : "Crop"}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Customise Board Modal ── */}
       <AnimatePresence>
         {showCustomiseModal && (
@@ -838,7 +926,9 @@ export default function AACApp() {
                                 const ctx = c.getContext("2d")!;
                                 ctx.translate(c.width, 0); ctx.scale(-1, 1);
                                 ctx.drawImage(v, 0, 0);
-                                setCustomImageUrl(c.toDataURL("image/jpeg", 0.85));
+                                setCropSrc(c.toDataURL("image/jpeg", 0.85));
+                                setCropPos({ x: 0, y: 0 }); setCropZoom(1);
+                                setShowCropModal(true);
                                 stopCustomCamera();
                               }}
                               className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-white/30 backdrop-blur-sm">
@@ -855,7 +945,9 @@ export default function AACApp() {
                           <input ref={customFileRef} type="file" accept="image/*" className="hidden"
                             onChange={async e => {
                               const f = e.target.files?.[0]; if (!f) return;
-                              setCustomImageUrl(await toBase64(f));
+                              const src = await toBase64(f);
+                              setCropSrc(src); setCropPos({ x: 0, y: 0 }); setCropZoom(1);
+                              setShowCropModal(true);
                             }} />
                         </label>
                         <button
@@ -1504,9 +1596,15 @@ export default function AACApp() {
                       ].map(c => (
                         <button
                           key={c.v}
-                          onClick={() => setProfile(p => ({ ...p, condition: p.condition === c.v ? "" : c.v }))}
+                          onClick={() => {
+                            if (c.v === "other") {
+                              setProfile(p => ({ ...p, condition: isOtherCondition ? "" : "other" }));
+                            } else {
+                              setProfile(p => ({ ...p, condition: p.condition === c.v ? "" : c.v }));
+                            }
+                          }}
                           className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors ${
-                            profile.condition === c.v
+                            (c.v === "other" ? isOtherCondition : profile.condition === c.v)
                               ? "bg-blue-700 text-white border-blue-700"
                               : "bg-white text-slate-600 hover:bg-blue-50 border-slate-200"
                           }`}
@@ -1515,6 +1613,16 @@ export default function AACApp() {
                         </button>
                       ))}
                     </div>
+                    {isOtherCondition && (
+                      <Input
+                        autoFocus
+                        dir={isRTL ? "rtl" : "ltr"}
+                        value={profile.condition === "other" ? "" : profile.condition}
+                        onChange={e => setProfile(p => ({ ...p, condition: e.target.value || "other" }))}
+                        placeholder={isRTL ? "اكتب التشخيص هنا…" : "Type diagnosis here…"}
+                        className="rounded-xl mt-1"
+                      />
+                    )}
                   </div>
 
                   <div className="space-y-3">
