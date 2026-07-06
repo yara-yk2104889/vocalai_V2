@@ -153,6 +153,15 @@ const TILES: Record<string, AacTile[]> = {
     { emoji: "✅", en: "Can I?",    ar: "هل يمكنني؟" },
     { emoji: "🙏", en: "Please",    ar: "من فضلك"    },
   ],
+  phrases: [
+    { emoji: "🪪", en: "__my_name__",          ar: "__my_name__"          },
+    { emoji: "🤝", en: "Nice to meet you",     ar: "Nice to meet you"     },
+    { emoji: "🙂", en: "How are you?",         ar: "How are you?"         },
+    { emoji: "🙏", en: "Thank you",            ar: "Thank you"            },
+    { emoji: "😊", en: "You're welcome",       ar: "You're welcome"       },
+    { emoji: "🆘", en: "I need help please",   ar: "I need help please"   },
+    { emoji: "🔁", en: "Can you repeat that?", ar: "Can you repeat that?" },
+  ],
 };
 
 const CATEGORIES = [
@@ -163,6 +172,7 @@ const CATEGORIES = [
   { id: "activities", enLabel: "Activities", arLabel: "أنشطة"  },
   { id: "people",     enLabel: "People",     arLabel: "أشخاص"  },
   { id: "questions",  enLabel: "Questions",  arLabel: "أسئلة"  },
+  { id: "phrases",    enLabel: "Phrases",    arLabel: "جمل"    },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -173,6 +183,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   activities: "bg-green-50  hover:bg-green-100  border-green-200",
   people:     "bg-yellow-50 hover:bg-yellow-100 border-yellow-200",
   questions:  "bg-purple-50 hover:bg-purple-100 border-purple-200",
+  phrases:    "bg-rose-50   hover:bg-rose-100   border-rose-200",
 };
 
 const STYLE_OPTIONS: { id: "symbolic" | "cartoon" | "realistic"; en: string; ar: string }[] = [
@@ -461,9 +472,19 @@ export default function AACApp() {
   }
 
   function getTilesForCategory(cat: string): AacTile[] {
-    const base = cat !== "people"
-      ? TILES[cat] ?? []
-      : [...TILES.people, ...importantPeople.map(p => ({ emoji: "👤", en: p.name, ar: p.name }))];
+    let base: AacTile[];
+    if (cat === "people") {
+      base = [...TILES.people, ...importantPeople.map(p => ({ emoji: "👤", en: p.name, ar: p.name }))];
+    } else if (cat === "phrases") {
+      const name = profile.name.trim();
+      base = (TILES.phrases ?? []).map(t =>
+        t.en === "__my_name__"
+          ? { emoji: t.emoji, en: name ? `My name is ${name}` : "My name is…", ar: name ? `My name is ${name}` : "My name is…" }
+          : t
+      );
+    } else {
+      base = TILES[cat] ?? [];
+    }
     return [...base, ...(customTiles[cat] ?? [])];
   }
 
