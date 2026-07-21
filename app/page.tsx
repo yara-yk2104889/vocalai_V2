@@ -363,10 +363,12 @@ export default function AACApp() {
       const savedPeople   = localStorage.getItem("vocalai_people");
       const savedTiles    = localStorage.getItem("vocalai_custom_tiles");
       const savedLanguage = localStorage.getItem("vocalai_language");
+      const savedStyle    = localStorage.getItem("vocalai_image_style");
       if (savedProfile)  setProfile(JSON.parse(savedProfile));
       if (savedPeople)   setImportantPeople(JSON.parse(savedPeople));
       if (savedTiles)    setCustomTiles(JSON.parse(savedTiles));
       if (savedLanguage) setLanguage(savedLanguage as "en" | "ar");
+      if (savedStyle)    setImageStyle(savedStyle as "symbolic" | "cartoon" | "realistic");
     } catch { /* corrupted data — start fresh */ }
   }, []);
 
@@ -386,6 +388,10 @@ export default function AACApp() {
   useEffect(() => {
     localStorage.setItem("vocalai_language", language);
   }, [language]);
+
+  useEffect(() => {
+    localStorage.setItem("vocalai_image_style", imageStyle);
+  }, [imageStyle]);
 
   useEffect(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) return;
@@ -676,9 +682,16 @@ export default function AACApp() {
         body: JSON.stringify({ image: dataUrl }),
       });
       const data = await res.json();
-      if (target === "profile") setProfile(p => ({ ...p, appearance: data.appearance ?? "" }));
-      else setNewPersonDesc(data.appearance ?? "");
-    } catch { /* silent */ } finally {
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+      const appearance = data.appearance ?? "";
+      if (target === "profile") setProfile(p => ({ ...p, appearance }));
+      else setNewPersonDesc(appearance);
+      if (!appearance) console.warn("[analyzePhoto] API returned empty appearance for", target);
+    } catch (e) {
+      console.error("[analyzePhoto] failed for", target, e);
+      if (target === "profile")
+        setProfile(p => ({ ...p, appearance: "" }));
+    } finally {
       if (target === "profile") setProfilePhotoLoading(false);
       else setNewPersonPhotoLoading(false);
     }
@@ -1668,6 +1681,19 @@ export default function AACApp() {
                           <p className="text-xs text-green-600 font-medium">
                             ✓ {isRTL ? "تم تحليل الصورة — ستُخصَّص الصور" : "Photo analyzed — images will be personalized"}
                           </p>
+                        )}
+                        {!profilePhotoLoading && profile.photoPreview && !profile.appearance && (
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs text-red-500 font-medium">
+                              ✗ {isRTL ? "فشل تحليل الصورة" : "Photo analysis failed"}
+                            </p>
+                            <button
+                              onClick={() => analyzePhoto(profile.photoPreview, "profile")}
+                              className="text-xs text-blue-600 underline"
+                            >
+                              {isRTL ? "إعادة المحاولة" : "Retry"}
+                            </button>
+                          </div>
                         )}
                         <Button
                           variant="outline" size="sm" className="rounded-xl text-red-500 border-red-200 hover:bg-red-50"
