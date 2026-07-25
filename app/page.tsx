@@ -231,6 +231,29 @@ const CONNECTORS: { en: string; ar: string }[] = [
 
 const DEFAULT_PIN = "1234";
 
+// ─── In-app keyboard layouts ───────────────────────────────────────────────────
+const KBD_EN = [
+  ['q','w','e','r','t','y','u','i','o','p'],
+  ['a','s','d','f','g','h','j','k','l'],
+  ['SHIFT','z','x','c','v','b','n','m','⌫'],
+  ['123',' ','🔊'],
+];
+const KBD_AR = [
+  ['ض','ص','ث','ق','ف','غ','ع','ه','خ','ح'],
+  ['ش','س','ي','ب','ل','ا','ت','ن','م','ك'],
+  ['ئ','ء','ؤ','ر','لا','ى','ة','و','ز','ظ'],
+  ['⌫',' ','🔊'],
+];
+const KBD_NUM = [
+  ['1','2','3','4','5','6','7','8','9','0'],
+  ['-','/','.',',','?','!','@','#','%','*'],
+  ["'",'(',')','+','=',';',':','~','_','⌫'],
+  ['ABC',' ','🔊'],
+];
+const KBD_FLEX: Record<string, number> = {
+  SHIFT: 1.5, '⌫': 1.5, '123': 1.5, ABC: 1.5, ' ': 4.5, '🔊': 2,
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function toBase64(file: File): Promise<string> {
@@ -345,10 +368,11 @@ export default function AACApp() {
   const [isArrangingCategories, setIsArrangingCategories] = useState(false);
   const [draggedCatId, setDraggedCatId]   = useState<string | null>(null);
   const [dragOverCatId, setDragOverCatId] = useState<string | null>(null);
-  const [showEmojiInput, setShowEmojiInput]           = useState(false);
-  const [emojiInputText, setEmojiInputText]           = useState("");
-  const [emojiInputLabel, setEmojiInputLabel]         = useState("");
-  const emojiInputRef = useRef<HTMLInputElement>(null);
+  const [textMode, setTextMode]   = useState(false);
+  const [freeText, setFreeText]   = useState("");
+  const [kbdShift, setKbdShift]   = useState(false);
+  const [kbdNumMode, setKbdNumMode] = useState(false);
+  const freeTextRef = useRef<HTMLTextAreaElement>(null);
   const [customCategory, setCustomCategory]           = useState(CATEGORIES[0].id);
   const [customIconType, setCustomIconType]           = useState<"emoji" | "photo" | "generated">("emoji");
   const [customEmoji, setCustomEmoji]                 = useState("");
@@ -450,7 +474,23 @@ export default function AACApp() {
   }, [culturalGrounding]);
 
   useEffect(() => {
-    localStorage.setItem("vocalai_history", JSON.stringify(recentGenerations));
+    // Strip base64 data: URLs before persisting — they're ~1-3 MB each and blow the 5 MB quota.
+    // In-memory state keeps them for the current session; history cards just won't show images after reload.
+    const stripped = recentGenerations.map(g => ({
+      ...g,
+      images: g.images.filter(url => !url.startsWith("data:")),
+    }));
+    try {
+      localStorage.setItem("vocalai_history", JSON.stringify(stripped));
+    } catch {
+      // Still too large (e.g. many remote URLs) — save metadata only
+      try {
+        localStorage.setItem(
+          "vocalai_history",
+          JSON.stringify(stripped.map(g => ({ ...g, images: [] }))),
+        );
+      } catch { /* give up gracefully */ }
+    }
   }, [recentGenerations]);
 
   useEffect(() => {
@@ -638,14 +678,6 @@ export default function AACApp() {
     setCustomCameraOn(false);
   }
 
-  function submitEmojiInput() {
-    const emoji = emojiInputText.trim();
-    const label = emojiInputLabel.trim() || emoji;
-    if (!emoji) return;
-    addTile({ emoji, en: label, ar: label });
-    setEmojiInputText(""); setEmojiInputLabel(""); setShowEmojiInput(false);
-  }
-
   function addTile(tile: AacTile) {
     setSelectedTiles(prev => [...prev, tile]);
     setGeneratedImages([]);
@@ -664,9 +696,21 @@ export default function AACApp() {
     setCaption("");
   }
 
+  function handleKbdKey(key: string) {
+    if (key === '⌫')   { setFreeText(p => p.slice(0, -1)); return; }
+    if (key === ' ')   { setFreeText(p => p + ' '); return; }
+    if (key === '🔊')  { speakSentence(); return; }
+    if (key === 'SHIFT') { setKbdShift(v => !v); return; }
+    if (key === '123') { setKbdNumMode(true); return; }
+    if (key === 'ABC') { setKbdNumMode(false); return; }
+    const ch = kbdShift && key.length === 1 ? key.toUpperCase() : key;
+    setFreeText(p => p + ch);
+    if (kbdShift && key.length === 1) setKbdShift(false);
+  }
+
   async function speakSentence() {
-    if (selectedTiles.length === 0 || typeof window === "undefined") return;
-    const text = selectedTiles.map(t => isRTL ? t.ar : t.en).join(" ");
+    const text = textMode ? freeText.trim() : selectedTiles.map(t => isRTL ? t.ar : t.en).join(" ");
+    if (!text || typeof window === "undefined") return;
     try {
       const res = await fetch("/api/speak", {
         method: "POST",
@@ -703,17 +747,18 @@ export default function AACApp() {
   };
 
   async function handleGenerate() {
-    if (selectedTiles.length === 0 || isGenerating) return;
+    const hasInput = textMode ? !!freeText.trim() : selectedTiles.length > 0;
+    if (!hasInput || isGenerating) return;
     setIsGenerating(true);
     setGeneratedImages([]);
     setCaption("");
 
-    const words = selectedTiles.map(t => (isRTL ? t.ar : t.en)).join(" ");
+    const words = textMode ? freeText.trim() : selectedTiles.map(t => (isRTL ? t.ar : t.en)).join(" ");
 
     try {
       if (imageMode === "single") {
-        const prompt = selectedTiles.map(t => t.en).join(" ");
-        const matchingPeople = importantPeople.filter(p =>
+        const prompt = textMode ? freeText.trim() : selectedTiles.map(t => t.en).join(" ");
+        const matchingPeople = textMode ? [] : importantPeople.filter(p =>
           selectedTiles.some(t => t.en.toLowerCase() === p.name.toLowerCase())
         );
 
@@ -745,7 +790,7 @@ export default function AACApp() {
         }, ...prev].slice(0, 20));
 
       } else {
-        const sentence = selectedTiles.map(t => t.en).join(" ");
+        const sentence = textMode ? freeText.trim() : selectedTiles.map(t => t.en).join(" ");
 
         const [splitRes, captionRes] = await Promise.all([
           fetch("/api/split-story", {
@@ -1503,104 +1548,109 @@ export default function AACApp() {
           <div
             className={`shrink-0 bg-white border-b border-slate-100 px-3 py-2.5 flex items-stretch gap-2 shadow-sm transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}
           >
-            {/* Emoji keyboard button + inline input */}
+            {/* Text mode toggle button */}
             <button
-              onClick={() => { setShowEmojiInput(v => !v); setTimeout(() => emojiInputRef.current?.focus(), 50); }}
-              className={`shrink-0 w-12 min-h-[56px] rounded-2xl border-2 flex items-center justify-center transition-all text-xl ${showEmojiInput ? "bg-yellow-50 border-yellow-300" : "bg-slate-50 border-slate-200 hover:bg-yellow-50 hover:border-yellow-200"}`}
-              aria-label="Emoji keyboard"
+              onClick={() => {
+                const next = !textMode;
+                setTextMode(next);
+                if (next) setTimeout(() => freeTextRef.current?.focus(), 50);
+              }}
+              className={`shrink-0 w-12 min-h-[56px] rounded-2xl border-2 flex items-center justify-center transition-all text-xl ${textMode ? "bg-orange-50 border-orange-300" : "bg-slate-50 border-slate-200 hover:bg-orange-50 hover:border-orange-200"}`}
+              aria-label={textMode ? (isRTL ? "وضع البطاقات" : "Switch to tiles") : (isRTL ? "وضع الكتابة" : "Switch to keyboard")}
             >
               😊
             </button>
-            <AnimatePresence>
-              {showEmojiInput && (
-                <motion.div
-                  initial={{ width: 0, opacity: 0 }} animate={{ width: "auto", opacity: 1 }} exit={{ width: 0, opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="shrink-0 flex items-center gap-1.5 overflow-hidden"
-                >
-                  <input
-                    ref={emojiInputRef}
-                    value={emojiInputText}
-                    onChange={e => setEmojiInputText(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && submitEmojiInput()}
-                    placeholder="😄"
-                    className="w-24 min-h-[56px] text-2xl text-center border-2 border-yellow-200 bg-yellow-50 rounded-2xl px-2 outline-none focus:border-yellow-400"
-                  />
-                  <button
-                    onClick={submitEmojiInput}
-                    disabled={!emojiInputText.trim()}
-                    className="shrink-0 min-h-[56px] px-3 rounded-2xl bg-yellow-400 hover:bg-yellow-500 disabled:opacity-30 font-bold text-white text-sm transition-colors"
-                  >
-                    {isRTL ? "إضافة" : "Add"}
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
 
-            {/* Word strip — tap to speak */}
-            <button
-              onClick={speakSentence}
-              className="flex-1 min-h-[56px] bg-slate-50 hover:bg-blue-50 active:bg-blue-100 rounded-2xl border-2 border-slate-200 hover:border-blue-300 px-3 py-2 transition-all flex items-center gap-1.5 flex-wrap text-left overflow-hidden"
-              aria-label={isRTL ? "اضغط للنطق" : "Tap to speak"}
-            >
-              {selectedTiles.length === 0 ? (
-                <span className="text-sm text-slate-400 select-none">
-                  {isRTL ? "اضغط على بطاقة لبناء رسالتك…" : "Tap a tile to build your message…"}
-                </span>
-              ) : (
-                selectedTiles.map((tile, i) => (
-                  <motion.span
-                    key={`${tile.en}-${i}`}
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                    onClick={e => { e.stopPropagation(); removeTileAt(i); }}
-                    className="inline-flex flex-col items-center rounded-xl bg-white border border-blue-200 shadow-sm px-2 py-1 shrink-0 cursor-pointer hover:bg-red-50 hover:border-red-300 active:scale-90 transition-all"
-                  >
-                    {tile.imageUrl
-                      ? <img src={tile.imageUrl} className="w-7 h-7 object-cover rounded-md" alt={tile.en} />
-                      : tile.emoji && <span className="text-lg leading-none">{tile.emoji}</span>
-                    }
-                    <span className="text-[10px] text-slate-700 font-semibold leading-tight mt-0.5">
-                      {isRTL ? tile.ar : tile.en}
-                    </span>
-                  </motion.span>
-                ))
-              )}
-            </button>
+            {/* Word strip — tiles in tile mode, textarea in text mode */}
+            {textMode ? (
+              <textarea
+                ref={freeTextRef}
+                value={freeText}
+                onChange={e => setFreeText(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); speakSentence(); } }}
+                placeholder={isRTL ? "اكتب رسالتك هنا…" : "Type your message here…"}
+                rows={2}
+                className="flex-1 min-h-[56px] resize-none bg-orange-50 border-2 border-orange-200 focus:border-orange-400 rounded-2xl px-3 py-2 text-sm text-slate-800 placeholder-slate-400 outline-none leading-snug"
+                dir={isRTL ? "rtl" : "ltr"}
+              />
+            ) : (
+              <button
+                onClick={speakSentence}
+                className="flex-1 min-h-[56px] bg-slate-50 hover:bg-blue-50 active:bg-blue-100 rounded-2xl border-2 border-slate-200 hover:border-blue-300 px-3 py-2 transition-all flex items-center gap-1.5 flex-wrap text-left overflow-hidden"
+                aria-label={isRTL ? "اضغط للنطق" : "Tap to speak"}
+              >
+                {selectedTiles.length === 0 ? (
+                  <span className="text-sm text-slate-400 select-none">
+                    {isRTL ? "اضغط على بطاقة لبناء رسالتك…" : "Tap a tile to build your message…"}
+                  </span>
+                ) : (
+                  selectedTiles.map((tile, i) => (
+                    <motion.span
+                      key={`${tile.en}-${i}`}
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                      onClick={e => { e.stopPropagation(); removeTileAt(i); }}
+                      className="inline-flex flex-col items-center rounded-xl bg-white border border-blue-200 shadow-sm px-2 py-1 shrink-0 cursor-pointer hover:bg-red-50 hover:border-red-300 active:scale-90 transition-all"
+                    >
+                      {tile.imageUrl
+                        ? <img src={tile.imageUrl} className="w-7 h-7 object-cover rounded-md" alt={tile.en} />
+                        : tile.emoji && <span className="text-lg leading-none">{tile.emoji}</span>
+                      }
+                      <span className="text-[10px] text-slate-700 font-semibold leading-tight mt-0.5">
+                        {isRTL ? tile.ar : tile.en}
+                      </span>
+                    </motion.span>
+                  ))
+                )}
+              </button>
+            )}
 
-            {/* Action buttons: speak, delete last, clear, generate */}
+            {/* Action buttons: speak, delete last / clear text, clear, generate */}
             <div className="flex gap-1.5 items-center shrink-0">
               <button
                 onClick={speakSentence}
-                disabled={selectedTiles.length === 0}
+                disabled={textMode ? !freeText.trim() : selectedTiles.length === 0}
                 className="w-12 h-full min-h-[56px] rounded-2xl bg-slate-100 hover:bg-blue-100 active:bg-blue-200 disabled:opacity-30 flex items-center justify-center transition-colors group"
                 aria-label={isRTL ? "نطق الرسالة" : "Speak message"}
               >
                 <Volume2 className="h-5 w-5 text-slate-600 group-hover:text-blue-600 transition-colors" />
               </button>
-              <button
-                onClick={() => removeTileAt(selectedTiles.length - 1)}
-                disabled={selectedTiles.length === 0}
-                className="w-12 h-full min-h-[56px] rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 disabled:opacity-30 flex items-center justify-center transition-colors"
-                aria-label={isRTL ? "حذف آخر كلمة" : "Delete last"}
-              >
-                {isRTL
-                  ? <ArrowRight className="h-5 w-5 text-slate-600" />
-                  : <ArrowLeft className="h-5 w-5 text-slate-600" />
-                }
-              </button>
-              <button
-                onClick={clearAll}
-                disabled={selectedTiles.length === 0}
-                className="w-12 h-full min-h-[56px] rounded-2xl bg-slate-100 hover:bg-red-100 active:bg-red-200 disabled:opacity-30 flex items-center justify-center transition-colors group"
-                aria-label={isRTL ? "مسح الكل" : "Clear all"}
-              >
-                <X className="h-5 w-5 text-slate-600 group-hover:text-red-500 transition-colors" />
-              </button>
+              {textMode ? (
+                <button
+                  onClick={() => setFreeText("")}
+                  disabled={!freeText.trim()}
+                  className="w-12 h-full min-h-[56px] rounded-2xl bg-slate-100 hover:bg-red-100 active:bg-red-200 disabled:opacity-30 flex items-center justify-center transition-colors group"
+                  aria-label={isRTL ? "مسح النص" : "Clear text"}
+                >
+                  <X className="h-5 w-5 text-slate-600 group-hover:text-red-500 transition-colors" />
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => removeTileAt(selectedTiles.length - 1)}
+                    disabled={selectedTiles.length === 0}
+                    className="w-12 h-full min-h-[56px] rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 disabled:opacity-30 flex items-center justify-center transition-colors"
+                    aria-label={isRTL ? "حذف آخر كلمة" : "Delete last"}
+                  >
+                    {isRTL
+                      ? <ArrowRight className="h-5 w-5 text-slate-600" />
+                      : <ArrowLeft className="h-5 w-5 text-slate-600" />
+                    }
+                  </button>
+                  <button
+                    onClick={clearAll}
+                    disabled={selectedTiles.length === 0}
+                    className="w-12 h-full min-h-[56px] rounded-2xl bg-slate-100 hover:bg-red-100 active:bg-red-200 disabled:opacity-30 flex items-center justify-center transition-colors group"
+                    aria-label={isRTL ? "مسح الكل" : "Clear all"}
+                  >
+                    <X className="h-5 w-5 text-slate-600 group-hover:text-red-500 transition-colors" />
+                  </button>
+                </>
+              )}
               <button
                 onClick={handleGenerate}
-                disabled={selectedTiles.length === 0 || isGenerating}
+                disabled={(textMode ? !freeText.trim() : selectedTiles.length === 0) || isGenerating}
                 className="w-12 h-full min-h-[56px] rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-30 flex items-center justify-center transition-colors shadow-md shadow-blue-200"
                 aria-label={isRTL ? "توليد صورة" : "Generate image"}
               >
@@ -1615,10 +1665,43 @@ export default function AACApp() {
           {/* ── Main 3-column area ── */}
           <div className="flex-1 flex overflow-hidden min-h-0">
 
-            {/* Left: emoji board — ~70% of area */}
+            {/* Left: emoji board or text-mode placeholder — ~70% of area */}
             <div className="flex flex-col overflow-hidden min-w-0" style={{ flex: 7 }}>
+              {textMode && (
+                <div className="flex-1 min-h-0 bg-slate-300 p-1.5 flex flex-col gap-1 select-none">
+                  {(kbdNumMode ? KBD_NUM : isRTL ? KBD_AR : KBD_EN).map((row, ri) => (
+                    <div key={ri} className="flex gap-1 flex-1 min-h-0">
+                      {row.map(key => {
+                        const flex = KBD_FLEX[key] ?? 1;
+                        const isSpeak  = key === '🔊';
+                        const isAction = key in KBD_FLEX;
+                        const isShiftOn = key === 'SHIFT' && kbdShift;
+                        const label =
+                          key === 'SHIFT' ? (kbdShift ? '⬆' : '⇧') :
+                          key === ' '     ? (isRTL ? 'مسافة' : 'space') :
+                          (kbdShift && key.length === 1) ? key.toUpperCase() :
+                          key;
+                        return (
+                          <button
+                            key={key}
+                            onPointerDown={e => { e.preventDefault(); handleKbdKey(key); }}
+                            style={{ flex }}
+                            className={`rounded-xl flex items-center justify-center font-semibold text-sm shadow-sm border transition-all active:scale-95 active:brightness-90 min-h-0
+                              ${isSpeak   ? 'bg-blue-600 border-blue-700 text-white text-base' :
+                                isShiftOn ? 'bg-blue-100 border-blue-300 text-blue-700' :
+                                isAction  ? 'bg-slate-400 border-slate-500 text-slate-800' :
+                                            'bg-white border-slate-300 text-slate-900'}`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              )}
 
-              {/* Category headers */}
+              {!textMode && <> {/* Category headers */}
               <div className={`shrink-0 border-b border-slate-100 bg-white ${isArrangingCategories ? "p-2 space-y-2" : ""}`}>
                 {/* Arrange mode instruction strip */}
                 {isArrangingCategories && (
@@ -1772,6 +1855,7 @@ export default function AACApp() {
                   </div>
                 )}
               </div>
+            </>}
             </div>
 
             {/* Middle: connector word sidebar */}
