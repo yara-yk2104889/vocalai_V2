@@ -330,6 +330,17 @@ export default function AACApp() {
 
   // ── Customise Board modal
   const [showCustomiseModal, setShowCustomiseModal]   = useState(false);
+  const [customiseView, setCustomiseView]             = useState<"menu" | "arrange" | "add">("menu");
+
+  // ── Board layout settings
+  const [categoryOrder, setCategoryOrder]       = useState<string[]>(CATEGORIES.map(c => c.id));
+  const [hiddenCategories, setHiddenCategories] = useState<string[]>([]);
+  const [tilesPerColumn, setTilesPerColumn]     = useState(4);
+
+  // ── Board arrange mode
+  const [isArrangingCategories, setIsArrangingCategories] = useState(false);
+  const [draggedCatId, setDraggedCatId]   = useState<string | null>(null);
+  const [dragOverCatId, setDragOverCatId] = useState<string | null>(null);
   const [showEmojiInput, setShowEmojiInput]           = useState(false);
   const [emojiInputText, setEmojiInputText]           = useState("");
   const [emojiInputLabel, setEmojiInputLabel]         = useState("");
@@ -390,14 +401,20 @@ export default function AACApp() {
       const savedPeople   = localStorage.getItem("vocalai_people");
       const savedTiles    = localStorage.getItem("vocalai_custom_tiles");
       const savedLanguage = localStorage.getItem("vocalai_language");
-      const savedStyle    = localStorage.getItem("vocalai_image_style");
-      const savedHistory  = localStorage.getItem("vocalai_history");
-      if (savedProfile)  setProfile(JSON.parse(savedProfile));
-      if (savedPeople)   setImportantPeople(JSON.parse(savedPeople));
-      if (savedTiles)    setCustomTiles(JSON.parse(savedTiles));
-      if (savedLanguage) setLanguage(savedLanguage as "en" | "ar");
-      if (savedStyle)    setImageStyle(savedStyle as "symbolic" | "cartoon" | "realistic");
-      if (savedHistory)  setRecentGenerations(JSON.parse(savedHistory));
+      const savedStyle      = localStorage.getItem("vocalai_image_style");
+      const savedHistory    = localStorage.getItem("vocalai_history");
+      const savedCatOrder   = localStorage.getItem("vocalai_category_order");
+      const savedHidden     = localStorage.getItem("vocalai_hidden_categories");
+      const savedTilesPerCol = localStorage.getItem("vocalai_tiles_per_column");
+      if (savedProfile)    setProfile(JSON.parse(savedProfile));
+      if (savedPeople)     setImportantPeople(JSON.parse(savedPeople));
+      if (savedTiles)      setCustomTiles(JSON.parse(savedTiles));
+      if (savedLanguage)   setLanguage(savedLanguage as "en" | "ar");
+      if (savedStyle)      setImageStyle(savedStyle as "symbolic" | "cartoon" | "realistic");
+      if (savedHistory)    setRecentGenerations(JSON.parse(savedHistory));
+      if (savedCatOrder)   setCategoryOrder(JSON.parse(savedCatOrder));
+      if (savedHidden)     setHiddenCategories(JSON.parse(savedHidden));
+      if (savedTilesPerCol) setTilesPerColumn(Number(savedTilesPerCol));
     } catch { /* corrupted data — start fresh */ }
   }, []);
 
@@ -425,6 +442,18 @@ export default function AACApp() {
   useEffect(() => {
     localStorage.setItem("vocalai_history", JSON.stringify(recentGenerations));
   }, [recentGenerations]);
+
+  useEffect(() => {
+    localStorage.setItem("vocalai_category_order", JSON.stringify(categoryOrder));
+  }, [categoryOrder]);
+
+  useEffect(() => {
+    localStorage.setItem("vocalai_hidden_categories", JSON.stringify(hiddenCategories));
+  }, [hiddenCategories]);
+
+  useEffect(() => {
+    localStorage.setItem("vocalai_tiles_per_column", String(tilesPerColumn));
+  }, [tilesPerColumn]);
 
   useEffect(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) return;
@@ -525,6 +554,38 @@ export default function AACApp() {
       base = TILES[cat] ?? [];
     }
     return [...base, ...(customTiles[cat] ?? [])];
+  }
+
+  // ── Board layout helpers ───────────────────────────────────────────────────
+  const visibleCategories = categoryOrder
+    .map(id => CATEGORIES.find(c => c.id === id))
+    .filter((c): c is typeof CATEGORIES[0] => !!c && !hiddenCategories.includes(c.id));
+
+  function moveCategoryUp(id: string) {
+    setCategoryOrder(prev => {
+      const idx = prev.indexOf(id);
+      if (idx <= 0) return prev;
+      const next = [...prev];
+      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+      return next;
+    });
+  }
+
+  function moveCategoryDown(id: string) {
+    setCategoryOrder(prev => {
+      const idx = prev.indexOf(id);
+      if (idx >= prev.length - 1) return prev;
+      const next = [...prev];
+      [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+      return next;
+    });
+  }
+
+  function toggleHideCategory(id: string) {
+    if (expandedCategory === id) setExpandedCategory(null);
+    setHiddenCategories(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
   }
 
   function openAddToBoard(imageUrl: string, prefillLabel: string) {
@@ -1105,16 +1166,88 @@ export default function AACApp() {
             >
               {/* Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                <h2 className="font-bold text-lg text-slate-800">
-                  {isRTL ? "تخصيص اللوحة" : "Customise Board"}
-                </h2>
+                <div className="flex items-center gap-2">
+                  {customiseView !== "menu" && (
+                    <button onClick={() => setCustomiseView("menu")}
+                      className="p-1.5 rounded-xl hover:bg-slate-100 transition-colors text-slate-500">
+                      ←
+                    </button>
+                  )}
+                  <h2 className="font-bold text-lg text-slate-800">
+                    {customiseView === "menu"
+                      ? (isRTL ? "تخصيص اللوحة" : "Customise Board")
+                      : customiseView === "arrange"
+                      ? (isRTL ? "ترتيب اللوحة" : "Arrange Board")
+                      : (isRTL ? "إضافة بطاقة" : "Add New Tile")}
+                  </h2>
+                </div>
                 <button onClick={() => { setShowCustomiseModal(false); stopCustomCamera(); }}
                   className="p-2 rounded-xl hover:bg-slate-100 transition-colors">
                   <X className="h-5 w-5 text-slate-500" />
                 </button>
               </div>
 
-              <div className="p-5 space-y-5 max-h-[75vh] overflow-y-auto" style={{ scrollbarWidth: "none" } as CSSProperties}>
+              <div className="p-5 max-h-[75vh] overflow-y-auto" style={{ scrollbarWidth: "none" } as CSSProperties}>
+
+              {/* ── Menu view ── */}
+              {customiseView === "menu" && (
+                <div className="space-y-4">
+                  <button
+                    onClick={() => { setShowCustomiseModal(false); setIsArrangingCategories(true); setExpandedCategory(null); }}
+                    className="w-full flex items-center gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-blue-50 border-2 border-slate-200 hover:border-blue-300 transition-all text-left"
+                  >
+                    <span className="text-3xl">🗂️</span>
+                    <div>
+                      <p className="font-bold text-slate-800 text-sm">{isRTL ? "ترتيب اللوحة" : "Arrange Board"}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{isRTL ? "اسحب الفئات وأخفِ أو أظهر" : "Drag to reorder · tap 👁 to show/hide"}</p>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setCustomiseView("add")}
+                    className="w-full flex items-center gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-blue-50 border-2 border-slate-200 hover:border-blue-300 transition-all text-left"
+                  >
+                    <span className="text-3xl">➕</span>
+                    <div>
+                      <p className="font-bold text-slate-800 text-sm">{isRTL ? "إضافة بطاقة جديدة" : "Add New Tile"}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{isRTL ? "أضف بطاقة مخصصة إلى أي فئة" : "Add a custom tile to any category"}</p>
+                    </div>
+                  </button>
+
+                  {/* Grid size — always accessible from menu */}
+                  <div className="space-y-2 pt-1 border-t border-slate-100">
+                    <p className="text-sm font-semibold text-slate-700">{isRTL ? "عدد البطاقات في العمود" : "Tiles per column"}</p>
+                    <div className="flex gap-2">
+                      {[3, 4, 5, 6, 8].map(n => (
+                        <button key={n} onClick={() => setTilesPerColumn(n)}
+                          className={`flex-1 py-2 rounded-xl border-2 text-sm font-bold transition-all ${tilesPerColumn === n ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"}`}>
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Arrange view (grid size only — reorder/hide is on the board) ── */}
+              {customiseView === "arrange" && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-slate-700">{isRTL ? "عدد البطاقات في العمود" : "Tiles per column"}</p>
+                    <div className="flex gap-2">
+                      {[3, 4, 5, 6, 8].map(n => (
+                        <button key={n} onClick={() => setTilesPerColumn(n)}
+                          className={`flex-1 py-2 rounded-xl border-2 text-sm font-bold transition-all ${tilesPerColumn === n ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"}`}>
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Add Tile view ── */}
+              {customiseView === "add" && (
+                <div className="space-y-5">
 
                 {/* 1. Category */}
                 <div className="space-y-2">
@@ -1283,6 +1416,9 @@ export default function AACApp() {
                   {isRTL ? "إضافة إلى اللوحة" : "Add to Board"}
                 </Button>
               </div>
+              )}
+
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -1325,27 +1461,36 @@ export default function AACApp() {
               )}
             </div>
 
-            {/* Language + History — RIGHT */}
-            <div className="flex items-center gap-2 shrink-0">
+            {/* Language + History — RIGHT (or Done button in arrange mode) */}
+            {isArrangingCategories ? (
               <button
-                onClick={() => setShowHistoryGallery(true)}
-                className="w-10 h-10 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 flex items-center justify-center text-lg transition-colors shadow-sm"
-                aria-label="Generation history"
+                onClick={() => { setDraggedCatId(null); setDragOverCatId(null); setIsArrangingCategories(false); }}
+                className="px-5 py-2 rounded-2xl bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-bold transition-colors shadow-sm shrink-0"
               >
-                🕐
+                {isRTL ? "✓ تم" : "✓ Done"}
               </button>
-              <button
-                onClick={() => setLanguage(isRTL ? "en" : "ar")}
-                className="px-4 py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-bold transition-colors shadow-sm"
-              >
-                {isRTL ? "EN" : "عربي"}
-              </button>
-            </div>
+            ) : (
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setShowHistoryGallery(true)}
+                  className="w-10 h-10 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 flex items-center justify-center text-lg transition-colors shadow-sm"
+                  aria-label="Generation history"
+                >
+                  🕐
+                </button>
+                <button
+                  onClick={() => setLanguage(isRTL ? "en" : "ar")}
+                  className="px-4 py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-bold transition-colors shadow-sm"
+                >
+                  {isRTL ? "EN" : "عربي"}
+                </button>
+              </div>
+            )}
           </header>
 
           {/* ── Sentence builder bar ── */}
           <div
-            className="shrink-0 bg-white border-b border-slate-100 px-3 py-2.5 flex items-stretch gap-2 shadow-sm"
+            className={`shrink-0 bg-white border-b border-slate-100 px-3 py-2.5 flex items-stretch gap-2 shadow-sm transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}
           >
             {/* Emoji keyboard button + inline input */}
             <button
@@ -1454,63 +1599,135 @@ export default function AACApp() {
             {/* Left: emoji board — ~70% of area */}
             <div className="flex flex-col overflow-hidden min-w-0" style={{ flex: 7 }}>
 
-              {/* Category headers — always visible, one per column */}
-              <div
-                className="shrink-0 flex gap-1.5 p-2 border-b border-slate-100 bg-white"
-              >
-                {CATEGORIES.map(cat => {
-                  const colors = CATEGORY_COLORS[cat.id] ?? "bg-slate-50 border-slate-200";
-                  const isSelected = expandedCategory === cat.id;
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => setExpandedCategory(isSelected ? null : cat.id)}
-                      className={`flex-1 min-w-0 rounded-2xl py-2 px-1 text-[11px] font-bold text-center border-2 transition-all active:scale-95 text-slate-700 ${colors} ${isSelected ? "ring-2 ring-blue-500 ring-offset-1" : ""}`}
-                    >
-                      {isRTL ? cat.arLabel : cat.enLabel}
-                    </button>
-                  );
-                })}
-              </div>
+              {/* Category headers */}
+              <div className={`shrink-0 border-b border-slate-100 bg-white ${isArrangingCategories ? "p-2 space-y-2" : ""}`}>
+                {/* Arrange mode instruction strip */}
+                {isArrangingCategories && (
+                  <div className="flex items-center justify-between px-1">
+                    <p className="text-[10px] text-slate-500 font-medium">
+                      {isRTL ? "اسحب للترتيب · اضغط 👁 للإخفاء" : "Drag to reorder · tap 👁 to show/hide"}
+                    </p>
+                    {/* Grid size inline picker */}
+                    <div className="flex gap-1 items-center">
+                      <span className="text-[9px] text-slate-400 font-medium">{isRTL ? "صفوف:" : "Rows:"}</span>
+                      {[3, 4, 5, 6, 8].map(n => (
+                        <button key={n} onClick={() => setTilesPerColumn(n)}
+                          className={`w-6 h-6 rounded-lg text-[9px] font-bold border transition-all ${tilesPerColumn === n ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-500 border-slate-200"}`}>
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-              {/* Emoji area — squares never resize */}
-              <div
-                className="flex-1 overflow-y-auto p-2"
-                style={{ scrollbarWidth: "none" } as CSSProperties}
-              >
-                {expandedCategory === null ? (
-                  /* Home: 7-column preview, 4 tiles per column going top-to-bottom */
-                  <div className="flex gap-1.5">
-                    {CATEGORIES.map(cat => {
-                      const colors = CATEGORY_COLORS[cat.id] ?? "bg-slate-50 hover:bg-slate-100 border-slate-200";
+                {/* Chips row */}
+                <div className="flex gap-1.5 p-2 pt-0">
+                  {(isArrangingCategories ? categoryOrder : visibleCategories.map(c => c.id)).map(id => {
+                    const cat = CATEGORIES.find(c => c.id === id);
+                    if (!cat) return null;
+                    const colors = CATEGORY_COLORS[cat.id] ?? "bg-slate-50 border-slate-200";
+                    const isHidden = hiddenCategories.includes(id);
+                    const isSelected = expandedCategory === cat.id;
+                    const isDragOver = dragOverCatId === id;
+
+                    if (isArrangingCategories) {
                       return (
-                        <div key={cat.id} className="flex-1 min-w-0 flex flex-col gap-1.5">
-                          {getTilesForCategory(cat.id).slice(0, 4).map((tile, i) => (
-                            <button
-                              key={i}
-                              onClick={() => addTile(tile)}
-                              className={`w-full aspect-square rounded-xl border-2 ${colors} flex flex-col items-center justify-center p-1 active:scale-90 transition-all shadow-sm overflow-hidden`}
-                            >
-                              {tile.imageUrl
-                                ? <img src={tile.imageUrl} className="w-3/4 h-3/4 object-cover rounded-lg" alt={tile.en} />
-                                : <span className="text-3xl leading-none">{tile.emoji}</span>
-                              }
-                              <span className="text-[9px] font-semibold text-slate-700 text-center leading-tight mt-1 w-full line-clamp-3 break-words px-0.5">
-                                {isRTL ? tile.ar : tile.en}
-                              </span>
-                            </button>
-                          ))}
+                        <div
+                          key={id}
+                          draggable
+                          onDragStart={() => setDraggedCatId(id)}
+                          onDragOver={e => { e.preventDefault(); setDragOverCatId(id); }}
+                          onDrop={() => {
+                            if (!draggedCatId || draggedCatId === id) return;
+                            setCategoryOrder(prev => {
+                              const next = [...prev];
+                              const from = next.indexOf(draggedCatId);
+                              const to = next.indexOf(id);
+                              next.splice(from, 1);
+                              next.splice(to, 0, draggedCatId);
+                              return next;
+                            });
+                            setDraggedCatId(null);
+                            setDragOverCatId(null);
+                          }}
+                          onDragEnd={() => { setDraggedCatId(null); setDragOverCatId(null); }}
+                          className={`flex-1 min-w-0 flex flex-col items-center gap-0.5 rounded-2xl py-1.5 px-1 border-2 cursor-grab active:cursor-grabbing transition-all select-none
+                            ${isHidden ? "opacity-40" : ""}
+                            ${isDragOver ? "ring-2 ring-blue-500 scale-105" : ""}
+                            ${draggedCatId === id ? "opacity-50 scale-95" : ""}
+                            ${colors}`}
+                        >
+                          <button
+                            onClick={e => { e.stopPropagation(); toggleHideCategory(id); }}
+                            className="text-[10px] leading-none"
+                            onMouseDown={e => e.stopPropagation()}
+                          >
+                            {isHidden ? "🙈" : "👁️"}
+                          </button>
+                          <span className="text-[9px] font-bold text-slate-700 text-center leading-tight truncate w-full text-center">
+                            {isRTL ? cat.arLabel : cat.enLabel}
+                          </span>
                         </div>
                       );
+                    }
+
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => setExpandedCategory(isSelected ? null : cat.id)}
+                        className={`flex-1 min-w-0 rounded-2xl py-2 px-1 text-[11px] font-bold text-center border-2 transition-all active:scale-95 text-slate-700 ${colors} ${isSelected ? "ring-2 ring-blue-500 ring-offset-1" : ""}`}
+                      >
+                        {isRTL ? cat.arLabel : cat.enLabel}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Emoji area */}
+              <div className={`flex-1 min-h-0 overflow-hidden p-2 transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}>
+                {expandedCategory === null ? (
+                  /* Home: tiles-per-column rows, one column per visible category */
+                  <div
+                    className="h-full"
+                    style={{
+                      display: "grid",
+                      gridTemplateRows: `repeat(${tilesPerColumn}, minmax(0, 1fr))`,
+                      gridAutoColumns: "minmax(0, 1fr)",
+                      gridAutoFlow: "column",
+                      gap: "6px",
+                    }}
+                  >
+                    {visibleCategories.flatMap(cat => {
+                      const colors = CATEGORY_COLORS[cat.id] ?? "bg-slate-50 hover:bg-slate-100 border-slate-200";
+                      return getTilesForCategory(cat.id).slice(0, tilesPerColumn).map((tile, i) => (
+                        <button
+                          key={`${cat.id}-${i}`}
+                          onClick={() => addTile(tile)}
+                          className={`rounded-xl border-2 ${colors} flex flex-col items-center justify-center p-1 active:scale-90 transition-all shadow-sm overflow-hidden`}
+                        >
+                          {tile.imageUrl
+                            ? <img src={tile.imageUrl} className="w-2/3 h-2/3 object-cover rounded-lg" alt={tile.en} />
+                            : <span className={`leading-none ${tilesPerColumn <= 4 ? "text-3xl" : tilesPerColumn <= 6 ? "text-2xl" : "text-lg"}`}>{tile.emoji}</span>
+                          }
+                          <span className="text-[9px] font-semibold text-slate-700 text-center leading-tight mt-1 w-full line-clamp-2 break-words px-0.5">
+                            {isRTL ? tile.ar : tile.en}
+                          </span>
+                        </button>
+                      ));
                     })}
                   </div>
                 ) : (
-                  /* Expanded: same 7-column grid, all tiles flow left-to-right */
+                  /* Expanded: all tiles in a scrollable grid */
+                  <div
+                    className="h-full overflow-y-auto"
+                    style={{ scrollbarWidth: "none" } as CSSProperties}
+                  >
                   <div
                     className="gap-1.5"
                     style={{
                       display: "grid",
-                      gridTemplateColumns: `repeat(${CATEGORIES.length}, minmax(0, 1fr))`,
+                      gridTemplateColumns: `repeat(${visibleCategories.length}, minmax(0, 1fr))`,
                       direction: isRTL ? "rtl" : "ltr",
                     }}
                   >
@@ -1533,13 +1750,14 @@ export default function AACApp() {
                       );
                     })}
                   </div>
+                  </div>
                 )}
               </div>
             </div>
 
             {/* Middle: connector word sidebar */}
             <div
-              className="shrink-0 w-14 border-x border-slate-100 bg-white overflow-y-auto flex flex-col gap-1.5 p-1.5"
+              className={`shrink-0 w-14 border-x border-slate-100 bg-white overflow-y-auto flex flex-col gap-1.5 p-1.5 transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}
               style={{ scrollbarWidth: "none" } as CSSProperties}
             >
               {CONNECTORS.map(word => (
@@ -1556,7 +1774,7 @@ export default function AACApp() {
             </div>
 
             {/* Right: image panel — ~30% of area */}
-            <div className="flex flex-col border-x border-slate-100 bg-slate-50 overflow-hidden" style={{ flex: 3 }}>
+            <div className={`flex flex-col border-x border-slate-100 bg-slate-50 overflow-hidden transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`} style={{ flex: 3 }}>
               {/* Mode + style selectors */}
               <div className="shrink-0 p-2 border-b border-slate-100 bg-white space-y-1.5">
                 <div className="flex rounded-xl overflow-hidden border border-slate-200">
@@ -1710,7 +1928,7 @@ export default function AACApp() {
           </div>
 
           {/* ── Bottom bar ── */}
-          <div className="shrink-0 bg-white border-t border-slate-100 px-4 py-3 flex items-center gap-2">
+          <div className={`shrink-0 bg-white border-t border-slate-100 px-4 py-3 flex items-center gap-2 transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}>
             <div className="flex items-center gap-2" style={isRTL ? { marginRight: "auto" } : { marginLeft: "auto" }}>
               <button
                 onClick={() => setExpandedCategory(null)}
@@ -1720,7 +1938,7 @@ export default function AACApp() {
                 {isRTL ? "الرئيسية" : "Home"}
               </button>
               <button
-                onClick={() => { setShowCustomiseModal(true); setCustomImageUrl(""); setCustomEmoji(""); setCustomLabelEn(""); setCustomLabelAr(""); }}
+                onClick={() => { setShowCustomiseModal(true); setCustomiseView("menu"); setCustomImageUrl(""); setCustomEmoji(""); setCustomLabelEn(""); setCustomLabelAr(""); }}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-600 font-semibold text-sm transition-colors border border-slate-200"
               >
                 <Settings className="h-4 w-4" />
