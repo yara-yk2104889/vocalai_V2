@@ -14,6 +14,7 @@ import {
   RefreshCw,
   Settings,
   Trash2,
+  Volume2,
   X,
 } from "lucide-react";
 import Cropper from "react-easy-crop";
@@ -332,6 +333,9 @@ export default function AACApp() {
   const [showCustomiseModal, setShowCustomiseModal]   = useState(false);
   const [customiseView, setCustomiseView]             = useState<"menu" | "arrange" | "add">("menu");
 
+  // ── Image generation preferences
+  const [culturalGrounding, setCulturalGrounding] = useState(true);
+
   // ── Board layout settings
   const [categoryOrder, setCategoryOrder]       = useState<string[]>(CATEGORIES.map(c => c.id));
   const [hiddenCategories, setHiddenCategories] = useState<string[]>([]);
@@ -403,6 +407,7 @@ export default function AACApp() {
       const savedLanguage = localStorage.getItem("vocalai_language");
       const savedStyle      = localStorage.getItem("vocalai_image_style");
       const savedHistory    = localStorage.getItem("vocalai_history");
+      const savedCultural   = localStorage.getItem("vocalai_cultural_grounding");
       const savedCatOrder   = localStorage.getItem("vocalai_category_order");
       const savedHidden     = localStorage.getItem("vocalai_hidden_categories");
       const savedTilesPerCol = localStorage.getItem("vocalai_tiles_per_column");
@@ -412,6 +417,7 @@ export default function AACApp() {
       if (savedLanguage)   setLanguage(savedLanguage as "en" | "ar");
       if (savedStyle)      setImageStyle(savedStyle as "symbolic" | "cartoon" | "realistic");
       if (savedHistory)    setRecentGenerations(JSON.parse(savedHistory));
+      if (savedCultural !== null) setCulturalGrounding(savedCultural === "true");
       if (savedCatOrder)   setCategoryOrder(JSON.parse(savedCatOrder));
       if (savedHidden)     setHiddenCategories(JSON.parse(savedHidden));
       if (savedTilesPerCol) setTilesPerColumn(Number(savedTilesPerCol));
@@ -438,6 +444,10 @@ export default function AACApp() {
   useEffect(() => {
     localStorage.setItem("vocalai_image_style", imageStyle);
   }, [imageStyle]);
+
+  useEffect(() => {
+    localStorage.setItem("vocalai_cultural_grounding", String(culturalGrounding));
+  }, [culturalGrounding]);
 
   useEffect(() => {
     localStorage.setItem("vocalai_history", JSON.stringify(recentGenerations));
@@ -684,11 +694,12 @@ export default function AACApp() {
   }
 
   const profileContext = {
-    location:   locationLabel      || undefined,
-    gender:     profile.gender     || undefined,
-    condition:  profile.condition  || undefined,
-    age:        profile.age        || undefined,
-    appearance: profile.appearance || undefined,
+    location:         locationLabel      || undefined,
+    gender:           profile.gender     || undefined,
+    condition:        profile.condition  || undefined,
+    age:              profile.age        || undefined,
+    appearance:       profile.appearance || undefined,
+    culturalGrounding,
   };
 
   async function handleGenerate() {
@@ -1558,8 +1569,16 @@ export default function AACApp() {
               )}
             </button>
 
-            {/* Action buttons: delete last, clear, generate */}
+            {/* Action buttons: speak, delete last, clear, generate */}
             <div className="flex gap-1.5 items-center shrink-0">
+              <button
+                onClick={speakSentence}
+                disabled={selectedTiles.length === 0}
+                className="w-12 h-full min-h-[56px] rounded-2xl bg-slate-100 hover:bg-blue-100 active:bg-blue-200 disabled:opacity-30 flex items-center justify-center transition-colors group"
+                aria-label={isRTL ? "نطق الرسالة" : "Speak message"}
+              >
+                <Volume2 className="h-5 w-5 text-slate-600 group-hover:text-blue-600 transition-colors" />
+              </button>
               <button
                 onClick={() => removeTileAt(selectedTiles.length - 1)}
                 disabled={selectedTiles.length === 0}
@@ -2207,6 +2226,32 @@ export default function AACApp() {
                       </div>
                     )}
                   </div>
+                </div>
+
+                {/* Image generation preferences */}
+                <div className="bg-white rounded-3xl p-5 shadow-sm space-y-4">
+                  <h2 className={`font-bold text-base text-slate-800 ${isRTL ? "text-right" : ""}`}>
+                    {isRTL ? "تفضيلات توليد الصور" : "Image Generation Preferences"}
+                  </h2>
+
+                  <button
+                    onClick={() => setCulturalGrounding(v => !v)}
+                    className={`w-full flex items-center justify-between gap-4 p-4 rounded-2xl border-2 transition-all text-left ${culturalGrounding ? "bg-blue-50 border-blue-300" : "bg-slate-50 border-slate-200"}`}
+                  >
+                    <div className={isRTL ? "text-right" : ""}>
+                      <p className="font-bold text-slate-800 text-sm">
+                        {isRTL ? "صور ذات طابع ثقافي خليجي" : "Gulf / Regional Cultural Grounding"}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {isRTL
+                          ? "أطعمة خليجية، ملابس تقليدية، بيئات مألوفة"
+                          : "Gulf foods, traditional clothing, familiar regional settings"}
+                      </p>
+                    </div>
+                    <div className={`shrink-0 w-12 h-7 rounded-full flex items-center transition-all duration-200 ${culturalGrounding ? "bg-blue-600 justify-end" : "bg-slate-200 justify-start"}`}>
+                      <div className="w-5 h-5 rounded-full bg-white shadow mx-1" />
+                    </div>
+                  </button>
                 </div>
               </div>
             )}

@@ -14,6 +14,7 @@ export async function POST(req: Request) {
       appearance,
       importantPeople,
       count: rawCount,
+      culturalGrounding,
     } = body as {
       prompt: string;
       style: "realistic" | "cartoon" | "symbolic";
@@ -24,6 +25,7 @@ export async function POST(req: Request) {
       appearance?: string;
       importantPeople?: { name: string; description: string }[];
       count?: number;
+      culturalGrounding?: boolean;
     };
 
     const count = Math.min(Math.max(1, rawCount ?? 1), 4);
@@ -91,6 +93,10 @@ export async function POST(req: Request) {
       ? `Important people in the user's life (match their appearance when depicted): ${peopleDesc}.`
       : "";
 
+    const culturalRule = culturalGrounding
+      ? `Cultural context: Depict culturally-grounded imagery relevant to the Gulf/Middle Eastern region — include regional foods (dates, hummus, kabsa, shawarma, luqaimat, karak tea), traditional clothing (thobe, kandura, abaya, ghutra), and familiar Gulf/Arab cultural settings and aesthetics where relevant to the scene.`
+      : "";
+
     const fullPrompt = `
 The following words are AAC symbol tiles selected by a user to communicate a message: "${prompt}".
 Interpret them together as a single, coherent communication intent — do NOT treat them as a list or label them word by word.
@@ -100,6 +106,7 @@ ${contextClues ? `Context about the user and setting: ${contextClues}.` : ""}
 ${appearanceRule}
 ${autismRule}
 ${peopleRule}
+${culturalRule}
 
 Requirements:
 ${sharedRequirements}
