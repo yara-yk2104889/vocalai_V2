@@ -341,6 +341,13 @@ export default function AACApp() {
   const [noteInput, setNoteInput]               = useState("");
   const [showHistoryGallery, setShowHistoryGallery] = useState(false);
 
+  // ── Add to board modal
+  const [showAddToBoard, setShowAddToBoard]         = useState(false);
+  const [addToBoardUrl, setAddToBoardUrl]           = useState("");
+  const [addToBoardLabelEn, setAddToBoardLabelEn]   = useState("");
+  const [addToBoardLabelAr, setAddToBoardLabelAr]   = useState("");
+  const [addToBoardCategory, setAddToBoardCategory] = useState(CATEGORIES[0].id);
+
   const PRESET_CONDITIONS = ["autism", "cerebral-palsy", "down-syndrome", "aphasia", "als", "other", ""];
   const isOtherCondition = !PRESET_CONDITIONS.includes(profile.condition) || profile.condition === "other";
 
@@ -502,6 +509,26 @@ export default function AACApp() {
       base = TILES[cat] ?? [];
     }
     return [...base, ...(customTiles[cat] ?? [])];
+  }
+
+  function openAddToBoard(imageUrl: string, prefillLabel: string) {
+    setAddToBoardUrl(imageUrl);
+    setAddToBoardLabelEn(prefillLabel);
+    setAddToBoardLabelAr("");
+    setAddToBoardCategory(CATEGORIES[0].id);
+    setShowAddToBoard(true);
+  }
+
+  function saveToBoard() {
+    if (!addToBoardUrl || !addToBoardLabelEn.trim()) return;
+    const tile: AacTile = {
+      emoji: "",
+      en: addToBoardLabelEn.trim(),
+      ar: addToBoardLabelAr.trim() || addToBoardLabelEn.trim(),
+      imageUrl: addToBoardUrl,
+    };
+    setCustomTiles(prev => ({ ...prev, [addToBoardCategory]: [...(prev[addToBoardCategory] ?? []), tile] }));
+    setShowAddToBoard(false);
   }
 
   function addCustomTile() {
@@ -827,6 +854,104 @@ export default function AACApp() {
         )}
       </AnimatePresence>
 
+      {/* ── Add to Board Modal ── */}
+      <AnimatePresence>
+        {showAddToBoard && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex flex-col"
+            onClick={() => setShowAddToBoard(false)}
+          >
+            <motion.div
+              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="absolute inset-x-0 bottom-0 bg-white rounded-t-3xl flex flex-col"
+              style={{ maxHeight: "90dvh" }}
+              onClick={e => e.stopPropagation()}
+              dir={isRTL ? "rtl" : "ltr"}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100">
+                <h2 className="text-lg font-bold text-slate-800">
+                  {isRTL ? "إضافة إلى اللوحة" : "Add to Board"}
+                </h2>
+                <button
+                  onClick={() => setShowAddToBoard(false)}
+                  className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"
+                >✕</button>
+              </div>
+
+              <div className="overflow-y-auto flex-1 p-5 space-y-5" style={{ scrollbarWidth: "none" }}>
+                {/* Image preview */}
+                {addToBoardUrl && (
+                  <img
+                    src={addToBoardUrl}
+                    alt=""
+                    className="w-32 h-32 rounded-2xl object-cover border border-slate-200 shadow-sm mx-auto"
+                  />
+                )}
+
+                {/* Category picker */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-slate-600">
+                    {isRTL ? "الفئة" : "Category"}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {CATEGORIES.map(cat => (
+                      <button
+                        key={cat.id}
+                        onClick={() => setAddToBoardCategory(cat.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${CATEGORY_COLORS[cat.id] ?? ""} ${addToBoardCategory === cat.id ? "ring-2 ring-blue-500 ring-offset-1" : ""} text-slate-700`}
+                      >
+                        {isRTL ? cat.arLabel : cat.enLabel}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Labels */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-600">
+                      {isRTL ? "الاسم (EN) *" : "Label (EN) *"}
+                    </label>
+                    <input
+                      value={addToBoardLabelEn}
+                      onChange={e => setAddToBoardLabelEn(e.target.value)}
+                      placeholder="e.g. Playing"
+                      className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-blue-400"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-600">
+                      {isRTL ? "الاسم (AR)" : "Label (AR)"}
+                    </label>
+                    <input
+                      dir="rtl"
+                      value={addToBoardLabelAr}
+                      onChange={e => setAddToBoardLabelAr(e.target.value)}
+                      placeholder="مثال: يلعب"
+                      className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-blue-400"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Save button */}
+              <div className="px-5 pb-6 pt-3 border-t border-slate-100">
+                <button
+                  onClick={saveToBoard}
+                  disabled={!addToBoardLabelEn.trim()}
+                  className="w-full py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-40 disabled:pointer-events-none text-white font-bold text-sm transition-colors"
+                >
+                  {isRTL ? "حفظ في اللوحة" : "Save to Board"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── History Gallery Modal ── */}
       <AnimatePresence>
         {showHistoryGallery && (
@@ -854,38 +979,40 @@ export default function AACApp() {
                 >✕</button>
               </div>
 
-              {/* Gallery grid */}
-              <div className="overflow-y-auto flex-1 p-4 space-y-5" style={{ scrollbarWidth: "none" }}>
-                {recentGenerations.map(gen => (
-                  <div key={gen.id} className="space-y-2">
-                    {/* Tiles label */}
-                    <p className="text-xs text-slate-400 font-medium">
-                      {new Date(gen.timestamp).toLocaleString(isRTL ? "ar-SA" : "en-GB", { dateStyle: "medium", timeStyle: "short" })}
-                      {" · "}
-                      {gen.tiles.map(t => isRTL ? t.ar : t.en).join(" ")}
+              {/* Gallery — compact board tiles */}
+              <div className="overflow-y-auto flex-1 p-4" style={{ scrollbarWidth: "none" }}>
+                {recentGenerations.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+                    <span className="text-4xl">🖼️</span>
+                    <p className="text-sm text-slate-400 font-medium">
+                      {isRTL ? "لا توجد صور بعد — ولّد صورة أولاً" : "No generations yet — generate one to get started"}
                     </p>
-                    {/* Image grid — click any image to load it */}
-                    <div className={`grid gap-2 ${gen.images.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
-                      {gen.images.map((url, i) => (
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-6 gap-2">
+                    {recentGenerations.flatMap(gen =>
+                      gen.images.map((url, imgIdx) => (
                         <button
-                          key={i}
+                          key={`${gen.id}-${imgIdx}`}
                           onClick={() => {
                             setGeneratedImages(gen.images.map(u => ({ url: u })));
                             setCaption(gen.caption);
                             setImageMode(gen.images.length > 1 ? "story" : "single");
                             setShowHistoryGallery(false);
                           }}
-                          className="aspect-square rounded-2xl overflow-hidden border-2 border-transparent hover:border-blue-400 active:border-blue-600 transition-all"
+                          className="flex flex-col items-center gap-1 group"
                         >
-                          <img src={url} alt="" className="w-full h-full object-cover" />
+                          <div className="w-full aspect-square rounded-2xl overflow-hidden border-2 border-slate-100 group-hover:border-blue-400 group-active:border-blue-600 transition-all shadow-sm">
+                            <img src={url} alt="" className="w-full h-full object-cover" />
+                          </div>
+                          <p className="text-[9px] text-slate-400 leading-tight text-center line-clamp-1 w-full px-0.5">
+                            {gen.tiles.map(t => isRTL ? t.ar : t.en).join(" ")}
+                          </p>
                         </button>
-                      ))}
-                    </div>
-                    {gen.note && (
-                      <p className="text-xs text-amber-700 bg-amber-50 rounded-xl px-3 py-1.5">📝 {gen.note}</p>
+                      ))
                     )}
                   </div>
-                ))}
+                )}
               </div>
             </motion.div>
           </motion.div>
@@ -1186,8 +1313,7 @@ export default function AACApp() {
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => setShowHistoryGallery(true)}
-                disabled={recentGenerations.length === 0}
-                className="w-10 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center text-lg transition-colors shadow-sm"
+                className="w-10 h-10 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 flex items-center justify-center text-lg transition-colors shadow-sm"
                 aria-label="Generation history"
               >
                 🕐
@@ -1453,13 +1579,10 @@ export default function AACApp() {
               </div>
 
               {/* Image display */}
-              <div
-                className="flex-1 overflow-y-auto p-2 space-y-2"
-                style={{ scrollbarWidth: "none" } as CSSProperties}
-              >
+              <div className="flex-1 min-h-0 flex flex-col p-2 gap-2 overflow-hidden">
                 {/* Empty state */}
                 {!isGenerating && generatedImages.length === 0 && (
-                  <div className="h-full flex flex-col items-center justify-center text-center p-3 gap-3">
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-3 gap-3">
                     <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-3xl">
                       🖼️
                     </div>
@@ -1474,11 +1597,11 @@ export default function AACApp() {
                 {/* Loading */}
                 {isGenerating && (
                   imageMode === "story" ? (
-                    <div className="grid grid-cols-2 gap-1.5">
+                    <div className="flex-1 min-h-0 grid grid-cols-2 grid-rows-2 gap-1.5">
                       {[0, 1, 2, 3].map(i => (
                         <div
                           key={i}
-                          className="rounded-2xl aspect-square flex flex-col items-center justify-center gap-1.5"
+                          className="rounded-2xl flex flex-col items-center justify-center gap-1.5"
                           style={{ background: "linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%)" }}
                         >
                           <RefreshCw className="h-5 w-5 text-blue-400 animate-spin" />
@@ -1490,7 +1613,7 @@ export default function AACApp() {
                     </div>
                   ) : (
                     <div
-                      className="rounded-2xl aspect-square flex flex-col items-center justify-center gap-2"
+                      className="flex-1 rounded-2xl flex flex-col items-center justify-center gap-2"
                       style={{ background: "linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%)" }}
                     >
                       <RefreshCw className="h-6 w-6 text-blue-400 animate-spin" />
@@ -1504,7 +1627,7 @@ export default function AACApp() {
                 {/* Caption */}
                 {!isGenerating && caption && (
                   <p
-                    className="text-[11px] font-semibold text-slate-700 text-center px-1 leading-snug"
+                    className="shrink-0 text-[11px] font-semibold text-slate-700 text-center px-1 leading-snug"
                     dir={isRTL ? "rtl" : "ltr"}
                   >
                     {caption}
@@ -1514,42 +1637,56 @@ export default function AACApp() {
                 {/* Images */}
                 {!isGenerating && generatedImages.length > 0 && (
                   imageMode === "story" ? (
-                    /* ── Story 2×2 grid ── */
-                    <div className="grid grid-cols-2 gap-1.5">
+                    /* ── Story 2×2 grid — fills available height ── */
+                    <div className="flex-1 min-h-0 grid grid-cols-2 grid-rows-2 gap-1.5">
                       {generatedImages.map((img, i) => (
                         <motion.div
                           key={i}
                           initial={{ opacity: 0, scale: 0.92 }}
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ delay: i * 0.05 }}
-                          className="rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-white flex flex-col"
+                          className="relative rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-white"
                         >
                           <img
                             src={img.url}
                             alt={img.label ?? caption}
-                            className="w-full aspect-square object-cover"
+                            className="absolute inset-0 w-full h-full object-contain"
                           />
                           {img.label && (
-                            <p className="text-[8px] font-semibold text-slate-500 text-center px-1 py-0.5 leading-tight truncate">
+                            <p className="absolute bottom-0 inset-x-0 text-[8px] font-semibold text-white bg-black/30 text-center px-1 py-0.5 leading-tight truncate">
                               {img.label}
                             </p>
                           )}
+                          <button
+                            onClick={() => openAddToBoard(img.url, img.label ?? selectedTiles.map(t => isRTL ? t.ar : t.en).join(" "))}
+                            className="absolute bottom-1 right-1 bg-white/90 hover:bg-white active:bg-blue-50 border border-slate-200 rounded-lg px-1.5 py-0.5 text-[8px] font-bold text-blue-600 shadow-sm transition-all"
+                          >
+                            + {isRTL ? "لوحة" : "Board"}
+                          </button>
                         </motion.div>
                       ))}
                     </div>
                   ) : (
-                    /* ── Single image ── */
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-white"
-                    >
-                      <img
-                        src={generatedImages[0].url}
-                        alt={caption}
-                        className="w-full aspect-square object-cover"
-                      />
-                    </motion.div>
+                    /* ── Single image — fills available height ── */
+                    <>
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="flex-1 min-h-0 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-white"
+                      >
+                        <img
+                          src={generatedImages[0].url}
+                          alt={caption}
+                          className="w-full h-full object-contain"
+                        />
+                      </motion.div>
+                      <button
+                        onClick={() => openAddToBoard(generatedImages[0].url, selectedTiles.map(t => isRTL ? t.ar : t.en).join(" "))}
+                        className="shrink-0 w-full py-2 rounded-2xl bg-blue-50 hover:bg-blue-100 active:bg-blue-200 border border-blue-200 text-blue-700 text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        ➕ {isRTL ? "إضافة إلى اللوحة" : "Add to board"}
+                      </button>
+                    </>
                   )
                 )}
               </div>
