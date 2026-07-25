@@ -59,6 +59,7 @@ interface RecentGeneration {
   caption: string;
   style: string;
   timestamp: string;
+  note?: string;
 }
 
 // ─── Tile data ────────────────────────────────────────────────────────────────
@@ -336,6 +337,9 @@ export default function AACApp() {
 
   // ── Parent tab
   const [parentTab, setParentTab] = useState<"profile" | "people" | "history">("profile");
+  const [editingNoteId, setEditingNoteId]       = useState<string | null>(null);
+  const [noteInput, setNoteInput]               = useState("");
+  const [showHistoryGallery, setShowHistoryGallery] = useState(false);
 
   const PRESET_CONDITIONS = ["autism", "cerebral-palsy", "down-syndrome", "aphasia", "als", "other", ""];
   const isOtherCondition = !PRESET_CONDITIONS.includes(profile.condition) || profile.condition === "other";
@@ -364,11 +368,13 @@ export default function AACApp() {
       const savedTiles    = localStorage.getItem("vocalai_custom_tiles");
       const savedLanguage = localStorage.getItem("vocalai_language");
       const savedStyle    = localStorage.getItem("vocalai_image_style");
+      const savedHistory  = localStorage.getItem("vocalai_history");
       if (savedProfile)  setProfile(JSON.parse(savedProfile));
       if (savedPeople)   setImportantPeople(JSON.parse(savedPeople));
       if (savedTiles)    setCustomTiles(JSON.parse(savedTiles));
       if (savedLanguage) setLanguage(savedLanguage as "en" | "ar");
       if (savedStyle)    setImageStyle(savedStyle as "symbolic" | "cartoon" | "realistic");
+      if (savedHistory)  setRecentGenerations(JSON.parse(savedHistory));
     } catch { /* corrupted data — start fresh */ }
   }, []);
 
@@ -392,6 +398,10 @@ export default function AACApp() {
   useEffect(() => {
     localStorage.setItem("vocalai_image_style", imageStyle);
   }, [imageStyle]);
+
+  useEffect(() => {
+    localStorage.setItem("vocalai_history", JSON.stringify(recentGenerations));
+  }, [recentGenerations]);
 
   useEffect(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) return;
@@ -761,6 +771,14 @@ export default function AACApp() {
     setImportantPeople(prev => prev.filter(p => p.id !== id));
   }
 
+  function saveNote(id: string) {
+    setRecentGenerations(prev =>
+      prev.map(g => g.id === id ? { ...g, note: noteInput.trim() } : g)
+    );
+    setEditingNoteId(null);
+    setNoteInput("");
+  }
+
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -803,6 +821,71 @@ export default function AACApp() {
                   disabled={pinInput.length !== 4} onClick={submitPin}>
                   {isRTL ? "دخول" : "Enter"}
                 </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── History Gallery Modal ── */}
+      <AnimatePresence>
+        {showHistoryGallery && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex flex-col"
+            onClick={() => setShowHistoryGallery(false)}
+          >
+            <motion.div
+              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="absolute inset-x-0 bottom-0 bg-white rounded-t-3xl flex flex-col"
+              style={{ maxHeight: "85dvh" }}
+              onClick={e => e.stopPropagation()}
+              dir={isRTL ? "rtl" : "ltr"}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100">
+                <h2 className="text-lg font-bold text-slate-800">
+                  {isRTL ? "الصور السابقة" : "Past Generations"}
+                </h2>
+                <button
+                  onClick={() => setShowHistoryGallery(false)}
+                  className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"
+                >✕</button>
+              </div>
+
+              {/* Gallery grid */}
+              <div className="overflow-y-auto flex-1 p-4 space-y-5" style={{ scrollbarWidth: "none" }}>
+                {recentGenerations.map(gen => (
+                  <div key={gen.id} className="space-y-2">
+                    {/* Tiles label */}
+                    <p className="text-xs text-slate-400 font-medium">
+                      {new Date(gen.timestamp).toLocaleString(isRTL ? "ar-SA" : "en-GB", { dateStyle: "medium", timeStyle: "short" })}
+                      {" · "}
+                      {gen.tiles.map(t => isRTL ? t.ar : t.en).join(" ")}
+                    </p>
+                    {/* Image grid — click any image to load it */}
+                    <div className={`grid gap-2 ${gen.images.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
+                      {gen.images.map((url, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            setGeneratedImages(gen.images.map(u => ({ url: u })));
+                            setCaption(gen.caption);
+                            setImageMode(gen.images.length > 1 ? "story" : "single");
+                            setShowHistoryGallery(false);
+                          }}
+                          className="aspect-square rounded-2xl overflow-hidden border-2 border-transparent hover:border-blue-400 active:border-blue-600 transition-all"
+                        >
+                          <img src={url} alt="" className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                    {gen.note && (
+                      <p className="text-xs text-amber-700 bg-amber-50 rounded-xl px-3 py-1.5">📝 {gen.note}</p>
+                    )}
+                  </div>
+                ))}
               </div>
             </motion.div>
           </motion.div>
@@ -1099,13 +1182,23 @@ export default function AACApp() {
               )}
             </div>
 
-            {/* Language — RIGHT */}
-            <button
-              onClick={() => setLanguage(isRTL ? "en" : "ar")}
-              className="shrink-0 px-4 py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-bold transition-colors shadow-sm"
-            >
-              {isRTL ? "EN" : "عربي"}
-            </button>
+            {/* Language + History — RIGHT */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => setShowHistoryGallery(true)}
+                disabled={recentGenerations.length === 0}
+                className="w-10 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center text-lg transition-colors shadow-sm"
+                aria-label="Generation history"
+              >
+                🕐
+              </button>
+              <button
+                onClick={() => setLanguage(isRTL ? "en" : "ar")}
+                className="px-4 py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-bold transition-colors shadow-sm"
+              >
+                {isRTL ? "EN" : "عربي"}
+              </button>
+            </div>
           </header>
 
           {/* ── Sentence builder bar ── */}
@@ -1929,11 +2022,59 @@ export default function AACApp() {
                           <img key={i} src={url} alt="" className="rounded-2xl w-full aspect-square object-cover" />
                         ))}
                       </div>
-                      <p className="text-xs text-slate-400 capitalize">
-                        {isRTL
-                          ? ({ symbolic: "رمزي", cartoon: "كرتوني", realistic: "واقعي" } as Record<string, string>)[gen.style] ?? gen.style
-                          : gen.style}
-                      </p>
+                      <div className={`flex items-center justify-between gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
+                        <p className="text-xs text-slate-400 capitalize">
+                          {isRTL
+                            ? ({ symbolic: "رمزي", cartoon: "كرتوني", realistic: "واقعي" } as Record<string, string>)[gen.style] ?? gen.style
+                            : gen.style}
+                        </p>
+                        <button
+                          onClick={() => {
+                            setEditingNoteId(gen.id);
+                            setNoteInput(gen.note ?? "");
+                          }}
+                          className="text-xs text-blue-500 hover:text-blue-700 flex items-center gap-1 shrink-0"
+                        >
+                          ✏️ {gen.note
+                            ? (isRTL ? "تعديل الملاحظة" : "Edit note")
+                            : (isRTL ? "إضافة ملاحظة" : "Add note")}
+                        </button>
+                      </div>
+
+                      {editingNoteId === gen.id && (
+                        <div className="space-y-2">
+                          <textarea
+                            autoFocus
+                            dir={isRTL ? "rtl" : "ltr"}
+                            value={noteInput}
+                            onChange={e => setNoteInput(e.target.value)}
+                            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveNote(gen.id); } }}
+                            placeholder={isRTL ? "أضف ملاحظة لهذا التفاعل…" : "Add a note about this interaction…"}
+                            rows={2}
+                            className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 resize-none outline-none focus:border-blue-400"
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => saveNote(gen.id)}
+                              className="flex-1 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold"
+                            >
+                              {isRTL ? "حفظ" : "Save"}
+                            </button>
+                            <button
+                              onClick={() => { setEditingNoteId(null); setNoteInput(""); }}
+                              className="flex-1 py-1.5 rounded-xl bg-slate-100 text-slate-600 text-xs font-semibold"
+                            >
+                              {isRTL ? "إلغاء" : "Cancel"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {gen.note && editingNoteId !== gen.id && (
+                        <div className={`bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 ${isRTL ? "text-right" : ""}`}>
+                          <p className="text-xs text-amber-800 leading-relaxed">📝 {gen.note}</p>
+                        </div>
+                      )}
                     </div>
                   ))
                 )}
