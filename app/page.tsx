@@ -1558,7 +1558,7 @@ export default function AACApp() {
               className={`shrink-0 w-12 min-h-[56px] rounded-2xl border-2 flex items-center justify-center transition-all text-xl ${textMode ? "bg-orange-50 border-orange-300" : "bg-slate-50 border-slate-200 hover:bg-orange-50 hover:border-orange-200"}`}
               aria-label={textMode ? (isRTL ? "وضع البطاقات" : "Switch to tiles") : (isRTL ? "وضع الكتابة" : "Switch to keyboard")}
             >
-              😊
+              {textMode ? "😊" : "⌨️"}
             </button>
 
             {/* Word strip — tiles in tile mode, textarea in text mode */}
