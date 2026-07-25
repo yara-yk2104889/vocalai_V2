@@ -163,6 +163,20 @@ const TILES: Record<string, AacTile[]> = {
     { emoji: "🆘", en: "I need help please",   ar: "أحتاج مساعدة من فضلك"  },
     { emoji: "🔁", en: "Can you repeat that?", ar: "هل يمكنك إعادة ذلك؟"   },
   ],
+  sensory: [
+    { emoji: "🛑", en: "I need a break",       ar: "أحتاج استراحة"          },
+    { emoji: "🔇", en: "Too loud",             ar: "صوت عالٍ جداً"          },
+    { emoji: "🤲", en: "Need space",           ar: "أحتاج مساحة"            },
+    { emoji: "😤", en: "Feeling overwhelmed",  ar: "أشعر بضغط"             },
+    { emoji: "🙉", en: "Ears hurt",            ar: "أذناي تؤلمانني"        },
+    { emoji: "💡", en: "Too bright",           ar: "الإضاءة قوية جداً"      },
+    { emoji: "🤢", en: "Feel sick",            ar: "أشعر بغثيان"           },
+    { emoji: "🤗", en: "Need a hug",           ar: "أريد عناقاً"           },
+    { emoji: "😴", en: "I am tired",           ar: "أنا متعب"              },
+    { emoji: "😰", en: "I feel anxious",       ar: "أشعر بقلق"            },
+    { emoji: "🧘", en: "Calm down please",     ar: "هدّئوني من فضلكم"      },
+    { emoji: "🚪", en: "I want to leave",      ar: "أريد المغادرة"         },
+  ],
 };
 
 const CATEGORIES = [
@@ -174,6 +188,7 @@ const CATEGORIES = [
   { id: "people",     enLabel: "People",     arLabel: "أشخاص"  },
   { id: "questions",  enLabel: "Questions",  arLabel: "أسئلة"  },
   { id: "phrases",    enLabel: "Phrases",    arLabel: "جمل"    },
+  { id: "sensory",    enLabel: "Sensory",    arLabel: "حسي"    },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -185,6 +200,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   people:     "bg-yellow-50 hover:bg-yellow-100 border-yellow-200",
   questions:  "bg-purple-50 hover:bg-purple-100 border-purple-200",
   phrases:    "bg-rose-50   hover:bg-rose-100   border-rose-200",
+  sensory:    "bg-teal-50   hover:bg-teal-100   border-teal-200",
 };
 
 const STYLE_OPTIONS: { id: "symbolic" | "cartoon" | "realistic"; en: string; ar: string }[] = [
@@ -1479,7 +1495,7 @@ export default function AACApp() {
                                 ? <img src={tile.imageUrl} className="w-3/4 h-3/4 object-cover rounded-lg" alt={tile.en} />
                                 : <span className="text-3xl leading-none">{tile.emoji}</span>
                               }
-                              <span className="text-xs font-semibold text-slate-700 text-center leading-tight mt-1 w-full truncate px-0.5">
+                              <span className="text-[9px] font-semibold text-slate-700 text-center leading-tight mt-1 w-full line-clamp-3 break-words px-0.5">
                                 {isRTL ? tile.ar : tile.en}
                               </span>
                             </button>
@@ -1510,7 +1526,7 @@ export default function AACApp() {
                             ? <img src={tile.imageUrl} className="w-3/4 h-3/4 object-cover rounded-lg" alt={tile.en} />
                             : <span className="text-3xl leading-none">{tile.emoji}</span>
                           }
-                          <span className="text-xs font-semibold text-slate-700 text-center leading-tight mt-1 w-full truncate px-0.5">
+                          <span className="text-[9px] font-semibold text-slate-700 text-center leading-tight mt-1 w-full line-clamp-3 break-words px-0.5">
                             {isRTL ? tile.ar : tile.en}
                           </span>
                         </button>
@@ -1579,10 +1595,10 @@ export default function AACApp() {
               </div>
 
               {/* Image display */}
-              <div className="flex-1 min-h-0 flex flex-col p-2 gap-2 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-2 space-y-2" style={{ scrollbarWidth: "none" } as CSSProperties}>
                 {/* Empty state */}
                 {!isGenerating && generatedImages.length === 0 && (
-                  <div className="flex-1 flex flex-col items-center justify-center text-center p-3 gap-3">
+                  <div className="h-full flex flex-col items-center justify-center text-center p-3 gap-3">
                     <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-3xl">
                       🖼️
                     </div>
@@ -1597,11 +1613,11 @@ export default function AACApp() {
                 {/* Loading */}
                 {isGenerating && (
                   imageMode === "story" ? (
-                    <div className="flex-1 min-h-0 grid grid-cols-2 grid-rows-2 gap-1.5">
+                    <div className="grid grid-cols-2 gap-1.5">
                       {[0, 1, 2, 3].map(i => (
                         <div
                           key={i}
-                          className="rounded-2xl flex flex-col items-center justify-center gap-1.5"
+                          className="rounded-2xl aspect-square flex flex-col items-center justify-center gap-1.5"
                           style={{ background: "linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%)" }}
                         >
                           <RefreshCw className="h-5 w-5 text-blue-400 animate-spin" />
@@ -1613,7 +1629,7 @@ export default function AACApp() {
                     </div>
                   ) : (
                     <div
-                      className="flex-1 rounded-2xl flex flex-col items-center justify-center gap-2"
+                      className="rounded-2xl aspect-square flex flex-col items-center justify-center gap-2"
                       style={{ background: "linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%)" }}
                     >
                       <RefreshCw className="h-6 w-6 text-blue-400 animate-spin" />
@@ -1637,8 +1653,8 @@ export default function AACApp() {
                 {/* Images */}
                 {!isGenerating && generatedImages.length > 0 && (
                   imageMode === "story" ? (
-                    /* ── Story 2×2 grid — fills available height ── */
-                    <div className="flex-1 min-h-0 grid grid-cols-2 grid-rows-2 gap-1.5">
+                    /* ── Story 2×2 grid ── */
+                    <div className="grid grid-cols-2 gap-1.5">
                       {generatedImages.map((img, i) => (
                         <motion.div
                           key={i}
@@ -1650,7 +1666,7 @@ export default function AACApp() {
                           <img
                             src={img.url}
                             alt={img.label ?? caption}
-                            className="absolute inset-0 w-full h-full object-contain"
+                            className="w-full h-auto block"
                           />
                           {img.label && (
                             <p className="absolute bottom-0 inset-x-0 text-[8px] font-semibold text-white bg-black/30 text-center px-1 py-0.5 leading-tight truncate">
@@ -1667,17 +1683,17 @@ export default function AACApp() {
                       ))}
                     </div>
                   ) : (
-                    /* ── Single image — fills available height ── */
+                    /* ── Single image ── */
                     <>
                       <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="flex-1 min-h-0 rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-white"
+                        className="rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-white"
                       >
                         <img
                           src={generatedImages[0].url}
                           alt={caption}
-                          className="w-full h-full object-contain"
+                          className="w-full h-auto block"
                         />
                       </motion.div>
                       <button
