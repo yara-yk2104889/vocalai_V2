@@ -236,22 +236,57 @@ const KBD_EN = [
   ['q','w','e','r','t','y','u','i','o','p'],
   ['a','s','d','f','g','h','j','k','l'],
   ['SHIFT','z','x','c','v','b','n','m','⌫'],
-  ['123',' ','🔊'],
+  ['123',' '],
 ];
 const KBD_AR = [
   ['ض','ص','ث','ق','ف','غ','ع','ه','خ','ح'],
   ['ش','س','ي','ب','ل','ا','ت','ن','م','ك'],
   ['ئ','ء','ؤ','ر','لا','ى','ة','و','ز','ظ'],
-  ['⌫',' ','🔊'],
+  ['⌫',' '],
 ];
 const KBD_NUM = [
   ['1','2','3','4','5','6','7','8','9','0'],
   ['-','/','.',',','?','!','@','#','%','*'],
   ["'",'(',')','+','=',';',':','~','_','⌫'],
-  ['ABC',' ','🔊'],
+  ['ABC',' '],
 ];
 const KBD_FLEX: Record<string, number> = {
-  SHIFT: 1.5, '⌫': 1.5, '123': 1.5, ABC: 1.5, ' ': 4.5, '🔊': 2,
+  SHIFT: 1.5, '⌫': 1.5, '123': 1.5, ABC: 1.5, ' ': 5,
+};
+
+type ComboPhrase = { en: (t: string) => string; ar: (t: string) => string };
+const COMBO_PHRASES_BY_CAT: Record<string, ComboPhrase[]> = {
+  food: [
+    { en: t => `I want ${t}`,       ar: t => `أريد ${t}`      },
+    { en: t => `I like ${t}`,       ar: t => `أحب ${t}`       },
+    { en: t => `I don't want ${t}`, ar: t => `لا أريد ${t}`   },
+    { en: t => `More ${t}`,         ar: t => `المزيد من ${t}` },
+    { en: t => `No more ${t}`,      ar: t => `لا مزيد من ${t}` },
+  ],
+  drink: [
+    { en: t => `I want ${t}`,       ar: t => `أريد ${t}`      },
+    { en: t => `I like ${t}`,       ar: t => `أحب ${t}`       },
+    { en: t => `I don't want ${t}`, ar: t => `لا أريد ${t}`   },
+    { en: t => `More ${t}`,         ar: t => `المزيد من ${t}` },
+  ],
+  feelings: [
+    { en: t => `I feel ${t}`,       ar: t => `أشعر بـ${t}`    },
+    { en: t => `I am ${t}`,         ar: t => `أنا ${t}`        },
+  ],
+  activities: [
+    { en: t => `I want to ${t}`,        ar: t => `أريد أن ${t}`    },
+    { en: t => `I don't want to ${t}`,  ar: t => `لا أريد أن ${t}` },
+    { en: t => `Can we ${t}?`,          ar: t => `هل يمكننا ${t}؟` },
+  ],
+  people: [
+    { en: t => `I want ${t}`,    ar: t => `أريد ${t}`      },
+    { en: t => `I miss ${t}`,    ar: t => `أشتاق لـ${t}`   },
+    { en: t => `Where is ${t}?`, ar: t => `أين ${t}؟`      },
+  ],
+  sensory: [
+    { en: t => `I need ${t}`,    ar: t => `أحتاج ${t}`     },
+    { en: t => `I feel ${t}`,    ar: t => `أشعر بـ${t}`    },
+  ],
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -373,6 +408,15 @@ export default function AACApp() {
   const [kbdShift, setKbdShift]   = useState(false);
   const [kbdNumMode, setKbdNumMode] = useState(false);
   const freeTextRef = useRef<HTMLTextAreaElement>(null);
+  const [longPressMenu, setLongPressMenu] = useState<{
+    tile: AacTile; phrases: ComboPhrase[];
+    popupLeft: number; popupTop: number; arrowLeft: number;
+    hoveredIdx: number;
+  } | null>(null);
+  const longPressTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressStartRef  = useRef<{ x: number; y: number } | null>(null);
+  const longPressRectRef   = useRef<DOMRect | null>(null);
+  const longPressActiveRef = useRef(false);
   const [customCategory, setCustomCategory]           = useState(CATEGORIES[0].id);
   const [customIconType, setCustomIconType]           = useState<"emoji" | "photo" | "generated">("emoji");
   const [customEmoji, setCustomEmoji]                 = useState("");
@@ -684,6 +728,53 @@ export default function AACApp() {
     setCaption("");
   }
 
+  const COMBO_ITEM_H  = 52;
+  const COMBO_HEADER_H = 56;
+
+  function tilePointerProps(tile: AacTile, catId: string) {
+    const phrases = COMBO_PHRASES_BY_CAT[catId] ?? [];
+    return {
+      onPointerDown(e: React.PointerEvent) {
+        longPressActiveRef.current = false;
+        longPressStartRef.current  = { x: e.clientX, y: e.clientY };
+        longPressRectRef.current   = e.currentTarget.getBoundingClientRect();
+        longPressTimerRef.current  = setTimeout(() => {
+          if (!phrases.length) return;
+          const rect    = longPressRectRef.current!;
+          const PW      = 224;
+          const ITEM_H  = COMBO_ITEM_H;
+          const HDR_H   = COMBO_HEADER_H;
+          const popupH  = HDR_H + phrases.length * ITEM_H + 8; // +8 bottom padding
+          const centerX = rect.left + rect.width / 2;
+          const popupLeft = Math.max(8, Math.min(centerX - PW / 2, window.innerWidth - PW - 8));
+          const popupTop  = Math.max(8, rect.top - popupH - 12);
+          const arrowLeft = Math.min(Math.max(centerX - popupLeft - 8, 12), PW - 24);
+          longPressActiveRef.current = true;
+          setLongPressMenu({ tile, phrases, popupLeft, popupTop, arrowLeft, hoveredIdx: -1 });
+        }, 500);
+      },
+      onPointerMove(e: React.PointerEvent) {
+        if (longPressActiveRef.current || !longPressStartRef.current) return;
+        const dx = e.clientX - longPressStartRef.current.x;
+        const dy = e.clientY - longPressStartRef.current.y;
+        if (dx * dx + dy * dy > 64) {
+          clearTimeout(longPressTimerRef.current!);
+          longPressTimerRef.current = null;
+        }
+      },
+      onPointerUp() {
+        clearTimeout(longPressTimerRef.current!);
+        longPressTimerRef.current = null;
+        // Normal taps are handled by onClick; this just cancels the long-press timer
+      },
+      onPointerCancel() {
+        clearTimeout(longPressTimerRef.current!);
+        longPressTimerRef.current  = null;
+        longPressActiveRef.current = false;
+      },
+    };
+  }
+
   function removeTileAt(index: number) {
     setSelectedTiles(prev => prev.filter((_, i) => i !== index));
     setGeneratedImages([]);
@@ -699,7 +790,6 @@ export default function AACApp() {
   function handleKbdKey(key: string) {
     if (key === '⌫')   { setFreeText(p => p.slice(0, -1)); return; }
     if (key === ' ')   { setFreeText(p => p + ' '); return; }
-    if (key === '🔊')  { speakSentence(); return; }
     if (key === 'SHIFT') { setKbdShift(v => !v); return; }
     if (key === '123') { setKbdNumMode(true); return; }
     if (key === 'ABC') { setKbdNumMode(false); return; }
@@ -1673,7 +1763,6 @@ export default function AACApp() {
                     <div key={ri} className="flex gap-1 flex-1 min-h-0">
                       {row.map(key => {
                         const flex = KBD_FLEX[key] ?? 1;
-                        const isSpeak  = key === '🔊';
                         const isAction = key in KBD_FLEX;
                         const isShiftOn = key === 'SHIFT' && kbdShift;
                         const label =
@@ -1687,8 +1776,7 @@ export default function AACApp() {
                             onPointerDown={e => { e.preventDefault(); handleKbdKey(key); }}
                             style={{ flex }}
                             className={`rounded-xl flex items-center justify-center font-semibold text-sm shadow-sm border transition-all active:scale-95 active:brightness-90 min-h-0
-                              ${isSpeak   ? 'bg-blue-600 border-blue-700 text-white text-base' :
-                                isShiftOn ? 'bg-blue-100 border-blue-300 text-blue-700' :
+                              ${isShiftOn ? 'bg-blue-100 border-blue-300 text-blue-700' :
                                 isAction  ? 'bg-slate-400 border-slate-500 text-slate-800' :
                                             'bg-white border-slate-300 text-slate-900'}`}
                           >
@@ -1805,14 +1893,17 @@ export default function AACApp() {
                       return getTilesForCategory(cat.id).slice(0, tilesPerColumn).map((tile, i) => (
                         <button
                           key={`${cat.id}-${i}`}
-                          onClick={() => addTile(tile)}
-                          className={`rounded-xl border-2 ${colors} flex flex-col items-center justify-center p-1 active:scale-90 transition-all shadow-sm overflow-hidden`}
+                          onClick={() => { if (!longPressActiveRef.current) addTile(tile); }}
+                          {...tilePointerProps(tile, cat.id)}
+                          className={`rounded-xl border-2 ${colors} flex flex-col items-center justify-between p-1 active:scale-90 transition-all shadow-sm overflow-hidden`}
                         >
-                          {tile.imageUrl
-                            ? <img src={tile.imageUrl} className="w-2/3 h-2/3 object-cover rounded-lg" alt={tile.en} />
-                            : <span className={`leading-none ${tilesPerColumn <= 4 ? "text-3xl" : tilesPerColumn <= 6 ? "text-2xl" : "text-lg"}`}>{tile.emoji}</span>
-                          }
-                          <span className="text-[9px] font-semibold text-slate-700 text-center leading-tight mt-1 w-full line-clamp-2 break-words px-0.5">
+                          <div className="flex-1 flex items-center justify-center min-h-0">
+                            {tile.imageUrl
+                              ? <img src={tile.imageUrl} className="w-full h-full object-cover rounded-lg" alt={tile.en} />
+                              : <span className={`leading-none ${tilesPerColumn <= 4 ? "text-3xl" : tilesPerColumn <= 6 ? "text-2xl" : "text-lg"}`}>{tile.emoji}</span>
+                            }
+                          </div>
+                          <span className="shrink-0 text-[10px] font-semibold text-slate-700 text-center leading-tight w-full truncate px-0.5">
                             {isRTL ? tile.ar : tile.en}
                           </span>
                         </button>
@@ -1838,14 +1929,17 @@ export default function AACApp() {
                       return (
                         <button
                           key={i}
-                          onClick={() => addTile(tile)}
-                          className={`w-full aspect-square rounded-2xl border-2 ${colors} flex flex-col items-center justify-center p-1 active:scale-90 transition-all shadow-sm overflow-hidden`}
+                          onClick={() => { if (!longPressActiveRef.current) addTile(tile); }}
+                          {...tilePointerProps(tile, expandedCategory)}
+                          className={`w-full aspect-square rounded-2xl border-2 ${colors} flex flex-col items-center justify-between p-1 active:scale-90 transition-all shadow-sm overflow-hidden`}
                         >
-                          {tile.imageUrl
-                            ? <img src={tile.imageUrl} className="w-3/4 h-3/4 object-cover rounded-lg" alt={tile.en} />
-                            : <span className="text-3xl leading-none">{tile.emoji}</span>
-                          }
-                          <span className="text-[9px] font-semibold text-slate-700 text-center leading-tight mt-1 w-full line-clamp-3 break-words px-0.5">
+                          <div className="flex-1 flex items-center justify-center min-h-0">
+                            {tile.imageUrl
+                              ? <img src={tile.imageUrl} className="w-full h-full object-cover rounded-lg" alt={tile.en} />
+                              : <span className="text-3xl leading-none">{tile.emoji}</span>
+                            }
+                          </div>
+                          <span className="shrink-0 text-[10px] font-semibold text-slate-700 text-center leading-tight w-full truncate px-0.5">
                             {isRTL ? tile.ar : tile.en}
                           </span>
                         </button>
@@ -2049,6 +2143,85 @@ export default function AACApp() {
               </button>
             </div>
           </div>
+        {/* ── Long-press phrase combo overlay ── */}
+        {longPressMenu && (
+          <div
+            className="fixed inset-0 z-50"
+            onPointerMove={e => {
+              const relY = e.clientY - longPressMenu.popupTop - COMBO_HEADER_H;
+              const idx  = Math.floor(relY / COMBO_ITEM_H);
+              const clamped = Math.max(0, Math.min(longPressMenu.phrases.length - 1, idx));
+              setLongPressMenu(prev =>
+                prev ? { ...prev, hoveredIdx: relY >= 0 && relY < longPressMenu.phrases.length * COMBO_ITEM_H ? clamped : -1 } : null
+              );
+            }}
+            onPointerUp={() => {
+              if (longPressMenu.hoveredIdx >= 0) {
+                const phrase = longPressMenu.phrases[longPressMenu.hoveredIdx];
+                addTile({
+                  emoji:    longPressMenu.tile.emoji,
+                  en:       phrase.en(longPressMenu.tile.en),
+                  ar:       phrase.ar(longPressMenu.tile.ar),
+                  imageUrl: longPressMenu.tile.imageUrl,
+                });
+              }
+              longPressActiveRef.current = false;
+              setLongPressMenu(null);
+            }}
+            onPointerCancel={() => { longPressActiveRef.current = false; setLongPressMenu(null); }}
+          >
+            {/* Dim backdrop */}
+            <div className="absolute inset-0 bg-black/20" />
+
+            {/* Tooltip bubble */}
+            <motion.div
+              initial={{ opacity: 0, y: 6, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0,  scale: 1    }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="absolute bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-visible"
+              style={{ left: longPressMenu.popupLeft, top: longPressMenu.popupTop, width: 224 }}
+              onPointerDown={e => e.stopPropagation()}
+            >
+              {/* Tile header */}
+              <div
+                className="flex items-center gap-2.5 px-4 rounded-t-3xl bg-slate-50 border-b border-slate-100"
+                style={{ height: COMBO_HEADER_H }}
+              >
+                {longPressMenu.tile.imageUrl
+                  ? <img src={longPressMenu.tile.imageUrl} className="w-7 h-7 object-cover rounded-lg shrink-0" alt="" />
+                  : longPressMenu.tile.emoji
+                    ? <span className="text-xl shrink-0">{longPressMenu.tile.emoji}</span>
+                    : null
+                }
+                <span className="text-sm font-bold text-slate-700 truncate">
+                  {isRTL ? longPressMenu.tile.ar : longPressMenu.tile.en}
+                </span>
+              </div>
+
+              {/* Phrase options */}
+              <div className="pb-2">
+                {longPressMenu.phrases.map((phrase, i) => (
+                  <div
+                    key={i}
+                    className={`mx-2 mt-1 flex items-center px-3 rounded-2xl text-sm font-semibold transition-colors
+                      ${longPressMenu.hoveredIdx === i
+                        ? 'bg-blue-500 text-white'
+                        : 'text-slate-700'}`}
+                    style={{ height: COMBO_ITEM_H - 6 }}
+                  >
+                    {isRTL ? phrase.ar(longPressMenu.tile.ar) : phrase.en(longPressMenu.tile.en)}
+                  </div>
+                ))}
+              </div>
+
+              {/* Downward arrow pointing at tile */}
+              <div
+                className="absolute bottom-0 translate-y-[7px] w-4 h-4 rotate-45 bg-white border-r border-b border-slate-100"
+                style={{ left: longPressMenu.arrowLeft }}
+              />
+            </motion.div>
+          </div>
+        )}
         </div>
       )}
 
