@@ -511,13 +511,29 @@ export default function AACApp() {
         const savedTilesPerCol = localStorage.getItem("vocalai_tiles_per_column");
         if (savedProfile)     setProfile(JSON.parse(savedProfile));
         if (savedPeople)      setImportantPeople(JSON.parse(savedPeople));
-        if (savedTiles)       setCustomTiles(JSON.parse(savedTiles));
         if (savedLanguage)    setLanguage(savedLanguage as "en" | "ar");
         if (savedStyle)       setImageStyle(savedStyle as "symbolic" | "cartoon" | "realistic");
         if (savedCultural !== null) setCulturalGrounding(savedCultural === "true");
         if (savedCatOrder)    setCategoryOrder(JSON.parse(savedCatOrder));
         if (savedHidden)      setHiddenCategories(JSON.parse(savedHidden));
         if (savedTilesPerCol) setTilesPerColumn(Number(savedTilesPerCol));
+
+        if (savedTiles) {
+          const parsed = JSON.parse(savedTiles) as Record<string, AacTile[]>;
+          const resolved: Record<string, AacTile[]> = {};
+          for (const [cat, tiles] of Object.entries(parsed)) {
+            resolved[cat] = await Promise.all(
+              tiles.map(async tile => {
+                if (tile.imageUrl?.startsWith("idb:")) {
+                  const data = await idbGet(tile.imageUrl.slice(4)).catch(() => null);
+                  return { ...tile, imageUrl: data ?? undefined };
+                }
+                return tile;
+              })
+            );
+          }
+          setCustomTiles(resolved);
+        }
 
         if (savedHistory) {
           const history = JSON.parse(savedHistory) as RecentGeneration[];
@@ -551,7 +567,25 @@ export default function AACApp() {
   }, [importantPeople]);
 
   useEffect(() => {
-    localStorage.setItem("vocalai_custom_tiles", JSON.stringify(customTiles));
+    // Offload imageUrl data: URLs to IndexedDB, store "idb:<key>" refs in localStorage.
+    (async () => {
+      const forStorage: Record<string, AacTile[]> = {};
+      for (const [cat, tiles] of Object.entries(customTiles)) {
+        forStorage[cat] = await Promise.all(
+          tiles.map(async (tile, idx) => {
+            if (tile.imageUrl?.startsWith("data:")) {
+              const key = `tile:${cat}:${idx}`;
+              await idbPut(key, tile.imageUrl).catch(() => {});
+              return { ...tile, imageUrl: `idb:${key}` };
+            }
+            return tile;
+          })
+        );
+      }
+      try {
+        localStorage.setItem("vocalai_custom_tiles", JSON.stringify(forStorage));
+      } catch { /* silently ignore quota errors */ }
+    })();
   }, [customTiles]);
 
   useEffect(() => {
