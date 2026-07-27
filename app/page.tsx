@@ -313,10 +313,7 @@ const COMBO_PHRASES_BY_CAT: Record<string, ComboPhrase[]> = {
     { en: t => `I miss ${t}`,    ar: t => `أشتاق لـ${t}`   },
     { en: t => `Where is ${t}?`, ar: t => `أين ${t}؟`      },
   ],
-  sensory: [
-    { en: t => `I need ${t}`,    ar: t => `أحتاج ${t}`     },
-    { en: t => `I feel ${t}`,    ar: t => `أشعر بـ${t}`    },
-  ],
+  // sensory: no combo phrases — long-press menu disabled for this category
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

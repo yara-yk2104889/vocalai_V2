@@ -95,7 +95,7 @@ export async function POST(req: Request) {
 
     const culturalRule = culturalGrounding
       ? `Cultural context: Depict culturally-grounded imagery relevant to the Gulf/Middle Eastern region — include regional foods (dates, hummus, kabsa, shawarma, luqaimat, karak tea), traditional clothing (thobe, kandura, abaya, ghutra), and familiar Gulf/Arab cultural settings and aesthetics where relevant to the scene.`
-      : "";
+      : `Cultural context: Use culturally neutral, universally recognizable imagery. Do NOT include Gulf, Arab, or Middle Eastern-specific cultural elements such as regional dishes (kabsa, shawarma, luqaimat, karak tea), traditional Gulf clothing (thobe, kandura, abaya, ghutra), or Gulf/Arab-specific settings. Objects and scenes should look generic and globally familiar.`;
 
     const fullPrompt = `
 The following words are AAC symbol tiles selected by a user to communicate a message: "${prompt}".
