@@ -473,6 +473,8 @@ export default function AACApp() {
   const [addToBoardLabelEn, setAddToBoardLabelEn]   = useState("");
   const [addToBoardLabelAr, setAddToBoardLabelAr]   = useState("");
   const [addToBoardCategory, setAddToBoardCategory] = useState(CATEGORIES[0].id);
+  const [showAddStoryPicker, setShowAddStoryPicker] = useState(false);
+  const [addStoryCategory, setAddStoryCategory]     = useState(CATEGORIES[0].id);
 
   const PRESET_CONDITIONS = ["autism", "cerebral-palsy", "down-syndrome", "aphasia", "als", "other", ""];
   const isOtherCondition = !PRESET_CONDITIONS.includes(profile.condition) || profile.condition === "other";
@@ -761,6 +763,20 @@ export default function AACApp() {
     setShowAddToBoard(false);
   }
 
+  function saveStoryToBoard() {
+    generatedImages.forEach((img, idx) => {
+      const label = img.label || `Scene ${idx + 1}`;
+      setCustomTiles(prev => ({
+        ...prev,
+        [addStoryCategory]: [
+          ...(prev[addStoryCategory] ?? []),
+          { emoji: "", en: label, ar: label, imageUrl: img.url },
+        ],
+      }));
+    });
+    setShowAddStoryPicker(false);
+  }
+
   function addCustomTile() {
     if ((!customEmoji && !customImageUrl) || !customLabelEn.trim()) return;
     const tile: AacTile = {
@@ -901,6 +917,7 @@ export default function AACApp() {
     setIsGenerating(true);
     setGeneratedImages([]);
     setCaption("");
+    setShowAddStoryPicker(false);
 
     const words = textMode ? freeText.trim() : selectedTiles.map(t => (isRTL ? t.ar : t.en)).join(" ");
 
@@ -2127,35 +2144,78 @@ export default function AACApp() {
                 {/* Images */}
                 {!isGenerating && generatedImages.length > 0 && (
                   imageMode === "story" ? (
-                    /* ── Story 2×2 grid ── */
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {generatedImages.map((img, i) => (
-                        <motion.div
-                          key={i}
-                          initial={{ opacity: 0, scale: 0.92 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: i * 0.05 }}
-                          className="relative rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-white"
-                        >
-                          <img
-                            src={img.url}
-                            alt={img.label ?? caption}
-                            className="w-full h-auto block"
-                          />
-                          {img.label && (
-                            <p className="absolute bottom-0 inset-x-0 text-[8px] font-semibold text-white bg-black/30 text-center px-1 py-0.5 leading-tight truncate">
-                              {img.label}
-                            </p>
-                          )}
-                          <button
-                            onClick={() => openAddToBoard(img.url, img.label ?? selectedTiles.map(t => isRTL ? t.ar : t.en).join(" "))}
-                            className="absolute bottom-1 right-1 bg-white/90 hover:bg-white active:bg-blue-50 border border-slate-200 rounded-lg px-1.5 py-0.5 text-[8px] font-bold text-blue-600 shadow-sm transition-all"
+                    /* ── Story 2×2 grid + batch save ── */
+                    <>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {generatedImages.map((img, i) => (
+                          <motion.div
+                            key={i}
+                            initial={{ opacity: 0, scale: 0.92 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: i * 0.05 }}
+                            className="relative rounded-2xl overflow-hidden shadow-sm border border-slate-200 bg-white"
                           >
-                            + {isRTL ? "لوحة" : "Board"}
-                          </button>
-                        </motion.div>
-                      ))}
-                    </div>
+                            <img
+                              src={img.url}
+                              alt={img.label ?? caption}
+                              className="w-full h-auto block"
+                            />
+                            {img.label && (
+                              <p className="absolute bottom-0 inset-x-0 text-[8px] font-semibold text-white bg-black/30 text-center px-1 py-0.5 leading-tight truncate">
+                                {img.label}
+                              </p>
+                            )}
+                            <button
+                              onClick={() => openAddToBoard(img.url, img.label ?? selectedTiles.map(t => isRTL ? t.ar : t.en).join(" "))}
+                              className="absolute bottom-1 right-1 bg-white/90 hover:bg-white active:bg-blue-50 border border-slate-200 rounded-lg px-1.5 py-0.5 text-[8px] font-bold text-blue-600 shadow-sm transition-all"
+                            >
+                              + {isRTL ? "لوحة" : "Board"}
+                            </button>
+                          </motion.div>
+                        ))}
+                      </div>
+
+                      {/* Add story batch button */}
+                      {!showAddStoryPicker ? (
+                        <button
+                          onClick={() => setShowAddStoryPicker(true)}
+                          className="w-full py-2 rounded-2xl bg-blue-50 hover:bg-blue-100 active:bg-blue-200 border border-blue-200 text-blue-700 text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          📚 {isRTL ? "إضافة القصة كاملةً" : "Add story"}
+                        </button>
+                      ) : (
+                        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-3 space-y-2.5">
+                          <p className="text-xs font-bold text-slate-700">
+                            {isRTL ? "اختر الفئة لحفظ القصة فيها" : `Save all ${generatedImages.length} scenes to:`}
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {CATEGORIES.map(cat => (
+                              <button
+                                key={cat.id}
+                                onClick={() => setAddStoryCategory(cat.id)}
+                                className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border-2 transition-all ${CATEGORY_COLORS[cat.id] ?? ""} ${addStoryCategory === cat.id ? "ring-2 ring-blue-500 ring-offset-1" : ""} text-slate-700`}
+                              >
+                                {isRTL ? cat.arLabel : cat.enLabel}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={saveStoryToBoard}
+                              className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold transition-colors"
+                            >
+                              {isRTL ? "حفظ" : "Save"}
+                            </button>
+                            <button
+                              onClick={() => setShowAddStoryPicker(false)}
+                              className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-500 text-xs font-bold transition-colors hover:bg-slate-50"
+                            >
+                              {isRTL ? "إلغاء" : "Cancel"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     /* ── Single image ── */
                     <>
