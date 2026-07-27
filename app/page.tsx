@@ -58,7 +58,8 @@ interface AacTile {
   emoji: string;
   en: string;
   ar: string;
-  imageUrl?: string; // custom photo or generated image
+  imageUrl?: string;    // single custom photo or generated image
+  storyImages?: string[]; // multiple scenes — makes this a story tile
 }
 
 interface GeneratedImage {
@@ -478,6 +479,8 @@ export default function AACApp() {
   const [addToBoardCategory, setAddToBoardCategory] = useState(CATEGORIES[0].id);
   const [showAddStoryPicker, setShowAddStoryPicker] = useState(false);
   const [addStoryCategory, setAddStoryCategory]     = useState(CATEGORIES[0].id);
+  const [storyName, setStoryName]                   = useState("");
+  const [viewingStory, setViewingStory]             = useState<AacTile | null>(null);
 
   const PRESET_CONDITIONS = ["autism", "cerebral-palsy", "down-syndrome", "aphasia", "als", "other", ""];
   const isOtherCondition = !PRESET_CONDITIONS.includes(profile.condition) || profile.condition === "other";
@@ -527,11 +530,23 @@ export default function AACApp() {
           for (const [cat, tiles] of Object.entries(parsed)) {
             resolved[cat] = await Promise.all(
               tiles.map(async tile => {
+                let updatedTile = { ...tile };
                 if (tile.imageUrl?.startsWith("idb:")) {
                   const data = await idbGet(tile.imageUrl.slice(4)).catch(() => null);
-                  return { ...tile, imageUrl: data ?? undefined };
+                  updatedTile = { ...updatedTile, imageUrl: data ?? undefined };
                 }
-                return tile;
+                if (tile.storyImages?.length) {
+                  const restored = await Promise.all(
+                    tile.storyImages.map(async url => {
+                      if (url.startsWith("idb:")) {
+                        return (await idbGet(url.slice(4)).catch(() => null)) ?? "";
+                      }
+                      return url;
+                    })
+                  );
+                  updatedTile = { ...updatedTile, storyImages: restored.filter(Boolean) };
+                }
+                return updatedTile;
               })
             );
           }
@@ -576,12 +591,26 @@ export default function AACApp() {
       for (const [cat, tiles] of Object.entries(customTiles)) {
         forStorage[cat] = await Promise.all(
           tiles.map(async (tile, idx) => {
+            let updatedTile = { ...tile };
             if (tile.imageUrl?.startsWith("data:")) {
               const key = `tile:${cat}:${idx}`;
               await idbPut(key, tile.imageUrl).catch(() => {});
-              return { ...tile, imageUrl: `idb:${key}` };
+              updatedTile = { ...updatedTile, imageUrl: `idb:${key}` };
             }
-            return tile;
+            if (tile.storyImages?.length) {
+              const offloaded = await Promise.all(
+                tile.storyImages.map(async (url, imgIdx) => {
+                  if (url.startsWith("data:")) {
+                    const key = `tile:${cat}:${idx}:story:${imgIdx}`;
+                    await idbPut(key, url).catch(() => {});
+                    return `idb:${key}`;
+                  }
+                  return url;
+                })
+              );
+              updatedTile = { ...updatedTile, storyImages: offloaded };
+            }
+            return updatedTile;
           })
         );
       }
@@ -801,17 +830,20 @@ export default function AACApp() {
   }
 
   function saveStoryToBoard() {
-    generatedImages.forEach((img, idx) => {
-      const label = img.label || `Scene ${idx + 1}`;
-      setCustomTiles(prev => ({
-        ...prev,
-        [addStoryCategory]: [
-          ...(prev[addStoryCategory] ?? []),
-          { emoji: "", en: label, ar: label, imageUrl: img.url },
-        ],
-      }));
-    });
+    const name = storyName.trim() || (isRTL ? "قصتي" : "My Story");
+    const tile: AacTile = {
+      emoji: "📚",
+      en: name,
+      ar: name,
+      imageUrl: generatedImages[0]?.url,       // first scene as board preview
+      storyImages: generatedImages.map(g => g.url),
+    };
+    setCustomTiles(prev => ({
+      ...prev,
+      [addStoryCategory]: [...(prev[addStoryCategory] ?? []), tile],
+    }));
     setShowAddStoryPicker(false);
+    setStoryName("");
   }
 
   function addCustomTile() {
@@ -1281,6 +1313,67 @@ export default function AACApp() {
                   className="w-full py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-40 disabled:pointer-events-none text-white font-bold text-sm transition-colors"
                 >
                   {isRTL ? "حفظ في اللوحة" : "Save to Board"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Story Viewer Modal ── */}
+      <AnimatePresence>
+        {viewingStory && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] bg-black/80 backdrop-blur-sm flex flex-col"
+            onClick={() => setViewingStory(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="relative m-auto w-full max-w-md max-h-[92dvh] bg-white rounded-3xl flex flex-col overflow-hidden shadow-2xl"
+              onClick={e => e.stopPropagation()}
+              dir={isRTL ? "rtl" : "ltr"}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100 shrink-0">
+                <h2 className="text-base font-bold text-slate-800 truncate">{viewingStory.en}</h2>
+                <button
+                  onClick={() => setViewingStory(null)}
+                  className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 shrink-0"
+                >✕</button>
+              </div>
+
+              {/* Scene grid */}
+              <div
+                className="flex-1 overflow-y-auto p-4"
+                style={{ scrollbarWidth: "none" } as CSSProperties}
+              >
+                <div
+                  className="gap-3"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: (viewingStory.storyImages?.length ?? 0) === 1 ? "1fr" : "repeat(2, 1fr)",
+                  }}
+                >
+                  {viewingStory.storyImages?.map((src, idx) => (
+                    <div key={idx} className="relative rounded-2xl overflow-hidden border border-slate-200 aspect-square bg-slate-50">
+                      <img src={src} alt={`Scene ${idx + 1}`} className="w-full h-full object-cover" />
+                      <span className="absolute bottom-1.5 left-1.5 bg-black/50 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5">
+                        {idx + 1}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-5 pb-5 pt-3 border-t border-slate-100 shrink-0">
+                <button
+                  onClick={() => setViewingStory(null)}
+                  className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-colors"
+                >
+                  {isRTL ? "إغلاق" : "Close"}
                 </button>
               </div>
             </motion.div>
@@ -2006,13 +2099,22 @@ export default function AACApp() {
                       return getTilesForCategory(cat.id).slice(0, tilesPerColumn).map((tile, i) => (
                         <button
                           key={`${cat.id}-${i}`}
-                          onClick={() => { if (!longPressActiveRef.current) addTile(tile); }}
+                          onClick={() => {
+                            if (longPressActiveRef.current) return;
+                            if (tile.storyImages?.length) { setViewingStory(tile); return; }
+                            addTile(tile);
+                          }}
                           {...tilePointerProps(tile, cat.id)}
                           className={`rounded-xl border-2 ${colors} flex flex-col items-center justify-between p-1 active:scale-90 transition-all shadow-sm overflow-hidden`}
                         >
-                          <div className="flex-1 flex items-center justify-center min-h-0">
+                          <div className="flex-1 flex items-center justify-center min-h-0 relative w-full">
                             {tile.imageUrl
-                              ? <img src={tile.imageUrl} className="w-full h-full object-cover rounded-lg" alt={tile.en} />
+                              ? <>
+                                  <img src={tile.imageUrl} className="w-full h-full object-cover rounded-lg" alt={tile.en} />
+                                  {tile.storyImages?.length && (
+                                    <span className="absolute top-0.5 right-0.5 bg-white/80 rounded-full text-[9px] leading-none px-1 py-0.5 font-bold text-slate-600 shadow-sm">📚</span>
+                                  )}
+                                </>
                               : <span className={`leading-none ${tilesPerColumn <= 4 ? "text-3xl" : tilesPerColumn <= 6 ? "text-2xl" : "text-lg"}`}>{tile.emoji}</span>
                             }
                           </div>
@@ -2042,13 +2144,22 @@ export default function AACApp() {
                       return (
                         <button
                           key={i}
-                          onClick={() => { if (!longPressActiveRef.current) addTile(tile); }}
+                          onClick={() => {
+                            if (longPressActiveRef.current) return;
+                            if (tile.storyImages?.length) { setViewingStory(tile); return; }
+                            addTile(tile);
+                          }}
                           {...tilePointerProps(tile, expandedCategory)}
                           className={`w-full aspect-square rounded-2xl border-2 ${colors} flex flex-col items-center justify-between p-1 active:scale-90 transition-all shadow-sm overflow-hidden`}
                         >
-                          <div className="flex-1 flex items-center justify-center min-h-0">
+                          <div className="flex-1 flex items-center justify-center min-h-0 relative w-full">
                             {tile.imageUrl
-                              ? <img src={tile.imageUrl} className="w-full h-full object-cover rounded-lg" alt={tile.en} />
+                              ? <>
+                                  <img src={tile.imageUrl} className="w-full h-full object-cover rounded-lg" alt={tile.en} />
+                                  {tile.storyImages?.length && (
+                                    <span className="absolute top-0.5 right-0.5 bg-white/80 rounded-full text-[9px] leading-none px-1 py-0.5 font-bold text-slate-600 shadow-sm">📚</span>
+                                  )}
+                                </>
                               : <span className="text-3xl leading-none">{tile.emoji}</span>
                             }
                           </div>
@@ -2222,6 +2333,17 @@ export default function AACApp() {
                         </button>
                       ) : (
                         <div className="rounded-2xl border border-blue-200 bg-blue-50 p-3 space-y-2.5">
+                          <p className="text-xs font-bold text-slate-700">
+                            {isRTL ? "اسم القصة" : "Story name"}
+                          </p>
+                          <input
+                            type="text"
+                            value={storyName}
+                            onChange={e => setStoryName(e.target.value)}
+                            placeholder={isRTL ? "مثال: روتين الصباح" : "e.g. Morning Routine"}
+                            className="w-full px-3 py-2 rounded-xl border border-blue-200 bg-white text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-400"
+                            dir={isRTL ? "rtl" : "ltr"}
+                          />
                           <p className="text-xs font-bold text-slate-700">
                             {isRTL ? "اختر الفئة لحفظ القصة فيها" : `Save all ${generatedImages.length} scenes to:`}
                           </p>
