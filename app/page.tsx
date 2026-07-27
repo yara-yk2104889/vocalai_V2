@@ -263,6 +263,72 @@ const CONNECTORS: { en: string; ar: string }[] = [
   { en: "at",     ar: "عند"   },
 ];
 
+// ─── Tile prediction engine ───────────────────────────────────────────────────
+
+function tileCategory(tile: AacTile): string | null {
+  for (const [cat, tiles] of Object.entries(TILES)) {
+    if (tiles.some(t => t.en === tile.en)) return cat;
+  }
+  return null;
+}
+
+function predConn(en: string): AacTile {
+  const c = CONNECTORS.find(c => c.en === en);
+  return { emoji: "", en, ar: en, ...(c ? { ar: c.ar } : {}) };
+}
+
+function predictionsForCat(cat: string | null): AacTile[] {
+  const top = (c: string, n = 4) => (TILES[c] ?? []).slice(0, n);
+  const cc = (...words: string[]) => words.map(predConn);
+  switch (cat) {
+    case "food":       return [...cc("and", "more", "not"), ...top("food", 3), ...top("drink", 2)];
+    case "drink":      return [...cc("and", "more", "not"), ...top("drink", 3), ...top("food", 2)];
+    case "feelings":   return [...cc("and", "not", "more"), ...top("feelings", 4), ...top("people", 1)];
+    case "activities": return [...cc("and", "with", "more"), ...top("activities", 3), ...top("people", 2)];
+    case "people":     return [...cc("want", "and", "go"),  ...top("activities", 3), ...top("feelings", 2)];
+    case "sensory":    return [...cc("not", "and", "more"), ...top("people", 2), ...top("core", 2)];
+    default:           return [...cc("and", "more", "not"), ...top("core", 3), ...top("feelings", 2)];
+  }
+}
+
+function getPredictions(selected: AacTile[]): AacTile[] {
+  const top = (cat: string, n = 4) => (TILES[cat] ?? []).slice(0, n);
+  const cc  = (...words: string[]) => words.map(predConn);
+
+  if (selected.length === 0) {
+    return [...cc("I", "more", "not"), ...top("core", 3), ...top("feelings", 2)];
+  }
+
+  const last    = selected[selected.length - 1];
+  const lastEn  = last.en.toLowerCase();
+  const lastCat = tileCategory(last);
+
+  if (lastEn === "i") {
+    return [...cc("want", "need", "go"), ...top("feelings", 3), ...top("activities", 2)];
+  }
+  if (lastEn === "want" || lastEn === "need") {
+    return [...top("food", 3), ...top("drink", 2), ...top("activities", 3)];
+  }
+  if (lastEn === "help") {
+    return [...top("people", 5), ...cc("more")];
+  }
+  if (lastEn === "go") {
+    return [...top("activities", 4), ...top("people", 2), ...cc("with", "to")];
+  }
+  if (lastEn === "yes" || lastEn === "no" || lastEn === "stop") {
+    return [...cc("I", "more", "not"), ...top("core", 3), ...top("feelings", 2)];
+  }
+  if (lastEn === "and" || lastEn === "then" || lastEn === "more") {
+    const prev    = selected.length >= 2 ? selected[selected.length - 2] : null;
+    const prevCat = prev ? tileCategory(prev) : null;
+    return prevCat
+      ? predictionsForCat(prevCat)
+      : [...top("food", 2), ...top("drink", 1), ...top("activities", 2), ...top("feelings", 2), ...cc("I")];
+  }
+
+  return predictionsForCat(lastCat);
+}
+
 const DEFAULT_PIN = "1234";
 
 // ─── In-app keyboard layouts ───────────────────────────────────────────────────
@@ -430,6 +496,12 @@ export default function AACApp() {
   const [hiddenCategories, setHiddenCategories] = useState<string[]>([]);
   const [tilesPerColumn, setTilesPerColumn]     = useState(4);
 
+  // ── Category label overrides
+  const [categoryLabels, setCategoryLabels] = useState<Record<string, { en: string; ar: string }>>({});
+  const [renamingCatId, setRenamingCatId]   = useState<string | null>(null);
+  const [renameDraftEn, setRenameDraftEn]   = useState("");
+  const [renameDraftAr, setRenameDraftAr]   = useState("");
+
   // ── Board arrange mode
   const [isArrangingCategories, setIsArrangingCategories] = useState(false);
   const [draggedCatId, setDraggedCatId]   = useState<string | null>(null);
@@ -515,6 +587,7 @@ export default function AACApp() {
         const savedCatOrder    = localStorage.getItem("vocalai_category_order");
         const savedHidden      = localStorage.getItem("vocalai_hidden_categories");
         const savedTilesPerCol = localStorage.getItem("vocalai_tiles_per_column");
+        const savedCatLabels   = localStorage.getItem("vocalai_category_labels");
         if (savedProfile)     setProfile(JSON.parse(savedProfile));
         if (savedPeople)      setImportantPeople(JSON.parse(savedPeople));
         if (savedLanguage)    setLanguage(savedLanguage as "en" | "ar");
@@ -523,6 +596,7 @@ export default function AACApp() {
         if (savedCatOrder)    setCategoryOrder(JSON.parse(savedCatOrder));
         if (savedHidden)      setHiddenCategories(JSON.parse(savedHidden));
         if (savedTilesPerCol) setTilesPerColumn(Number(savedTilesPerCol));
+        if (savedCatLabels)   setCategoryLabels(JSON.parse(savedCatLabels));
 
         if (savedTiles) {
           const parsed = JSON.parse(savedTiles) as Record<string, AacTile[]>;
@@ -677,6 +751,10 @@ export default function AACApp() {
   }, [tilesPerColumn]);
 
   useEffect(() => {
+    localStorage.setItem("vocalai_category_labels", JSON.stringify(categoryLabels));
+  }, [categoryLabels]);
+
+  useEffect(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(async (pos) => {
       try {
@@ -778,6 +856,14 @@ export default function AACApp() {
   }
 
   // ── Board layout helpers ───────────────────────────────────────────────────
+  function getCatLabel(id: string) {
+    const override = categoryLabels[id];
+    const base = CATEGORIES.find(c => c.id === id);
+    return isRTL
+      ? (override?.ar || base?.arLabel || id)
+      : (override?.en || base?.enLabel || id);
+  }
+
   const visibleCategories = categoryOrder
     .map(id => CATEGORIES.find(c => c.id === id))
     .filter((c): c is typeof CATEGORIES[0] => !!c && !hiddenCategories.includes(c.id));
@@ -1271,7 +1357,7 @@ export default function AACApp() {
                         onClick={() => setAddToBoardCategory(cat.id)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${CATEGORY_COLORS[cat.id] ?? ""} ${addToBoardCategory === cat.id ? "ring-2 ring-blue-500 ring-offset-1" : ""} text-slate-700`}
                       >
-                        {isRTL ? cat.arLabel : cat.enLabel}
+                        {getCatLabel(cat.id)}
                       </button>
                     ))}
                   </div>
@@ -1374,6 +1460,87 @@ export default function AACApp() {
                   className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-colors"
                 >
                   {isRTL ? "إغلاق" : "Close"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Rename Category Modal ── */}
+      <AnimatePresence>
+        {renamingCatId && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0"
+            onClick={() => setRenamingCatId(null)}
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="w-full max-w-sm bg-white rounded-3xl p-5 space-y-4 shadow-2xl"
+              onClick={e => e.stopPropagation()}
+              dir={isRTL ? "rtl" : "ltr"}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-bold text-slate-800">
+                  {isRTL ? "تغيير اسم الفئة" : "Rename category"}
+                </h3>
+                <button
+                  onClick={() => setRenamingCatId(null)}
+                  className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"
+                >✕</button>
+              </div>
+
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-600">Name (EN)</label>
+                  <input
+                    value={renameDraftEn}
+                    onChange={e => setRenameDraftEn(e.target.value)}
+                    placeholder="e.g. Food"
+                    className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-blue-400"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-600">الاسم (AR)</label>
+                  <input
+                    dir="rtl"
+                    value={renameDraftAr}
+                    onChange={e => setRenameDraftAr(e.target.value)}
+                    placeholder="مثال: طعام"
+                    className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-blue-400"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => {
+                    if (renameDraftEn.trim() || renameDraftAr.trim()) {
+                      setCategoryLabels(prev => ({
+                        ...prev,
+                        [renamingCatId]: { en: renameDraftEn.trim(), ar: renameDraftAr.trim() },
+                      }));
+                    }
+                    setRenamingCatId(null);
+                  }}
+                  className="flex-1 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-sm transition-colors"
+                >
+                  {isRTL ? "حفظ" : "Save"}
+                </button>
+                <button
+                  onClick={() => {
+                    setCategoryLabels(prev => {
+                      const next = { ...prev };
+                      delete next[renamingCatId!];
+                      return next;
+                    });
+                    setRenamingCatId(null);
+                  }}
+                  className="px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-sm transition-colors"
+                >
+                  {isRTL ? "إعادة تعيين" : "Reset"}
                 </button>
               </div>
             </motion.div>
@@ -1608,7 +1775,7 @@ export default function AACApp() {
                     {CATEGORIES.map(cat => (
                       <button key={cat.id} onClick={() => setCustomCategory(cat.id)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${CATEGORY_COLORS[cat.id] ?? ""} ${customCategory === cat.id ? "ring-2 ring-blue-500 ring-offset-1" : ""} text-slate-700`}>
-                        {isRTL ? cat.arLabel : cat.enLabel}
+                        {getCatLabel(cat.id)}
                       </button>
                     ))}
                   </div>
@@ -2053,15 +2220,30 @@ export default function AACApp() {
                             ${draggedCatId === id ? "opacity-50 scale-95" : ""}
                             ${colors}`}
                         >
-                          <button
-                            onClick={e => { e.stopPropagation(); toggleHideCategory(id); }}
-                            className="text-[10px] leading-none"
-                            onMouseDown={e => e.stopPropagation()}
-                          >
-                            {isHidden ? "🙈" : "👁️"}
-                          </button>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={e => { e.stopPropagation(); toggleHideCategory(id); }}
+                              className="text-[10px] leading-none"
+                              onMouseDown={e => e.stopPropagation()}
+                            >
+                              {isHidden ? "🙈" : "👁️"}
+                            </button>
+                            <button
+                              onClick={e => {
+                                e.stopPropagation();
+                                const base = CATEGORIES.find(c => c.id === id);
+                                setRenameDraftEn(categoryLabels[id]?.en || base?.enLabel || "");
+                                setRenameDraftAr(categoryLabels[id]?.ar || base?.arLabel || "");
+                                setRenamingCatId(id);
+                              }}
+                              className="text-[10px] leading-none"
+                              onMouseDown={e => e.stopPropagation()}
+                            >
+                              ✏️
+                            </button>
+                          </div>
                           <span className="text-[9px] font-bold text-slate-700 text-center leading-tight truncate w-full text-center">
-                            {isRTL ? cat.arLabel : cat.enLabel}
+                            {getCatLabel(cat.id)}
                           </span>
                         </div>
                       );
@@ -2073,7 +2255,7 @@ export default function AACApp() {
                         onClick={() => setExpandedCategory(isSelected ? null : cat.id)}
                         className={`flex-1 min-w-0 rounded-2xl py-2 px-1 text-[11px] font-bold text-center border-2 transition-all active:scale-95 text-slate-700 ${colors} ${isSelected ? "ring-2 ring-blue-500 ring-offset-1" : ""}`}
                       >
-                        {isRTL ? cat.arLabel : cat.enLabel}
+                        {getCatLabel(cat.id)}
                       </button>
                     );
                   })}
@@ -2176,19 +2358,22 @@ export default function AACApp() {
             </>}
             </div>
 
-            {/* Middle: connector word sidebar */}
+            {/* Middle: predictive suggestion sidebar */}
             <div
               className={`shrink-0 w-14 border-x border-slate-100 bg-white overflow-y-auto flex flex-col gap-1.5 p-1.5 transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}
               style={{ scrollbarWidth: "none" } as CSSProperties}
             >
-              {CONNECTORS.map(word => (
+              {getPredictions(selectedTiles).map((tile, i) => (
                 <button
-                  key={word.en}
-                  onClick={() => addTile({ emoji: "", en: word.en, ar: word.ar })}
-                  className="w-full rounded-xl bg-slate-50 hover:bg-blue-50 hover:border-blue-300 active:scale-90 border border-slate-200 transition-all py-2 px-1 text-center"
+                  key={`${tile.en}-${i}`}
+                  onClick={() => addTile(tile)}
+                  className="w-full rounded-xl bg-slate-50 hover:bg-blue-50 hover:border-blue-300 active:scale-90 border border-slate-200 transition-all py-1.5 px-1 text-center flex flex-col items-center gap-0.5"
                 >
-                  <span className="block text-[11px] font-bold text-slate-700 leading-tight">
-                    {isRTL ? word.ar : word.en}
+                  {tile.emoji && (
+                    <span className="text-base leading-none">{tile.emoji}</span>
+                  )}
+                  <span className="block text-[10px] font-bold text-slate-700 leading-tight truncate w-full text-center">
+                    {isRTL ? tile.ar : tile.en}
                   </span>
                 </button>
               ))}
@@ -2354,7 +2539,7 @@ export default function AACApp() {
                                 onClick={() => setAddStoryCategory(cat.id)}
                                 className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border-2 transition-all ${CATEGORY_COLORS[cat.id] ?? ""} ${addStoryCategory === cat.id ? "ring-2 ring-blue-500 ring-offset-1" : ""} text-slate-700`}
                               >
-                                {isRTL ? cat.arLabel : cat.enLabel}
+                                {getCatLabel(cat.id)}
                               </button>
                             ))}
                           </div>
