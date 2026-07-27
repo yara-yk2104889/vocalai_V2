@@ -22,6 +22,36 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+// ─── IndexedDB image cache ────────────────────────────────────────────────────
+// localStorage can't hold base64 images (5 MB limit).
+// We store them in IDB keyed as "genId:imgIdx" so they survive page reloads.
+
+function idbOpen(): Promise<IDBDatabase> {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open("vocalai_images", 1);
+    req.onupgradeneeded = () => req.result.createObjectStore("images");
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => rej(req.error);
+  });
+}
+async function idbPut(key: string, value: string): Promise<void> {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction("images", "readwrite");
+    tx.objectStore("images").put(value, key);
+    tx.oncomplete = () => res();
+    tx.onerror    = () => rej(tx.error);
+  });
+}
+async function idbGet(key: string): Promise<string | null> {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const req = db.transaction("images", "readonly").objectStore("images").get(key);
+    req.onsuccess = () => res((req.result as string) ?? null);
+    req.onerror   = () => rej(req.error);
+  });
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AacTile {
@@ -468,28 +498,48 @@ export default function AACApp() {
 
   // ── localStorage: load on mount ──────────────────────────────────────────
   useEffect(() => {
-    try {
-      const savedProfile  = localStorage.getItem("vocalai_profile");
-      const savedPeople   = localStorage.getItem("vocalai_people");
-      const savedTiles    = localStorage.getItem("vocalai_custom_tiles");
-      const savedLanguage = localStorage.getItem("vocalai_language");
-      const savedStyle      = localStorage.getItem("vocalai_image_style");
-      const savedHistory    = localStorage.getItem("vocalai_history");
-      const savedCultural   = localStorage.getItem("vocalai_cultural_grounding");
-      const savedCatOrder   = localStorage.getItem("vocalai_category_order");
-      const savedHidden     = localStorage.getItem("vocalai_hidden_categories");
-      const savedTilesPerCol = localStorage.getItem("vocalai_tiles_per_column");
-      if (savedProfile)    setProfile(JSON.parse(savedProfile));
-      if (savedPeople)     setImportantPeople(JSON.parse(savedPeople));
-      if (savedTiles)      setCustomTiles(JSON.parse(savedTiles));
-      if (savedLanguage)   setLanguage(savedLanguage as "en" | "ar");
-      if (savedStyle)      setImageStyle(savedStyle as "symbolic" | "cartoon" | "realistic");
-      if (savedHistory)    setRecentGenerations(JSON.parse(savedHistory));
-      if (savedCultural !== null) setCulturalGrounding(savedCultural === "true");
-      if (savedCatOrder)   setCategoryOrder(JSON.parse(savedCatOrder));
-      if (savedHidden)     setHiddenCategories(JSON.parse(savedHidden));
-      if (savedTilesPerCol) setTilesPerColumn(Number(savedTilesPerCol));
-    } catch { /* corrupted data — start fresh */ }
+    (async () => {
+      try {
+        const savedProfile     = localStorage.getItem("vocalai_profile");
+        const savedPeople      = localStorage.getItem("vocalai_people");
+        const savedTiles       = localStorage.getItem("vocalai_custom_tiles");
+        const savedLanguage    = localStorage.getItem("vocalai_language");
+        const savedStyle       = localStorage.getItem("vocalai_image_style");
+        const savedHistory     = localStorage.getItem("vocalai_history");
+        const savedCultural    = localStorage.getItem("vocalai_cultural_grounding");
+        const savedCatOrder    = localStorage.getItem("vocalai_category_order");
+        const savedHidden      = localStorage.getItem("vocalai_hidden_categories");
+        const savedTilesPerCol = localStorage.getItem("vocalai_tiles_per_column");
+        if (savedProfile)     setProfile(JSON.parse(savedProfile));
+        if (savedPeople)      setImportantPeople(JSON.parse(savedPeople));
+        if (savedTiles)       setCustomTiles(JSON.parse(savedTiles));
+        if (savedLanguage)    setLanguage(savedLanguage as "en" | "ar");
+        if (savedStyle)       setImageStyle(savedStyle as "symbolic" | "cartoon" | "realistic");
+        if (savedCultural !== null) setCulturalGrounding(savedCultural === "true");
+        if (savedCatOrder)    setCategoryOrder(JSON.parse(savedCatOrder));
+        if (savedHidden)      setHiddenCategories(JSON.parse(savedHidden));
+        if (savedTilesPerCol) setTilesPerColumn(Number(savedTilesPerCol));
+
+        if (savedHistory) {
+          const history = JSON.parse(savedHistory) as RecentGeneration[];
+          // Restore any images that were offloaded to IndexedDB ("idb:<key>" placeholders)
+          const restored = await Promise.all(
+            history.map(async gen => {
+              const images = await Promise.all(
+                gen.images.map(async url => {
+                  if (url.startsWith("idb:")) {
+                    return (await idbGet(url.slice(4)).catch(() => null)) ?? "";
+                  }
+                  return url;
+                })
+              );
+              return { ...gen, images: images.filter(Boolean) };
+            })
+          );
+          setRecentGenerations(restored);
+        }
+      } catch { /* corrupted data — start fresh */ }
+    })();
   }, []);
 
   // ── localStorage: save on change ─────────────────────────────────────────
@@ -518,23 +568,35 @@ export default function AACApp() {
   }, [culturalGrounding]);
 
   useEffect(() => {
-    // Strip base64 data: URLs before persisting — they're ~1-3 MB each and blow the 5 MB quota.
-    // In-memory state keeps them for the current session; history cards just won't show images after reload.
-    const stripped = recentGenerations.map(g => ({
-      ...g,
-      images: g.images.filter(url => !url.startsWith("data:")),
-    }));
-    try {
-      localStorage.setItem("vocalai_history", JSON.stringify(stripped));
-    } catch {
-      // Still too large (e.g. many remote URLs) — save metadata only
+    // Offload base64 data: URLs to IndexedDB and store "idb:<key>" placeholders in localStorage.
+    // This keeps localStorage small while making images available after reload.
+    (async () => {
+      const forStorage = await Promise.all(
+        recentGenerations.map(async gen => {
+          const images = await Promise.all(
+            gen.images.map(async (url, idx) => {
+              if (url.startsWith("data:")) {
+                const key = `${gen.id}:${idx}`;
+                await idbPut(key, url).catch(() => {});
+                return `idb:${key}`;
+              }
+              return url; // already an idb: ref or external URL
+            })
+          );
+          return { ...gen, images };
+        })
+      );
       try {
-        localStorage.setItem(
-          "vocalai_history",
-          JSON.stringify(stripped.map(g => ({ ...g, images: [] }))),
-        );
-      } catch { /* give up gracefully */ }
-    }
+        localStorage.setItem("vocalai_history", JSON.stringify(forStorage));
+      } catch {
+        // Fallback: drop images entirely (very unlikely since we use idb: refs)
+        try {
+          localStorage.setItem("vocalai_history", JSON.stringify(
+            forStorage.map(g => ({ ...g, images: [] }))
+          ));
+        } catch { /* give up gracefully */ }
+      }
+    })();
   }, [recentGenerations]);
 
   useEffect(() => {
