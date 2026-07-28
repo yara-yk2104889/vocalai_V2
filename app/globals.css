@@ -124,3 +124,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Prevent iOS long-press from selecting/highlighting tiles */
+button {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
