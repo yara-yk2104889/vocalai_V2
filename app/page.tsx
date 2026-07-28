@@ -371,7 +371,7 @@ const COMBO_PHRASES_BY_CAT: Record<string, ComboPhrase[]> = {
   ],
   feelings: [
     { en: t => `I feel ${t}`,       ar: t => `أشعر بـ${t}`    },
-    { en: t => `I am ${t}`,         ar: t => `أنا ${t}`        },
+    { en: t => `I am not ${t}`,     ar: t => `لست ${t}`        },
   ],
   activities: [
     { en: t => `I want to ${t}`,        ar: t => `أريد أن ${t}`    },
@@ -2655,6 +2655,7 @@ export default function AACApp() {
               className="absolute bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-visible"
               style={{ left: longPressMenu.popupLeft, top: longPressMenu.popupTop, width: 224 }}
               onPointerDown={e => e.stopPropagation()}
+              onPointerUp={e => e.stopPropagation()}
             >
               {/* Tile header */}
               <div
