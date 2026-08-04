@@ -15,6 +15,7 @@ export async function POST(req: Request) {
       importantPeople,
       count: rawCount,
       culturalGrounding,
+      noCharacter,
     } = body as {
       prompt: string;
       style: "realistic" | "cartoon" | "symbolic";
@@ -26,22 +27,24 @@ export async function POST(req: Request) {
       importantPeople?: { name: string; description: string }[];
       count?: number;
       culturalGrounding?: boolean;
+      noCharacter?: boolean;
     };
 
     const count = Math.min(Math.max(1, rawCount ?? 1), 4);
 
     const contextParts = [
       location  && `Setting: ${location}`,
-      gender    && `User gender: ${gender}`,
-      condition && `User condition: ${condition}`,
-      age       && `User age: ${age}`,
-      appearance && `User appearance: ${appearance}`,
+      !noCharacter && gender    && `User gender: ${gender}`,
+      !noCharacter && condition && `User condition: ${condition}`,
+      !noCharacter && age       && `User age: ${age}`,
+      !noCharacter && appearance && `User appearance: ${appearance}`,
     ].filter(Boolean) as string[];
 
-    const peopleDesc =
-      (importantPeople ?? [])
-        .map(p => `${p.name}: ${p.description}`)
-        .join("; ");
+    const peopleDesc = noCharacter
+      ? ""
+      : (importantPeople ?? [])
+          .map(p => `${p.name}: ${p.description}`)
+          .join("; ");
 
     const contextClues = contextParts.join("; ");
 
@@ -80,17 +83,21 @@ export async function POST(req: Request) {
           - Use a plain white or very light background.
           - Focus on the key meaning — not decorative details.`;
 
-    const appearanceRule = appearance
+    const appearanceRule = !noCharacter && appearance
       ? `IMPORTANT — appearance consistency: The character representing the user MUST reflect ALL of the following attributes throughout: ${appearance}. If a head covering (e.g. hijab) is mentioned, ALL clothing must be consistent with modest dress — covered arms, no exposed hair. Maintain coherent, respectful cultural representation.`
       : "";
 
     const autismRule =
-      condition === "autism"
+      !noCharacter && condition === "autism"
         ? `IMPORTANT — facial expressions: Do NOT depict sad, distressed, crying, or negative facial expressions on any character. All characters must have neutral or positive (calm, content, or happy) expressions only.`
         : "";
 
     const peopleRule = peopleDesc
       ? `Important people in the user's life (match their appearance when depicted): ${peopleDesc}.`
+      : "";
+
+    const noCharacterRule = noCharacter
+      ? `IMPORTANT — no people: Do NOT include any person, human character, human figure, hands, or body parts anywhere in the image. Depict only the object, food, or scene itself, with no humans present.`
       : "";
 
     const culturalRule = culturalGrounding
@@ -103,6 +110,7 @@ Interpret them together as a single, coherent communication intent — do NOT tr
 For example: "sad don't understand" means the user is sad because they don't understand something; "I want water" means the user wants a drink of water.
 Generate a visual image that naturally represents this combined meaning.
 ${contextClues ? `Context about the user and setting: ${contextClues}.` : ""}
+${noCharacterRule}
 ${appearanceRule}
 ${autismRule}
 ${peopleRule}

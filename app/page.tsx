@@ -263,72 +263,6 @@ const CONNECTORS: { en: string; ar: string }[] = [
   { en: "at",     ar: "عند"   },
 ];
 
-// ─── Tile prediction engine ───────────────────────────────────────────────────
-
-function tileCategory(tile: AacTile): string | null {
-  for (const [cat, tiles] of Object.entries(TILES)) {
-    if (tiles.some(t => t.en === tile.en)) return cat;
-  }
-  return null;
-}
-
-function predConn(en: string): AacTile {
-  const c = CONNECTORS.find(c => c.en === en);
-  return { emoji: "", en, ar: en, ...(c ? { ar: c.ar } : {}) };
-}
-
-function predictionsForCat(cat: string | null): AacTile[] {
-  const top = (c: string, n = 4) => (TILES[c] ?? []).slice(0, n);
-  const cc = (...words: string[]) => words.map(predConn);
-  switch (cat) {
-    case "food":       return [...cc("and", "more", "not"), ...top("food", 3), ...top("drink", 2)];
-    case "drink":      return [...cc("and", "more", "not"), ...top("drink", 3), ...top("food", 2)];
-    case "feelings":   return [...cc("and", "not", "more"), ...top("feelings", 4), ...top("people", 1)];
-    case "activities": return [...cc("and", "with", "more"), ...top("activities", 3), ...top("people", 2)];
-    case "people":     return [...cc("want", "and", "go"),  ...top("activities", 3), ...top("feelings", 2)];
-    case "sensory":    return [...cc("not", "and", "more"), ...top("people", 2), ...top("core", 2)];
-    default:           return [...cc("and", "more", "not"), ...top("core", 3), ...top("feelings", 2)];
-  }
-}
-
-function getPredictions(selected: AacTile[]): AacTile[] {
-  const top = (cat: string, n = 4) => (TILES[cat] ?? []).slice(0, n);
-  const cc  = (...words: string[]) => words.map(predConn);
-
-  if (selected.length === 0) {
-    return [...cc("I", "more", "not"), ...top("core", 3), ...top("feelings", 2)];
-  }
-
-  const last    = selected[selected.length - 1];
-  const lastEn  = last.en.toLowerCase();
-  const lastCat = tileCategory(last);
-
-  if (lastEn === "i") {
-    return [...cc("want", "need", "go"), ...top("feelings", 3), ...top("activities", 2)];
-  }
-  if (lastEn === "want" || lastEn === "need") {
-    return [...top("food", 3), ...top("drink", 2), ...top("activities", 3)];
-  }
-  if (lastEn === "help") {
-    return [...top("people", 5), ...cc("more")];
-  }
-  if (lastEn === "go") {
-    return [...top("activities", 4), ...top("people", 2), ...cc("with", "to")];
-  }
-  if (lastEn === "yes" || lastEn === "no" || lastEn === "stop") {
-    return [...cc("I", "more", "not"), ...top("core", 3), ...top("feelings", 2)];
-  }
-  if (lastEn === "and" || lastEn === "then" || lastEn === "more") {
-    const prev    = selected.length >= 2 ? selected[selected.length - 2] : null;
-    const prevCat = prev ? tileCategory(prev) : null;
-    return prevCat
-      ? predictionsForCat(prevCat)
-      : [...top("food", 2), ...top("drink", 1), ...top("activities", 2), ...top("feelings", 2), ...cc("I")];
-  }
-
-  return predictionsForCat(lastCat);
-}
-
 const DEFAULT_PIN = "1234";
 
 // ─── In-app keyboard layouts ───────────────────────────────────────────────────
@@ -459,6 +393,7 @@ export default function AACApp() {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [imageStyle, setImageStyle]           = useState<"symbolic" | "cartoon" | "realistic">("symbolic");
   const [imageMode, setImageMode]             = useState<"single" | "story">("single");
+  const [hideCharacter, setHideCharacter]     = useState(false);
   const [isGenerating, setIsGenerating]       = useState(false);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [caption, setCaption]                 = useState("");
@@ -1065,6 +1000,7 @@ export default function AACApp() {
     age:              profile.age        || undefined,
     appearance:       profile.appearance || undefined,
     culturalGrounding,
+    noCharacter:      hideCharacter,
   };
 
   async function handleGenerate() {
@@ -2369,22 +2305,19 @@ export default function AACApp() {
             </>}
             </div>
 
-            {/* Middle: predictive suggestion sidebar */}
+            {/* Middle: connector word sidebar */}
             <div
               className={`shrink-0 w-14 border-x border-slate-100 bg-white overflow-y-auto flex flex-col gap-1.5 p-1.5 transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}
               style={{ scrollbarWidth: "none" } as CSSProperties}
             >
-              {getPredictions(selectedTiles).map((tile, i) => (
+              {CONNECTORS.map(word => (
                 <button
-                  key={`${tile.en}-${i}`}
-                  onClick={() => addTile(tile)}
-                  className="w-full rounded-xl bg-slate-50 hover:bg-blue-50 hover:border-blue-300 active:scale-90 border border-slate-200 transition-all py-1.5 px-1 text-center flex flex-col items-center gap-0.5"
+                  key={word.en}
+                  onClick={() => addTile({ emoji: "", en: word.en, ar: word.ar })}
+                  className="w-full rounded-xl bg-slate-50 hover:bg-blue-50 hover:border-blue-300 active:scale-90 border border-slate-200 transition-all py-2 px-1 text-center"
                 >
-                  {tile.emoji && (
-                    <span className="text-base leading-none">{tile.emoji}</span>
-                  )}
-                  <span className="block text-[10px] font-bold text-slate-700 leading-tight truncate w-full text-center">
-                    {isRTL ? tile.ar : tile.en}
+                  <span className="block text-[11px] font-bold text-slate-700 leading-tight">
+                    {isRTL ? word.ar : word.en}
                   </span>
                 </button>
               ))}
@@ -2427,6 +2360,17 @@ export default function AACApp() {
                     </button>
                   ))}
                 </div>
+                <button
+                  onClick={() => setHideCharacter(v => !v)}
+                  className={`w-full flex items-center justify-center gap-1.5 rounded-xl border py-1.5 text-[10px] font-semibold transition-colors ${
+                    hideCharacter
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
+                  }`}
+                >
+                  <span>🚫</span>
+                  {isRTL ? "عدم تضمين المستخدم في الصورة" : "Don't include user in image"}
+                </button>
               </div>
 
               {/* Image display */}
