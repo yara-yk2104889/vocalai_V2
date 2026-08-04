@@ -489,7 +489,7 @@ export default function AACApp() {
   const [customiseView, setCustomiseView]             = useState<"menu" | "arrange" | "add">("menu");
 
   // ── Image generation preferences
-  const [culturalGrounding, setCulturalGrounding] = useState(true);
+  const [culturalGrounding, setCulturalGrounding] = useState(false);
 
   // ── Board layout settings
   const [categoryOrder, setCategoryOrder]       = useState<string[]>(CATEGORIES.map(c => c.id));
