@@ -94,6 +94,14 @@ interface RecentGeneration {
   note?: string;
 }
 
+interface LibraryItem {
+  id: string;
+  en: string;
+  ar: string;
+  images: string[]; // 1 image = single generation, 2+ = story
+  timestamp: string;
+}
+
 // ─── Tile data ────────────────────────────────────────────────────────────────
 
 const TILES: Record<string, AacTile[]> = {
@@ -416,6 +424,9 @@ export default function AACApp() {
   // ── Recent generations
   const [recentGenerations, setRecentGenerations] = useState<RecentGeneration[]>([]);
 
+  // ── Library (saved single images + stories, for redisplay only)
+  const [libraryItems, setLibraryItems] = useState<LibraryItem[]>([]);
+
   // ── Custom tiles
   const [customTiles, setCustomTiles] = useState<Record<string, AacTile[]>>({});
 
@@ -477,15 +488,16 @@ export default function AACApp() {
   const [editingNoteId, setEditingNoteId]       = useState<string | null>(null);
   const [noteInput, setNoteInput]               = useState("");
   const [showHistoryGallery, setShowHistoryGallery] = useState(false);
+  const [showLibraryGallery, setShowLibraryGallery] = useState(false);
 
-  // ── Add to board modal
+  // ── Add to board / library modal (single images)
   const [showAddToBoard, setShowAddToBoard]         = useState(false);
   const [addToBoardUrl, setAddToBoardUrl]           = useState("");
   const [addToBoardLabelEn, setAddToBoardLabelEn]   = useState("");
   const [addToBoardLabelAr, setAddToBoardLabelAr]   = useState("");
   const [addToBoardCategory, setAddToBoardCategory] = useState(CATEGORIES[0].id);
+  const [addToBoardDest, setAddToBoardDest]         = useState<"board" | "library">("board");
   const [showAddStoryPicker, setShowAddStoryPicker] = useState(false);
-  const [addStoryCategory, setAddStoryCategory]     = useState(CATEGORIES[0].id);
   const [storyName, setStoryName]                   = useState("");
   const [viewingStory, setViewingStory]             = useState<AacTile | null>(null);
 
@@ -518,6 +530,7 @@ export default function AACApp() {
         const savedLanguage    = localStorage.getItem("vocalai_language");
         const savedStyle       = localStorage.getItem("vocalai_image_style");
         const savedHistory     = localStorage.getItem("vocalai_history");
+        const savedLibrary     = localStorage.getItem("vocalai_library");
         const savedCultural    = localStorage.getItem("vocalai_cultural_grounding");
         const savedCatOrder    = localStorage.getItem("vocalai_category_order");
         const savedHidden      = localStorage.getItem("vocalai_hidden_categories");
@@ -579,6 +592,24 @@ export default function AACApp() {
             })
           );
           setRecentGenerations(restored);
+        }
+
+        if (savedLibrary) {
+          const library = JSON.parse(savedLibrary) as LibraryItem[];
+          const restored = await Promise.all(
+            library.map(async item => {
+              const images = await Promise.all(
+                item.images.map(async url => {
+                  if (url.startsWith("idb:")) {
+                    return (await idbGet(url.slice(4)).catch(() => null)) ?? "";
+                  }
+                  return url;
+                })
+              );
+              return { ...item, images: images.filter(Boolean) };
+            })
+          );
+          setLibraryItems(restored);
         }
       } catch { /* corrupted data — start fresh */ }
     })();
@@ -672,6 +703,36 @@ export default function AACApp() {
       }
     })();
   }, [recentGenerations]);
+
+  useEffect(() => {
+    // Offload base64 data: URLs to IndexedDB and store "idb:<key>" placeholders in localStorage.
+    (async () => {
+      const forStorage = await Promise.all(
+        libraryItems.map(async item => {
+          const images = await Promise.all(
+            item.images.map(async (url, idx) => {
+              if (url.startsWith("data:")) {
+                const key = `lib:${item.id}:${idx}`;
+                await idbPut(key, url).catch(() => {});
+                return `idb:${key}`;
+              }
+              return url;
+            })
+          );
+          return { ...item, images };
+        })
+      );
+      try {
+        localStorage.setItem("vocalai_library", JSON.stringify(forStorage));
+      } catch {
+        try {
+          localStorage.setItem("vocalai_library", JSON.stringify(
+            forStorage.map(item => ({ ...item, images: [] }))
+          ));
+        } catch { /* give up gracefully */ }
+      }
+    })();
+  }, [libraryItems]);
 
   useEffect(() => {
     localStorage.setItem("vocalai_category_order", JSON.stringify(categoryOrder));
@@ -835,6 +896,7 @@ export default function AACApp() {
     setAddToBoardLabelEn(prefillLabel);
     setAddToBoardLabelAr("");
     setAddToBoardCategory(CATEGORIES[0].id);
+    setAddToBoardDest("board");
     setShowAddToBoard(true);
   }
 
@@ -850,21 +912,35 @@ export default function AACApp() {
     setShowAddToBoard(false);
   }
 
-  function saveStoryToBoard() {
+  function saveSingleToLibrary() {
+    if (!addToBoardUrl || !addToBoardLabelEn.trim()) return;
+    const item: LibraryItem = {
+      id: uid(),
+      en: addToBoardLabelEn.trim(),
+      ar: addToBoardLabelAr.trim() || addToBoardLabelEn.trim(),
+      images: [addToBoardUrl],
+      timestamp: new Date().toISOString(),
+    };
+    setLibraryItems(prev => [item, ...prev]);
+    setShowAddToBoard(false);
+  }
+
+  function saveStoryToLibrary() {
     const name = storyName.trim() || (isRTL ? "قصتي" : "My Story");
-    const tile: AacTile = {
-      emoji: "📚",
+    const item: LibraryItem = {
+      id: uid(),
       en: name,
       ar: name,
-      imageUrl: generatedImages[0]?.url,       // first scene as board preview
-      storyImages: generatedImages.map(g => g.url),
+      images: generatedImages.map(g => g.url),
+      timestamp: new Date().toISOString(),
     };
-    setCustomTiles(prev => ({
-      ...prev,
-      [addStoryCategory]: [...(prev[addStoryCategory] ?? []), tile],
-    }));
+    setLibraryItems(prev => [item, ...prev]);
     setShowAddStoryPicker(false);
     setStoryName("");
+  }
+
+  function removeLibraryItem(id: string) {
+    setLibraryItems(prev => prev.filter(item => item.id !== id));
   }
 
   function addCustomTile() {
@@ -1264,7 +1340,7 @@ export default function AACApp() {
               {/* Header */}
               <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100">
                 <h2 className="text-lg font-bold text-slate-800">
-                  {isRTL ? "إضافة إلى اللوحة" : "Add to Board"}
+                  {isRTL ? "حفظ الصورة" : "Save Image"}
                 </h2>
                 <button
                   onClick={() => setShowAddToBoard(false)}
@@ -1282,23 +1358,45 @@ export default function AACApp() {
                   />
                 )}
 
-                {/* Category picker */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-slate-600">
-                    {isRTL ? "الفئة" : "Category"}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {CATEGORIES.map(cat => (
-                      <button
-                        key={cat.id}
-                        onClick={() => setAddToBoardCategory(cat.id)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${CATEGORY_COLORS[cat.id] ?? ""} ${addToBoardCategory === cat.id ? "ring-2 ring-blue-500 ring-offset-1" : ""} text-slate-700`}
-                      >
-                        {getCatLabel(cat.id)}
-                      </button>
-                    ))}
-                  </div>
+                {/* Destination */}
+                <div className="flex rounded-xl overflow-hidden border border-slate-200">
+                  {[
+                    { id: "board",   en: "Add to Board",  ar: "إضافة إلى اللوحة" },
+                    { id: "library", en: "Add to Library", ar: "إضافة إلى المكتبة" },
+                  ].map(opt => (
+                    <button
+                      key={opt.id}
+                      onClick={() => setAddToBoardDest(opt.id as "board" | "library")}
+                      className={`flex-1 py-2 text-xs font-bold transition-colors ${
+                        addToBoardDest === opt.id
+                          ? "bg-blue-600 text-white"
+                          : "bg-white text-slate-500 hover:bg-slate-50"
+                      }`}
+                    >
+                      {isRTL ? opt.ar : opt.en}
+                    </button>
+                  ))}
                 </div>
+
+                {/* Category picker — board only */}
+                {addToBoardDest === "board" && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-slate-600">
+                      {isRTL ? "الفئة" : "Category"}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {CATEGORIES.map(cat => (
+                        <button
+                          key={cat.id}
+                          onClick={() => setAddToBoardCategory(cat.id)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${CATEGORY_COLORS[cat.id] ?? ""} ${addToBoardCategory === cat.id ? "ring-2 ring-blue-500 ring-offset-1" : ""} text-slate-700`}
+                        >
+                          {getCatLabel(cat.id)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Labels */}
                 <div className="grid grid-cols-2 gap-3">
@@ -1331,11 +1429,13 @@ export default function AACApp() {
               {/* Save button */}
               <div className="px-5 pb-6 pt-3 border-t border-slate-100">
                 <button
-                  onClick={saveToBoard}
+                  onClick={addToBoardDest === "board" ? saveToBoard : saveSingleToLibrary}
                   disabled={!addToBoardLabelEn.trim()}
                   className="w-full py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-40 disabled:pointer-events-none text-white font-bold text-sm transition-colors"
                 >
-                  {isRTL ? "حفظ في اللوحة" : "Save to Board"}
+                  {addToBoardDest === "board"
+                    ? (isRTL ? "حفظ في اللوحة" : "Save to Board")
+                    : (isRTL ? "حفظ في المكتبة" : "Save to Library")}
                 </button>
               </div>
             </motion.div>
@@ -1544,6 +1644,92 @@ export default function AACApp() {
                         </button>
                       ))
                     )}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Library Gallery Modal ── */}
+      <AnimatePresence>
+        {showLibraryGallery && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex flex-col"
+            onClick={() => setShowLibraryGallery(false)}
+          >
+            <motion.div
+              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="absolute inset-x-0 bottom-0 bg-white rounded-t-3xl flex flex-col"
+              style={{ maxHeight: "85dvh" }}
+              onClick={e => e.stopPropagation()}
+              dir={isRTL ? "rtl" : "ltr"}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100">
+                <h2 className="text-lg font-bold text-slate-800">
+                  {isRTL ? "📁 المكتبة" : "📁 Library"}
+                </h2>
+                <button
+                  onClick={() => setShowLibraryGallery(false)}
+                  className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"
+                >✕</button>
+              </div>
+
+              {/* Gallery — saved single images + stories */}
+              <div className="overflow-y-auto flex-1 p-4" style={{ scrollbarWidth: "none" }}>
+                {libraryItems.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+                    <span className="text-4xl">📁</span>
+                    <p className="text-sm text-slate-400 font-medium">
+                      {isRTL ? "لا توجد عناصر محفوظة بعد" : "Nothing saved yet"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-4 gap-2">
+                    {libraryItems.map(item => (
+                      <div key={item.id} className="flex flex-col items-center gap-1 group relative">
+                        <button
+                          onClick={() => {
+                            setGeneratedImages(item.images.map(u => ({ url: u })));
+                            setCaption(isRTL ? item.ar : item.en);
+                            setImageMode(item.images.length > 1 ? "story" : "single");
+                            setShowLibraryGallery(false);
+                          }}
+                          className="relative block w-full"
+                        >
+                          <div className="w-full aspect-square rounded-2xl overflow-hidden border-2 border-slate-100 group-hover:border-blue-400 group-active:border-blue-600 transition-all shadow-sm">
+                            {item.images.length > 1 ? (
+                              <div className="grid grid-cols-2 grid-rows-2 gap-px w-full h-full">
+                                {item.images.slice(0, 4).map((url, i) => (
+                                  <img key={i} src={url} alt="" className="w-full h-full object-cover" />
+                                ))}
+                              </div>
+                            ) : (
+                              <img src={item.images[0]} alt={item.en} className="w-full h-full object-cover" />
+                            )}
+                          </div>
+                          {item.images.length > 1 && (
+                            <span className="absolute top-1 right-1 bg-white/85 rounded-full text-[9px] leading-none px-1.5 py-0.5 font-bold text-slate-600 shadow-sm">
+                              📚 {item.images.length}
+                            </span>
+                          )}
+                        </button>
+                        <p className="text-[9px] text-slate-400 leading-tight text-center line-clamp-1 w-full px-0.5">
+                          {isRTL ? item.ar : item.en}
+                        </p>
+                        <button
+                          onClick={() => removeLibraryItem(item.id)}
+                          className="absolute top-1 left-1 bg-white/85 hover:bg-white rounded-full p-1 text-red-400 shadow-sm transition-colors"
+                          aria-label="Delete"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -1933,6 +2119,13 @@ export default function AACApp() {
                   aria-label="Generation history"
                 >
                   🕐
+                </button>
+                <button
+                  onClick={() => setShowLibraryGallery(true)}
+                  className="w-10 h-10 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 flex items-center justify-center text-lg transition-colors shadow-sm"
+                  aria-label="Library"
+                >
+                  📁
                 </button>
                 <button
                   onClick={() => setLanguage(isRTL ? "en" : "ar")}
@@ -2457,19 +2650,19 @@ export default function AACApp() {
                               onClick={() => openAddToBoard(img.url, img.label ?? selectedTiles.map(t => isRTL ? t.ar : t.en).join(" "))}
                               className="absolute bottom-1 right-1 bg-white/90 hover:bg-white active:bg-blue-50 border border-slate-200 rounded-lg px-1.5 py-0.5 text-[8px] font-bold text-blue-600 shadow-sm transition-all"
                             >
-                              + {isRTL ? "لوحة" : "Board"}
+                              💾 {isRTL ? "حفظ" : "Save"}
                             </button>
                           </motion.div>
                         ))}
                       </div>
 
-                      {/* Add story batch button */}
+                      {/* Add story batch button — library only, stories aren't board tiles */}
                       {!showAddStoryPicker ? (
                         <button
                           onClick={() => setShowAddStoryPicker(true)}
                           className="w-full py-2 rounded-2xl bg-blue-50 hover:bg-blue-100 active:bg-blue-200 border border-blue-200 text-blue-700 text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
                         >
-                          📚 {isRTL ? "إضافة القصة كاملةً" : "Add story"}
+                          📚 {isRTL ? "إضافة القصة إلى المكتبة" : "Add story to library"}
                         </button>
                       ) : (
                         <div className="rounded-2xl border border-blue-200 bg-blue-50 p-3 space-y-2.5">
@@ -2484,26 +2677,12 @@ export default function AACApp() {
                             className="w-full px-3 py-2 rounded-xl border border-blue-200 bg-white text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-400"
                             dir={isRTL ? "rtl" : "ltr"}
                           />
-                          <p className="text-xs font-bold text-slate-700">
-                            {isRTL ? "اختر الفئة لحفظ القصة فيها" : `Save all ${generatedImages.length} scenes to:`}
-                          </p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {CATEGORIES.map(cat => (
-                              <button
-                                key={cat.id}
-                                onClick={() => setAddStoryCategory(cat.id)}
-                                className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border-2 transition-all ${CATEGORY_COLORS[cat.id] ?? ""} ${addStoryCategory === cat.id ? "ring-2 ring-blue-500 ring-offset-1" : ""} text-slate-700`}
-                              >
-                                {getCatLabel(cat.id)}
-                              </button>
-                            ))}
-                          </div>
                           <div className="flex gap-2">
                             <button
-                              onClick={saveStoryToBoard}
+                              onClick={saveStoryToLibrary}
                               className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold transition-colors"
                             >
-                              {isRTL ? "حفظ" : "Save"}
+                              {isRTL ? "حفظ في المكتبة" : "Save to library"}
                             </button>
                             <button
                               onClick={() => setShowAddStoryPicker(false)}
@@ -2533,7 +2712,7 @@ export default function AACApp() {
                         onClick={() => openAddToBoard(generatedImages[0].url, selectedTiles.map(t => isRTL ? t.ar : t.en).join(" "))}
                         className="shrink-0 w-full py-2 rounded-2xl bg-blue-50 hover:bg-blue-100 active:bg-blue-200 border border-blue-200 text-blue-700 text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
                       >
-                        ➕ {isRTL ? "إضافة إلى اللوحة" : "Add to board"}
+                        💾 {isRTL ? "حفظ الصورة" : "Save image"}
                       </button>
                     </>
                   )
