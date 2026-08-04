@@ -220,9 +220,74 @@ const TILES: Record<string, AacTile[]> = {
     { emoji: "🧘", en: "Calm down please",     ar: "هدّئوني من فضلكم"      },
     { emoji: "🚪", en: "I want to leave",      ar: "أريد المغادرة"         },
   ],
+  food_drink: [
+    { emoji: "🍎", en: "Apple",      ar: "تفاحة"    },
+    { emoji: "🍞", en: "Bread",      ar: "خبز"      },
+    { emoji: "🍌", en: "Banana",     ar: "موزة"     },
+    { emoji: "🥪", en: "Sandwich",   ar: "ساندويش"  },
+    { emoji: "🍕", en: "Pizza",      ar: "بيتزا"    },
+    { emoji: "🍚", en: "Rice",       ar: "أرز"      },
+    { emoji: "🍳", en: "Egg",        ar: "بيضة"     },
+    { emoji: "🍗", en: "Chicken",    ar: "دجاج"     },
+    { emoji: "🍪", en: "Cookie",     ar: "بسكويت"   },
+    { emoji: "🍇", en: "Grapes",     ar: "عنب"      },
+    { emoji: "🍓", en: "Strawberry", ar: "فراولة"   },
+    { emoji: "🥗", en: "Salad",      ar: "سلطة"     },
+    { emoji: "💧", en: "Water",      ar: "ماء"           },
+    { emoji: "🥛", en: "Milk",       ar: "حليب"          },
+    { emoji: "🧃", en: "Juice",      ar: "عصير"          },
+    { emoji: "☕", en: "Coffee",     ar: "قهوة"          },
+    { emoji: "🍵", en: "Tea",        ar: "شاي"           },
+    { emoji: "🥤", en: "Soda",       ar: "مشروب غازي"    },
+    { emoji: "🍶", en: "Warm drink", ar: "مشروب دافئ"    },
+    { emoji: "🧊", en: "Ice",        ar: "ثلج"           },
+  ],
+  body_parts: [
+    { emoji: "🧠", en: "Head",     ar: "الرأس"        },
+    { emoji: "👁️", en: "Eye",      ar: "العين"        },
+    { emoji: "👂", en: "Ear",      ar: "الأذن"        },
+    { emoji: "👃", en: "Nose",     ar: "الأنف"        },
+    { emoji: "👄", en: "Mouth",    ar: "الفم"         },
+    { emoji: "🦷", en: "Teeth",    ar: "الأسنان"      },
+    { emoji: "🗣️", en: "Throat",   ar: "الحلق"        },
+    { emoji: "🫀", en: "Chest",    ar: "الصدر"        },
+    { emoji: "🟠", en: "Stomach",  ar: "المعدة"       },
+    { emoji: "🦴", en: "Back",     ar: "الظهر"        },
+    { emoji: "🤷", en: "Shoulder", ar: "الكتف"        },
+    { emoji: "💪", en: "Arm",      ar: "الذراع"       },
+    { emoji: "✋",  en: "Hand",     ar: "اليد"         },
+    { emoji: "👆", en: "Finger",   ar: "الأصبع"       },
+    { emoji: "🦵", en: "Leg",      ar: "الساق"        },
+    { emoji: "🦶", en: "Foot",     ar: "القدم"        },
+  ],
+  pains: [
+    { emoji: "🤕", en: "It hurts",           ar: "يؤلمني"          },
+    { emoji: "🔥", en: "Burning",            ar: "حرقان"           },
+    { emoji: "⚡", en: "Sharp pain",         ar: "ألم حاد"         },
+    { emoji: "🐢", en: "Dull ache",          ar: "ألم خفيف مستمر"  },
+    { emoji: "🙂", en: "Mild pain",          ar: "ألم خفيف"        },
+    { emoji: "😣", en: "Moderate pain",      ar: "ألم متوسط"       },
+    { emoji: "😫", en: "Severe pain",        ar: "ألم شديد"        },
+    { emoji: "🤢", en: "Nausea",             ar: "غثيان"           },
+    { emoji: "😵", en: "Dizzy",              ar: "دوخة"            },
+    { emoji: "🤒", en: "Fever",              ar: "حرارة"           },
+    { emoji: "🩸", en: "Bleeding",           ar: "نزيف"            },
+    { emoji: "😮‍💨", en: "Trouble breathing", ar: "صعوبة في التنفس" },
+  ],
 };
 
-const CATEGORIES = [
+// Extra tiles shown only on the hospital board, appended on top of the shared
+// people/phrases tiles above (general board is unaffected).
+const HOSPITAL_PEOPLE_EXTRA: AacTile[] = [
+  { emoji: "👩‍⚕️", en: "Nurse", ar: "الممرضة" },
+];
+const HOSPITAL_PHRASES_EXTRA: AacTile[] = [
+  { emoji: "🆘", en: "Call the nurse",  ar: "نادِ الممرضة"     },
+  { emoji: "📞", en: "Call the doctor", ar: "اتصل بالطبيب"    },
+  { emoji: "🚨", en: "I need help now", ar: "أحتاج المساعدة الآن" },
+];
+
+const CATEGORIES_GENERAL = [
   { id: "core",       enLabel: "Core",       arLabel: "أساسي"  },
   { id: "food",       enLabel: "Food",       arLabel: "طعام"   },
   { id: "drink",      enLabel: "Drink",      arLabel: "مشروب"  },
@@ -232,6 +297,17 @@ const CATEGORIES = [
   { id: "questions",  enLabel: "Questions",  arLabel: "أسئلة"  },
   { id: "phrases",    enLabel: "Phrases",    arLabel: "جمل"    },
   { id: "sensory",    enLabel: "Sensory",    arLabel: "حسي"    },
+];
+
+const CATEGORIES_HOSPITAL = [
+  { id: "core",        enLabel: "Core",       arLabel: "أساسي"        },
+  { id: "food_drink",  enLabel: "Food/Drink", arLabel: "طعام وشراب"   },
+  { id: "feelings",    enLabel: "Feelings",   arLabel: "مشاعر"        },
+  { id: "people",      enLabel: "People",     arLabel: "أشخاص"        },
+  { id: "phrases",     enLabel: "Phrases",    arLabel: "جمل"          },
+  { id: "sensory",     enLabel: "Sensory",    arLabel: "حسي"          },
+  { id: "body_parts",  enLabel: "Body Parts", arLabel: "أجزاء الجسم"  },
+  { id: "pains",       enLabel: "Pain",       arLabel: "الألم"        },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -244,6 +320,9 @@ const CATEGORY_COLORS: Record<string, string> = {
   questions:  "bg-purple-50 hover:bg-purple-100 border-purple-200",
   phrases:    "bg-rose-50   hover:bg-rose-100   border-rose-200",
   sensory:    "bg-teal-50   hover:bg-teal-100   border-teal-200",
+  food_drink: "bg-orange-50 hover:bg-orange-100 border-orange-200",
+  body_parts: "bg-indigo-50 hover:bg-indigo-100 border-indigo-200",
+  pains:      "bg-red-50    hover:bg-red-100    border-red-200",
 };
 
 const STYLE_OPTIONS: { id: "symbolic" | "cartoon" | "realistic"; en: string; ar: string }[] = [
@@ -437,9 +516,33 @@ export default function AACApp() {
   // ── Image generation preferences
   const [culturalGrounding, setCulturalGrounding] = useState(false);
 
-  // ── Board layout settings
-  const [categoryOrder, setCategoryOrder]       = useState<string[]>(CATEGORIES.map(c => c.id));
-  const [hiddenCategories, setHiddenCategories] = useState<string[]>([]);
+  // ── Board type (general vs. hospital) ──────────────────────────────────────
+  const [boardType, setBoardType] = useState<"general" | "hospital">("general");
+  const CATEGORIES = boardType === "hospital" ? CATEGORIES_HOSPITAL : CATEGORIES_GENERAL;
+
+  // ── Board layout settings — kept separately per board type since each has a
+  // different set of category ids
+  const [categoryOrderByBoard, setCategoryOrderByBoard] = useState<Record<"general" | "hospital", string[]>>({
+    general:  CATEGORIES_GENERAL.map(c => c.id),
+    hospital: CATEGORIES_HOSPITAL.map(c => c.id),
+  });
+  const [hiddenCategoriesByBoard, setHiddenCategoriesByBoard] = useState<Record<"general" | "hospital", string[]>>({
+    general: [], hospital: [],
+  });
+  const categoryOrder       = categoryOrderByBoard[boardType];
+  const hiddenCategories    = hiddenCategoriesByBoard[boardType];
+  function setCategoryOrder(update: string[] | ((prev: string[]) => string[])) {
+    setCategoryOrderByBoard(prev => ({
+      ...prev,
+      [boardType]: typeof update === "function" ? (update as (p: string[]) => string[])(prev[boardType]) : update,
+    }));
+  }
+  function setHiddenCategories(update: string[] | ((prev: string[]) => string[])) {
+    setHiddenCategoriesByBoard(prev => ({
+      ...prev,
+      [boardType]: typeof update === "function" ? (update as (p: string[]) => string[])(prev[boardType]) : update,
+    }));
+  }
   const [tilesPerColumn, setTilesPerColumn]     = useState(4);
 
   // ── Category label overrides
@@ -536,13 +639,21 @@ export default function AACApp() {
         const savedHidden      = localStorage.getItem("vocalai_hidden_categories");
         const savedTilesPerCol = localStorage.getItem("vocalai_tiles_per_column");
         const savedCatLabels   = localStorage.getItem("vocalai_category_labels");
+        const savedBoardType   = localStorage.getItem("vocalai_board_type");
         if (savedProfile)     setProfile(JSON.parse(savedProfile));
         if (savedPeople)      setImportantPeople(JSON.parse(savedPeople));
         if (savedLanguage)    setLanguage(savedLanguage as "en" | "ar");
         if (savedStyle)       setImageStyle(savedStyle as "symbolic" | "cartoon" | "realistic");
         if (savedCultural !== null) setCulturalGrounding(savedCultural === "true");
-        if (savedCatOrder)    setCategoryOrder(JSON.parse(savedCatOrder));
-        if (savedHidden)      setHiddenCategories(JSON.parse(savedHidden));
+        if (savedBoardType === "hospital" || savedBoardType === "general") setBoardType(savedBoardType);
+        if (savedCatOrder) {
+          const parsed = JSON.parse(savedCatOrder);
+          setCategoryOrderByBoard(prev => Array.isArray(parsed) ? { ...prev, general: parsed } : { ...prev, ...parsed });
+        }
+        if (savedHidden) {
+          const parsed = JSON.parse(savedHidden);
+          setHiddenCategoriesByBoard(prev => Array.isArray(parsed) ? { ...prev, general: parsed } : { ...prev, ...parsed });
+        }
         if (savedTilesPerCol) setTilesPerColumn(Number(savedTilesPerCol));
         if (savedCatLabels)   setCategoryLabels(JSON.parse(savedCatLabels));
 
@@ -735,12 +846,16 @@ export default function AACApp() {
   }, [libraryItems]);
 
   useEffect(() => {
-    localStorage.setItem("vocalai_category_order", JSON.stringify(categoryOrder));
-  }, [categoryOrder]);
+    localStorage.setItem("vocalai_category_order", JSON.stringify(categoryOrderByBoard));
+  }, [categoryOrderByBoard]);
 
   useEffect(() => {
-    localStorage.setItem("vocalai_hidden_categories", JSON.stringify(hiddenCategories));
-  }, [hiddenCategories]);
+    localStorage.setItem("vocalai_hidden_categories", JSON.stringify(hiddenCategoriesByBoard));
+  }, [hiddenCategoriesByBoard]);
+
+  useEffect(() => {
+    localStorage.setItem("vocalai_board_type", boardType);
+  }, [boardType]);
 
   useEffect(() => {
     localStorage.setItem("vocalai_tiles_per_column", String(tilesPerColumn));
@@ -837,14 +952,21 @@ export default function AACApp() {
   function getTilesForCategory(cat: string): AacTile[] {
     let base: AacTile[];
     if (cat === "people") {
-      base = [...TILES.people, ...importantPeople.map(p => ({ emoji: "👤", en: p.name, ar: p.name }))];
+      base = [
+        ...TILES.people,
+        ...importantPeople.map(p => ({ emoji: "👤", en: p.name, ar: p.name })),
+        ...(boardType === "hospital" ? HOSPITAL_PEOPLE_EXTRA : []),
+      ];
     } else if (cat === "phrases") {
       const name = profile.name.trim();
-      base = (TILES.phrases ?? []).map(t =>
-        t.en === "__my_name__"
-          ? { emoji: t.emoji, en: name ? `My name is ${name}` : "My name is…", ar: name ? `اسمي ${name}` : "اسمي…" }
-          : t
-      );
+      base = [
+        ...(TILES.phrases ?? []).map(t =>
+          t.en === "__my_name__"
+            ? { emoji: t.emoji, en: name ? `My name is ${name}` : "My name is…", ar: name ? `اسمي ${name}` : "اسمي…" }
+            : t
+        ),
+        ...(boardType === "hospital" ? HOSPITAL_PHRASES_EXTRA : []),
+      ];
     } else {
       base = TILES[cat] ?? [];
     }
@@ -2722,23 +2844,25 @@ export default function AACApp() {
           </div>
 
           {/* ── Bottom bar ── */}
-          <div className={`shrink-0 bg-white border-t border-slate-100 px-4 py-3 flex items-center gap-2 transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}>
-            <div className="flex items-center gap-2" style={isRTL ? { marginRight: "auto" } : { marginLeft: "auto" }}>
-              <button
-                onClick={() => setExpandedCategory(null)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-700 font-semibold text-sm transition-colors border border-blue-200"
-              >
-                <Home className="h-4 w-4" />
-                {isRTL ? "الرئيسية" : "Home"}
-              </button>
-              <button
-                onClick={() => { setShowCustomiseModal(true); setCustomiseView("menu"); setCustomImageUrl(""); setCustomEmoji(""); setCustomLabelEn(""); setCustomLabelAr(""); }}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-600 font-semibold text-sm transition-colors border border-slate-200"
-              >
-                <Settings className="h-4 w-4" />
-                {isRTL ? "تخصيص اللوحة" : "Customise Board"}
-              </button>
-            </div>
+          <div className={`shrink-0 bg-white border-t border-slate-100 px-4 py-3 flex items-center justify-between gap-2 transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""} ${isRTL ? "flex-row-reverse" : ""}`}>
+            <button
+              onClick={() => {
+                setBoardType(prev => prev === "general" ? "hospital" : "general");
+                setExpandedCategory(null);
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-700 font-semibold text-sm transition-colors border border-blue-200"
+            >
+              {boardType === "general"
+                ? <>🏥 {isRTL ? "المستشفى" : "Hospital"}</>
+                : <><Home className="h-4 w-4" /> {isRTL ? "الرئيسية" : "Home"}</>}
+            </button>
+            <button
+              onClick={() => { setShowCustomiseModal(true); setCustomiseView("menu"); setCustomImageUrl(""); setCustomEmoji(""); setCustomLabelEn(""); setCustomLabelAr(""); }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-600 font-semibold text-sm transition-colors border border-slate-200"
+            >
+              <Settings className="h-4 w-4" />
+              {isRTL ? "تخصيص اللوحة" : "Customise Board"}
+            </button>
           </div>
         {/* ── Long-press phrase combo overlay ── */}
         {longPressMenu && (
