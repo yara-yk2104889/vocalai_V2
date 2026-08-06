@@ -121,30 +121,6 @@ const TILES: Record<string, AacTile[]> = {
     { emoji: "🚽", en: "Toilet",   ar: "الحمام" },
     { emoji: "👋", en: "Bye",      ar: "وداعاً" },
   ],
-  food: [
-    { emoji: "🍎", en: "Apple",      ar: "تفاحة"    },
-    { emoji: "🍞", en: "Bread",      ar: "خبز"      },
-    { emoji: "🍌", en: "Banana",     ar: "موزة"     },
-    { emoji: "🥪", en: "Sandwich",   ar: "ساندويش"  },
-    { emoji: "🍕", en: "Pizza",      ar: "بيتزا"    },
-    { emoji: "🍚", en: "Rice",       ar: "أرز"      },
-    { emoji: "🍳", en: "Egg",        ar: "بيضة"     },
-    { emoji: "🍗", en: "Chicken",    ar: "دجاج"     },
-    { emoji: "🍪", en: "Cookie",     ar: "بسكويت"   },
-    { emoji: "🍇", en: "Grapes",     ar: "عنب"      },
-    { emoji: "🍓", en: "Strawberry", ar: "فراولة"   },
-    { emoji: "🥗", en: "Salad",      ar: "سلطة"     },
-  ],
-  drink: [
-    { emoji: "💧", en: "Water",      ar: "ماء"           },
-    { emoji: "🥛", en: "Milk",       ar: "حليب"          },
-    { emoji: "🧃", en: "Juice",      ar: "عصير"          },
-    { emoji: "☕", en: "Coffee",     ar: "قهوة"          },
-    { emoji: "🍵", en: "Tea",        ar: "شاي"           },
-    { emoji: "🥤", en: "Soda",       ar: "مشروب غازي"    },
-    { emoji: "🍶", en: "Warm drink", ar: "مشروب دافئ"    },
-    { emoji: "🧊", en: "Ice",        ar: "ثلج"           },
-  ],
   feelings: [
     { emoji: "😊", en: "Happy",      ar: "سعيد"  },
     { emoji: "😢", en: "Sad",        ar: "حزين"  },
@@ -289,11 +265,10 @@ const HOSPITAL_PHRASES_EXTRA: AacTile[] = [
 
 const CATEGORIES_GENERAL = [
   { id: "core",       enLabel: "Core",       arLabel: "أساسي"  },
-  { id: "food",       enLabel: "Food",       arLabel: "طعام"   },
-  { id: "drink",      enLabel: "Drink",      arLabel: "مشروب"  },
+  { id: "food_drink", enLabel: "Food/Drink", arLabel: "طعام وشراب" },
   { id: "feelings",   enLabel: "Feelings",   arLabel: "مشاعر"  },
-  { id: "activities", enLabel: "Activities", arLabel: "أنشطة"  },
   { id: "people",     enLabel: "People",     arLabel: "أشخاص"  },
+  { id: "activities", enLabel: "Activities", arLabel: "أنشطة"  },
   { id: "questions",  enLabel: "Questions",  arLabel: "أسئلة"  },
   { id: "phrases",    enLabel: "Phrases",    arLabel: "جمل"    },
   { id: "sensory",    enLabel: "Sensory",    arLabel: "حسي"    },
@@ -304,16 +279,14 @@ const CATEGORIES_HOSPITAL = [
   { id: "food_drink",  enLabel: "Food/Drink", arLabel: "طعام وشراب"   },
   { id: "feelings",    enLabel: "Feelings",   arLabel: "مشاعر"        },
   { id: "people",      enLabel: "People",     arLabel: "أشخاص"        },
-  { id: "phrases",     enLabel: "Phrases",    arLabel: "جمل"          },
-  { id: "sensory",     enLabel: "Sensory",    arLabel: "حسي"          },
   { id: "body_parts",  enLabel: "Body Parts", arLabel: "أجزاء الجسم"  },
   { id: "pains",       enLabel: "Pain",       arLabel: "الألم"        },
+  { id: "phrases",     enLabel: "Phrases",    arLabel: "جمل"          },
+  { id: "sensory",     enLabel: "Sensory",    arLabel: "حسي"          },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
   core:       "bg-blue-50   hover:bg-blue-100   border-blue-200",
-  food:       "bg-orange-50 hover:bg-orange-100 border-orange-200",
-  drink:      "bg-cyan-50   hover:bg-cyan-100   border-cyan-200",
   feelings:   "bg-pink-50   hover:bg-pink-100   border-pink-200",
   activities: "bg-green-50  hover:bg-green-100  border-green-200",
   people:     "bg-yellow-50 hover:bg-yellow-100 border-yellow-200",
@@ -456,6 +429,18 @@ async function getCroppedImg(
 function uid(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
   return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+}
+
+// Bump this whenever CATEGORIES_GENERAL/CATEGORIES_HOSPITAL's canonical order changes,
+// to force a one-time reset of anyone's already-persisted category order.
+const CATEGORY_LAYOUT_VERSION = 2;
+
+// Drops ids no longer in the category set, appends any new ones — keeps a
+// persisted category order in sync when the underlying category list changes.
+function reconcileOrder(order: string[], validIds: string[]): string[] {
+  const kept = order.filter(id => validIds.includes(id));
+  const missing = validIds.filter(id => !kept.includes(id));
+  return [...kept, ...missing];
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -654,6 +639,27 @@ export default function AACApp() {
           const parsed = JSON.parse(savedHidden);
           setHiddenCategoriesByBoard(prev => Array.isArray(parsed) ? { ...prev, general: parsed } : { ...prev, ...parsed });
         }
+        // One-time layout reset when the canonical category order changes (e.g. food/drink
+        // merge, category reordering) — bump CATEGORY_LAYOUT_VERSION whenever that happens.
+        // Below that version, snap straight to canonical order; at/above it, just reconcile
+        // (drop stale ids, append new ones) so manual "arrange" customization survives.
+        const savedLayoutVersion = Number(localStorage.getItem("vocalai_category_layout_version") ?? "1");
+        if (savedLayoutVersion < CATEGORY_LAYOUT_VERSION) {
+          setCategoryOrderByBoard({
+            general:  CATEGORIES_GENERAL.map(c => c.id),
+            hospital: CATEGORIES_HOSPITAL.map(c => c.id),
+          });
+        } else {
+          setCategoryOrderByBoard(prev => ({
+            general:  reconcileOrder(prev.general,  CATEGORIES_GENERAL.map(c => c.id)),
+            hospital: reconcileOrder(prev.hospital, CATEGORIES_HOSPITAL.map(c => c.id)),
+          }));
+        }
+        localStorage.setItem("vocalai_category_layout_version", String(CATEGORY_LAYOUT_VERSION));
+        setHiddenCategoriesByBoard(prev => ({
+          general:  prev.general.filter(id => CATEGORIES_GENERAL.some(c => c.id === id)),
+          hospital: prev.hospital.filter(id => CATEGORIES_HOSPITAL.some(c => c.id === id)),
+        }));
         if (savedTilesPerCol) setTilesPerColumn(Number(savedTilesPerCol));
         if (savedCatLabels)   setCategoryLabels(JSON.parse(savedCatLabels));
 
@@ -2198,7 +2204,7 @@ export default function AACApp() {
             <button
               onClick={() => { setShowPinModal(true); setPinInput(""); setPinError(false); }}
               className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-semibold transition-colors shadow-sm"
-              aria-label={isRTL ? "وضع الوالدين" : "Parent mode"}
+              aria-label={isRTL ? "وضع مقدم الرعاية" : "Carer mode"}
             >
               <Lock className="h-4 w-4" />
             </button>
@@ -2559,7 +2565,7 @@ export default function AACApp() {
                                     <span className="absolute top-0.5 right-0.5 bg-white/80 rounded-full text-[9px] leading-none px-1 py-0.5 font-bold text-slate-600 shadow-sm">📚</span>
                                   )}
                                 </>
-                              : <span className={`leading-none ${tilesPerColumn <= 4 ? "text-3xl" : tilesPerColumn <= 6 ? "text-2xl" : "text-lg"}`}>{tile.emoji}</span>
+                              : <span className={`leading-none ${tilesPerColumn <= 4 ? "text-4xl" : tilesPerColumn <= 6 ? "text-3xl" : "text-xl"}`}>{tile.emoji}</span>
                             }
                           </div>
                           <span className="shrink-0 text-[10px] font-semibold text-slate-700 text-center leading-tight w-full truncate px-0.5">
@@ -2604,7 +2610,7 @@ export default function AACApp() {
                                     <span className="absolute top-0.5 right-0.5 bg-white/80 rounded-full text-[9px] leading-none px-1 py-0.5 font-bold text-slate-600 shadow-sm">📚</span>
                                   )}
                                 </>
-                              : <span className="text-3xl leading-none">{tile.emoji}</span>
+                              : <span className="text-4xl leading-none">{tile.emoji}</span>
                             }
                           </div>
                           <span className="shrink-0 text-[10px] font-semibold text-slate-700 text-center leading-tight w-full truncate px-0.5">
@@ -2972,7 +2978,7 @@ export default function AACApp() {
               <ArrowLeft className="h-5 w-5" />
             </button>
             <h1 className="flex-1 text-center font-bold text-lg">
-              {isRTL ? "⚙️ إعدادات الوالدين" : "⚙️ Parent Settings"}
+              {isRTL ? "⚙️ إعدادات مقدم الرعاية" : "⚙️ Carer Settings"}
             </h1>
             {/* Language — always RIGHT */}
             <button
@@ -3010,7 +3016,7 @@ export default function AACApp() {
               <div className="space-y-4">
                 <div className="bg-white rounded-3xl p-5 shadow-sm space-y-5">
                   <h2 className={`font-bold text-lg text-slate-800 ${isRTL ? "text-right" : ""}`}>
-                    {isRTL ? "الملف الشخصي للطفل" : "Child Profile"}
+                    {isRTL ? "الملف الشخصي للمستخدم" : "User Profile"}
                   </h2>
 
                   <div className={`grid grid-cols-2 gap-3`}>
@@ -3048,8 +3054,8 @@ export default function AACApp() {
                       </Label>
                       <div className={`flex gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
                         {[
-                          { v: "male",   en: "Boy",  ar: "ذكر"  },
-                          { v: "female", en: "Girl", ar: "أنثى" },
+                          { v: "male",   en: "Male",   ar: "ذكر"  },
+                          { v: "female", en: "Female", ar: "أنثى" },
                         ].map(g => (
                           <button
                             key={g.v}
@@ -3137,13 +3143,13 @@ export default function AACApp() {
                   <div className="space-y-3">
                     <Label className={`text-sm ${isRTL ? "block text-right" : ""}`}>
                       {isRTL
-                        ? "صورة الطفل — لتخصيص الصور المُولَّدة (اختياري)"
-                        : "Child photo — for personalizing generated images (optional)"}
+                        ? "صورة المستخدم — لتخصيص الصور المُولَّدة (اختياري)"
+                        : "User photo — for personalizing generated images (optional)"}
                     </Label>
 
                     {profile.photoPreview ? (
                       <div className="space-y-2">
-                        <img src={profile.photoPreview} className="w-24 h-24 rounded-2xl object-cover border" alt="child profile" />
+                        <img src={profile.photoPreview} className="w-24 h-24 rounded-2xl object-cover border" alt="user profile" />
                         {profilePhotoLoading && (
                           <p className="text-xs text-blue-700 flex items-center gap-1">
                             <RefreshCw className="h-3 w-3 animate-spin" />
