@@ -112,6 +112,7 @@ const TILES: Record<string, AacTile[]> = {
     { emoji: "❓", en: "Question", ar: "سؤال"   },
     { emoji: "➕", en: "More",     ar: "أكثر"   },
     { emoji: "🛑", en: "Stop",     ar: "توقف"   },
+    { emoji: "⏳", en: "Wait",     ar: "انتظر"  },
     { emoji: "👍", en: "Yes",      ar: "نعم"    },
     { emoji: "👎", en: "No",       ar: "لا"     },
     { emoji: "😊", en: "Happy",    ar: "سعيد"   },
@@ -134,6 +135,8 @@ const TILES: Record<string, AacTile[]> = {
     { emoji: "🥱", en: "Bored",      ar: "ممل"   },
     { emoji: "😤", en: "Frustrated", ar: "محبط"  },
     { emoji: "🥰", en: "Loved",      ar: "محبوب" },
+    { emoji: "🚰", en: "Thirsty",    ar: "عطشان" },
+    { emoji: "🍽️", en: "Hungry",     ar: "جائع"  },
   ],
   activities: [
     { emoji: "🌅", en: "Wake Up",      ar: "استيقظ"    },
@@ -237,13 +240,18 @@ const TILES: Record<string, AacTile[]> = {
     { emoji: "🦶", en: "Foot",     ar: "القدم"        },
   ],
   pains: [
+    // Wong-Baker-style pain scale — kept first since this is the first
+    // thing clinicians look for on a hospital communication board.
+    { emoji: "😀", en: "No pain",           ar: "لا يوجد ألم"      },
+    { emoji: "🙂", en: "Hurts a little",    ar: "يؤلم قليلاً"      },
+    { emoji: "😕", en: "Hurts a little more", ar: "يؤلم أكثر قليلاً" },
+    { emoji: "😣", en: "Hurts more",        ar: "يؤلم بشكل أكبر"   },
+    { emoji: "😫", en: "Hurts way more",    ar: "يؤلم كثيراً"      },
+    { emoji: "😭", en: "Hurts a lot",       ar: "يؤلم جداً"        },
     { emoji: "🤕", en: "It hurts",           ar: "يؤلمني"          },
     { emoji: "🔥", en: "Burning",            ar: "حرقان"           },
     { emoji: "⚡", en: "Sharp pain",         ar: "ألم حاد"         },
     { emoji: "🐢", en: "Dull ache",          ar: "ألم خفيف مستمر"  },
-    { emoji: "🙂", en: "Mild pain",          ar: "ألم خفيف"        },
-    { emoji: "😣", en: "Moderate pain",      ar: "ألم متوسط"       },
-    { emoji: "😫", en: "Severe pain",        ar: "ألم شديد"        },
     { emoji: "🤢", en: "Nausea",             ar: "غثيان"           },
     { emoji: "😵", en: "Dizzy",              ar: "دوخة"            },
     { emoji: "🤒", en: "Fever",              ar: "حرارة"           },
@@ -253,15 +261,25 @@ const TILES: Record<string, AacTile[]> = {
 };
 
 // Extra tiles shown only on the hospital board, appended on top of the shared
-// people/phrases tiles above (general board is unaffected).
-const HOSPITAL_PEOPLE_EXTRA: AacTile[] = [
-  { emoji: "👩‍⚕️", en: "Nurse", ar: "الممرضة" },
-];
-const HOSPITAL_PHRASES_EXTRA: AacTile[] = [
-  { emoji: "🆘", en: "Call the nurse",  ar: "نادِ الممرضة"     },
-  { emoji: "📞", en: "Call the doctor", ar: "اتصل بالطبيب"    },
-  { emoji: "🚨", en: "I need help now", ar: "أحتاج المساعدة الآن" },
-];
+// category tiles above (general board is unaffected). Keyed by category id.
+const HOSPITAL_EXTRA_TILES: Record<string, AacTile[]> = {
+  sensory: [
+    { emoji: "🥶", en: "Cold", ar: "بردان" },
+    { emoji: "🥵", en: "Hot",  ar: "حرّان"  },
+  ],
+  people: [
+    { emoji: "👩‍⚕️", en: "Nurse", ar: "الممرضة" },
+  ],
+  phrases: [
+    { emoji: "🆘", en: "Call the nurse",      ar: "نادِ الممرضة"        },
+    { emoji: "📞", en: "Call the doctor",     ar: "اتصل بالطبيب"       },
+    { emoji: "🚨", en: "I need help now",     ar: "أحتاج المساعدة الآن" },
+    { emoji: "🔄", en: "Turn me",             ar: "قلّبني"             },
+    { emoji: "⬆️", en: "Sit me up",           ar: "اجلسني"             },
+    { emoji: "😮‍💨", en: "I can't breathe",    ar: "لا أستطيع التنفس"   },
+    { emoji: "🤷", en: "I don't understand",  ar: "لا أفهم"            },
+  ],
+};
 
 const CATEGORIES_GENERAL = [
   { id: "core",       enLabel: "Core",       arLabel: "أساسي"  },
@@ -305,6 +323,8 @@ const STYLE_OPTIONS: { id: "symbolic" | "cartoon" | "realistic"; en: string; ar:
 ];
 
 const CONNECTORS: { en: string; ar: string }[] = [
+  { en: "Yes",    ar: "نعم"   },
+  { en: "No",     ar: "لا"    },
   { en: "I",      ar: "أنا"   },
   { en: "want",   ar: "أريد"  },
   { en: "the",    ar: "الـ"   },
@@ -961,22 +981,19 @@ export default function AACApp() {
       base = [
         ...TILES.people,
         ...importantPeople.map(p => ({ emoji: "👤", en: p.name, ar: p.name })),
-        ...(boardType === "hospital" ? HOSPITAL_PEOPLE_EXTRA : []),
       ];
     } else if (cat === "phrases") {
       const name = profile.name.trim();
-      base = [
-        ...(TILES.phrases ?? []).map(t =>
-          t.en === "__my_name__"
-            ? { emoji: t.emoji, en: name ? `My name is ${name}` : "My name is…", ar: name ? `اسمي ${name}` : "اسمي…" }
-            : t
-        ),
-        ...(boardType === "hospital" ? HOSPITAL_PHRASES_EXTRA : []),
-      ];
+      base = (TILES.phrases ?? []).map(t =>
+        t.en === "__my_name__"
+          ? { emoji: t.emoji, en: name ? `My name is ${name}` : "My name is…", ar: name ? `اسمي ${name}` : "اسمي…" }
+          : t
+      );
     } else {
       base = TILES[cat] ?? [];
     }
-    return [...base, ...(customTiles[cat] ?? [])];
+    const hospitalExtra = boardType === "hospital" ? (HOSPITAL_EXTRA_TILES[cat] ?? []) : [];
+    return [...base, ...hospitalExtra, ...(customTiles[cat] ?? [])];
   }
 
   // ── Board layout helpers ───────────────────────────────────────────────────
