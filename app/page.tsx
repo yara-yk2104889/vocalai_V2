@@ -2582,7 +2582,7 @@ export default function AACApp() {
                                     <span className="absolute top-0.5 right-0.5 bg-white/80 rounded-full text-[9px] leading-none px-1 py-0.5 font-bold text-slate-600 shadow-sm">📚</span>
                                   )}
                                 </>
-                              : <span className={`leading-none ${tilesPerColumn <= 4 ? "text-4xl" : tilesPerColumn <= 6 ? "text-3xl" : "text-xl"}`}>{tile.emoji}</span>
+                              : <span className={`leading-none ${tilesPerColumn <= 4 ? "text-5xl" : tilesPerColumn <= 6 ? "text-4xl" : "text-2xl"}`}>{tile.emoji}</span>
                             }
                           </div>
                           <span className="shrink-0 text-[10px] font-semibold text-slate-700 text-center leading-tight w-full truncate px-0.5">
@@ -2627,7 +2627,7 @@ export default function AACApp() {
                                     <span className="absolute top-0.5 right-0.5 bg-white/80 rounded-full text-[9px] leading-none px-1 py-0.5 font-bold text-slate-600 shadow-sm">📚</span>
                                   )}
                                 </>
-                              : <span className="text-4xl leading-none">{tile.emoji}</span>
+                              : <span className="text-5xl leading-none">{tile.emoji}</span>
                             }
                           </div>
                           <span className="shrink-0 text-[10px] font-semibold text-slate-700 text-center leading-tight w-full truncate px-0.5">
