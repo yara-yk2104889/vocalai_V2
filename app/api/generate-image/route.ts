@@ -101,7 +101,7 @@ export async function POST(req: Request) {
       : "";
 
     const culturalRule = culturalGrounding
-      ? `Cultural context: Depict culturally-grounded imagery relevant to the Gulf/Middle Eastern region — include regional foods (dates, hummus, kabsa, shawarma, luqaimat, karak tea), traditional clothing (thobe, kandura, abaya, ghutra), and familiar Gulf/Arab cultural settings and aesthetics where relevant to the scene.`
+      ? `Cultural context: ONLY if the scene is specifically about food, drink, or clothing, ground that specific food/drink/clothing in Gulf/Middle Eastern regional culture — e.g. regional dishes (dates, hummus, kabsa, shawarma, luqaimat, karak tea) or traditional clothing (thobe, kandura, abaya, ghutra). Do NOT add food, drink, cultural clothing, or other Gulf/Arab decorative elements to scenes that are not themselves about food, drink, or clothing — e.g. a scene about a person, place, or activity unrelated to eating/drinking/dress must NOT include food or regional dress props just for flavor.`
       : `Cultural context: Use culturally neutral, universally recognizable imagery. Do NOT include Gulf, Arab, or Middle Eastern-specific cultural elements such as regional dishes (kabsa, shawarma, luqaimat, karak tea), traditional Gulf clothing (thobe, kandura, abaya, ghutra), or Gulf/Arab-specific settings. Objects and scenes should look generic and globally familiar.`;
 
     const fullPrompt = `
