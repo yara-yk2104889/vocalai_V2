@@ -139,21 +139,20 @@ const TILES: Record<string, AacTile[]> = {
     { emoji: "🍽️", en: "Hungry",     ar: "جائع"  },
   ],
   activities: [
-    { emoji: "🌅", en: "Wake Up",      ar: "استيقظ"    },
-    { emoji: "🪥", en: "Brush Teeth",  ar: "اسنان"     },
-    { emoji: "🎒", en: "School",       ar: "مدرسة"     },
-    { emoji: "🎮", en: "Play",         ar: "العب"       },
-    { emoji: "📖", en: "Read",         ar: "اقرأ"       },
-    { emoji: "🏃", en: "Run",          ar: "اركض"       },
-    { emoji: "🛁", en: "Bath",         ar: "حمام"       },
-    { emoji: "😴", en: "Sleep",        ar: "نوم"        },
-    { emoji: "🎨", en: "Draw",         ar: "ارسم"       },
-    { emoji: "📺", en: "Watch TV",     ar: "تلفزيون"    },
-    { emoji: "🎵", en: "Music",        ar: "موسيقى"     },
-    { emoji: "⚽", en: "Ball",         ar: "كرة"        },
-    { emoji: "🚗", en: "Car",          ar: "سيارة"      },
-    { emoji: "🌳", en: "Outside",      ar: "بالخارج"    },
-    { emoji: "🛒", en: "Shopping",     ar: "تسوق"       },
+    { emoji: "🎮", en: "Play",         ar: "العب"          },
+    { emoji: "📖", en: "Read",         ar: "اقرأ"          },
+    { emoji: "😴", en: "Sleep",        ar: "نوم"           },
+    { emoji: "🌳", en: "Go Outside",   ar: "اذهب للخارج"    },
+    { emoji: "🌅", en: "Wake Up",      ar: "استيقظ"       },
+    { emoji: "🪥", en: "Brush Teeth",  ar: "اغسل الأسنان" },
+    { emoji: "🎒", en: "Go School",    ar: "اذهب للمدرسة"  },
+    { emoji: "🏃", en: "Run",          ar: "اركض"          },
+    { emoji: "🛁", en: "Bath",         ar: "استحمام"       },
+    { emoji: "🎨", en: "Draw",         ar: "ارسم"          },
+    { emoji: "📺", en: "Watch TV",     ar: "أحضر تلفزيون"  },
+    { emoji: "⚽", en: "Ball",         ar: "كرة"           },
+    { emoji: "🚗", en: "Go Car",       ar: "اذهب بالسيارة" },
+    { emoji: "🛒", en: "Go Shopping",  ar: "اذهب للتسوق"    },
   ],
   people: [
     { emoji: "👨",   en: "Dad",     ar: "أبي"      },
@@ -370,18 +369,12 @@ const KBD_FLEX: Record<string, number> = {
 
 type ComboPhrase = { en: (t: string) => string; ar: (t: string) => string };
 const COMBO_PHRASES_BY_CAT: Record<string, ComboPhrase[]> = {
-  food: [
+  food_drink: [
     { en: t => `I want ${t}`,       ar: t => `أريد ${t}`      },
     { en: t => `I like ${t}`,       ar: t => `أحب ${t}`       },
     { en: t => `I don't want ${t}`, ar: t => `لا أريد ${t}`   },
     { en: t => `More ${t}`,         ar: t => `المزيد من ${t}` },
     { en: t => `No more ${t}`,      ar: t => `لا مزيد من ${t}` },
-  ],
-  drink: [
-    { en: t => `I want ${t}`,       ar: t => `أريد ${t}`      },
-    { en: t => `I like ${t}`,       ar: t => `أحب ${t}`       },
-    { en: t => `I don't want ${t}`, ar: t => `لا أريد ${t}`   },
-    { en: t => `More ${t}`,         ar: t => `المزيد من ${t}` },
   ],
   feelings: [
     { en: t => `I feel ${t}`,       ar: t => `أشعر بـ${t}`    },
