@@ -1102,7 +1102,15 @@ export default function AACApp() {
   }
 
   function addTile(tile: AacTile) {
-    setSelectedTiles(prev => [...prev, tile]);
+    // Commit any pending typed text as a word first, so tapping a tile after
+    // typing doesn't jump the typed word to the end — it keeps its place.
+    const typed = freeText.trim();
+    setSelectedTiles(prev => [
+      ...prev,
+      ...(typed ? [{ emoji: "", en: typed, ar: typed }] : []),
+      tile,
+    ]);
+    if (typed) setFreeText("");
     setGeneratedImages([]);
     setCaption("");
   }
@@ -3507,7 +3515,7 @@ export default function AACApp() {
               className="w-full rounded-full py-5 text-base font-bold bg-blue-700 hover:bg-blue-600 text-white shadow-lg shadow-blue-200 transition-all"
               onClick={returnToChild}
             >
-              {isRTL ? "← العودة لوضع الطفل" : "← Return to Child Mode"}
+              {isRTL ? "← العودة إلى اللوحة" : "← Return to Board"}
             </Button>
           </div>
         </div>
