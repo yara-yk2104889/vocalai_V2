@@ -21,6 +21,7 @@ import Cropper from "react-easy-crop";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { tileImageFor } from "@/lib/tile-images";
 
 // ─── IndexedDB image cache ────────────────────────────────────────────────────
 // localStorage can't hold base64 images (5 MB limit).
@@ -137,6 +138,7 @@ const TILES: Record<string, AacTile[]> = {
     { emoji: "🥰", en: "Loved",      ar: "محبوب" },
     { emoji: "🚰", en: "Thirsty",    ar: "عطشان" },
     { emoji: "🍽️", en: "Hungry",     ar: "جائع"  },
+    { emoji: "🤢", en: "Nauseous",   ar: "غثيان" },
   ],
   activities: [
     { emoji: "🎮", en: "Play",         ar: "العب"          },
@@ -187,11 +189,8 @@ const TILES: Record<string, AacTile[]> = {
   sensory: [
     { emoji: "🛑", en: "I need a break",       ar: "أحتاج استراحة"          },
     { emoji: "🔇", en: "Too loud",             ar: "صوت عالٍ جداً"          },
-    { emoji: "🤲", en: "Need space",           ar: "أحتاج مساحة"            },
     { emoji: "😤", en: "Feeling overwhelmed",  ar: "أشعر بضغط"             },
-    { emoji: "🙉", en: "Ears hurt",            ar: "أذناي تؤلمانني"        },
     { emoji: "💡", en: "Too bright",           ar: "الإضاءة قوية جداً"      },
-    { emoji: "🤢", en: "Feel sick",            ar: "أشعر بغثيان"           },
     { emoji: "🤗", en: "Need a hug",           ar: "أريد عناقاً"           },
     { emoji: "😴", en: "I am tired",           ar: "أنا متعب"              },
     { emoji: "😰", en: "I feel anxious",       ar: "أشعر بقلق"            },
@@ -969,24 +968,28 @@ export default function AACApp() {
   }
 
   function getTilesForCategory(cat: string): AacTile[] {
+    const builtIn = [
+      ...(TILES[cat] ?? []),
+      ...(boardType === "hospital" ? (HOSPITAL_EXTRA_TILES[cat] ?? []) : []),
+    ].map(t => ({ ...t, imageUrl: tileImageFor(cat, t.en) }));
+
     let base: AacTile[];
     if (cat === "people") {
       base = [
-        ...TILES.people,
+        ...builtIn,
         ...importantPeople.map(p => ({ emoji: "👤", en: p.name, ar: p.name })),
       ];
     } else if (cat === "phrases") {
       const name = profile.name.trim();
-      base = (TILES.phrases ?? []).map(t =>
+      base = builtIn.map(t =>
         t.en === "__my_name__"
-          ? { emoji: t.emoji, en: name ? `My name is ${name}` : "My name is…", ar: name ? `اسمي ${name}` : "اسمي…" }
+          ? { ...t, en: name ? `My name is ${name}` : "My name is…", ar: name ? `اسمي ${name}` : "اسمي…" }
           : t
       );
     } else {
-      base = TILES[cat] ?? [];
+      base = builtIn;
     }
-    const hospitalExtra = boardType === "hospital" ? (HOSPITAL_EXTRA_TILES[cat] ?? []) : [];
-    return [...base, ...hospitalExtra, ...(customTiles[cat] ?? [])];
+    return [...base, ...(customTiles[cat] ?? [])];
   }
 
   // ── Board layout helpers ───────────────────────────────────────────────────
