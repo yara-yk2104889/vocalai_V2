@@ -105,13 +105,20 @@ export const TILE_IMAGES = new Set<string>([
   "people/nurse",
   "people/sister",
   "people/teacher",
+  "phrases/call-the-doctor",
+  "phrases/call-the-nurse",
   "phrases/can-you-repeat-that",
   "phrases/how-are-you",
+  "phrases/i-cant-breathe",
+  "phrases/i-dont-understand",
+  "phrases/i-need-help-now",
   "phrases/i-need-help-please",
   "phrases/my-name",
   "phrases/nice-to-meet-you",
+  "phrases/sit-me-up",
   "phrases/thank-you",
-  "phrases/you-re-welcome",
+  "phrases/turn-me",
+  "phrases/youre-welcome",
   "questions/can-i",
   "questions/how-many",
   "questions/please",
@@ -121,10 +128,11 @@ export const TILE_IMAGES = new Set<string>([
   "questions/who",
   "questions/why",
   "sensory/calm-down-please",
+  "sensory/cold",
   "sensory/feeling-overwhelmed",
+  "sensory/hot",
   "sensory/i-am-tired",
   "sensory/i-feel-anxious",
-  "sensory/i-feel-sick",
   "sensory/i-need-a-break",
   "sensory/i-want-to-leave",
   "sensory/need-a-hug",
@@ -133,7 +141,7 @@ export const TILE_IMAGES = new Set<string>([
 ]);
 
 export function tileSlug(label: string): string {
-  return label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return label.toLowerCase().replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
 export function tileImageFor(cat: string, enLabel: string): string | undefined {

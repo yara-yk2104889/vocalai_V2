@@ -163,6 +163,7 @@ const TILES: Record<string, AacTile[]> = {
     { emoji: "👧",   en: "Sister",  ar: "أختي"     },
     { emoji: "👩‍🏫", en: "Teacher", ar: "المعلمة"  },
     { emoji: "👨‍⚕️", en: "Doctor",  ar: "الطبيب"   },
+    { emoji: "👩‍⚕️", en: "Nurse", ar: "الممرضة" },
     { emoji: "👫",   en: "Friend",  ar: "صديق"     },
     { emoji: "👴",   en: "Grandpa", ar: "جدي"      },
     { emoji: "👵",   en: "Grandma", ar: "جدتي"     },
@@ -185,6 +186,7 @@ const TILES: Record<string, AacTile[]> = {
     { emoji: "😊", en: "You're welcome",       ar: "عفواً"                  },
     { emoji: "🆘", en: "I need help please",   ar: "أحتاج مساعدة من فضلك"  },
     { emoji: "🔁", en: "Can you repeat that?", ar: "هل يمكنك إعادة ذلك؟"   },
+    { emoji: "🤷", en: "I don't understand",   ar: "لا أفهم"                },
   ],
   sensory: [
     { emoji: "🛑", en: "I need a break",       ar: "أحتاج استراحة"          },
@@ -196,6 +198,8 @@ const TILES: Record<string, AacTile[]> = {
     { emoji: "😰", en: "I feel anxious",       ar: "أشعر بقلق"            },
     { emoji: "🧘", en: "Calm down please",     ar: "هدّئوني من فضلكم"      },
     { emoji: "🚪", en: "I want to leave",      ar: "أريد المغادرة"         },
+    { emoji: "🥶", en: "Cold",                 ar: "بردان"                 },
+    { emoji: "🥵", en: "Hot",                  ar: "حرّان"                 },
   ],
   food_drink: [
     { emoji: "🍎", en: "Apple",      ar: "تفاحة"    },
@@ -261,13 +265,7 @@ const TILES: Record<string, AacTile[]> = {
 // Extra tiles shown only on the hospital board, appended on top of the shared
 // category tiles above (general board is unaffected). Keyed by category id.
 const HOSPITAL_EXTRA_TILES: Record<string, AacTile[]> = {
-  sensory: [
-    { emoji: "🥶", en: "Cold", ar: "بردان" },
-    { emoji: "🥵", en: "Hot",  ar: "حرّان"  },
-  ],
-  people: [
-    { emoji: "👩‍⚕️", en: "Nurse", ar: "الممرضة" },
-  ],
+
   phrases: [
     { emoji: "🆘", en: "Call the nurse",      ar: "نادِ الممرضة"        },
     { emoji: "📞", en: "Call the doctor",     ar: "اتصل بالطبيب"       },
@@ -275,7 +273,6 @@ const HOSPITAL_EXTRA_TILES: Record<string, AacTile[]> = {
     { emoji: "🔄", en: "Turn me",             ar: "قلّبني"             },
     { emoji: "⬆️", en: "Sit me up",           ar: "اجلسني"             },
     { emoji: "😮‍💨", en: "I can't breathe",    ar: "لا أستطيع التنفس"   },
-    { emoji: "🤷", en: "I don't understand",  ar: "لا أفهم"            },
   ],
 };
 
@@ -2542,7 +2539,12 @@ export default function AACApp() {
                       <button
                         key={id}
                         onClick={() => setExpandedCategory(isSelected ? null : cat.id)}
-                        className={`flex-1 min-w-0 rounded-2xl py-2 px-1 text-[11px] font-bold text-center border-2 transition-all active:scale-95 text-slate-700 ${colors} ${isSelected ? "ring-2 ring-blue-500 ring-offset-1" : ""}`}
+                        aria-pressed={isSelected}
+                        className={`flex-1 min-w-0 rounded-2xl px-1 text-[11px] font-bold text-center transition-all active:scale-95 text-slate-700 ${
+                          isSelected
+                            ? `${colors.replace(/\S*border-\S+/g, "")} border-[3px] border-blue-600 py-[7px] shadow-md`
+                            : `${colors} border-2 py-2`
+                        }`}
                       >
                         {getCatLabel(cat.id)}
                       </button>
@@ -2552,18 +2554,22 @@ export default function AACApp() {
               </div>
 
               {/* Emoji area */}
-              <div className={`flex-1 min-h-0 overflow-hidden p-2 transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}>
+              <div
+                className={`flex-1 min-h-0 overflow-hidden p-2 transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}
+                style={{ containerType: "size" } as CSSProperties}
+              >
                 {expandedCategory === null ? (
-                  /* Home: tiles-per-column rows, one column per visible category */
+                  /* Home: square tiles shrink to fit the board so it never scrolls */
                   <div
-                    className="h-full"
                     style={{
+                      "--tile": `min((100cqw - ${(visibleCategories.length - 1) * 6}px) / ${Math.max(visibleCategories.length, 1)}, (100cqh - ${(tilesPerColumn - 1) * 6}px) / ${tilesPerColumn})`,
                       display: "grid",
-                      gridTemplateRows: `repeat(${tilesPerColumn}, minmax(0, 1fr))`,
-                      gridAutoColumns: "minmax(0, 1fr)",
+                      gridTemplateRows: `repeat(${tilesPerColumn}, var(--tile))`,
+                      gridAutoColumns: "var(--tile)",
                       gridAutoFlow: "column",
+                      justifyContent: "center",
                       gap: "6px",
-                    }}
+                    } as CSSProperties}
                   >
                     {visibleCategories.flatMap(cat => {
                       const colors = CATEGORY_COLORS[cat.id] ?? "bg-slate-50 hover:bg-slate-100 border-slate-200";
@@ -2581,15 +2587,18 @@ export default function AACApp() {
                           <div className="flex-1 flex items-center justify-center min-h-0 relative w-full">
                             {tile.imageUrl
                               ? <>
-                                  <img src={tile.imageUrl} className="w-full h-full object-cover rounded-lg" alt={tile.en} />
+                                  <img src={tile.imageUrl} className="w-full h-full object-contain rounded-lg" alt={tile.en} />
                                   {tile.storyImages?.length && (
                                     <span className="absolute top-0.5 right-0.5 bg-white/80 rounded-full text-[9px] leading-none px-1 py-0.5 font-bold text-slate-600 shadow-sm">📚</span>
                                   )}
                                 </>
-                              : <span className={`leading-none ${tilesPerColumn <= 4 ? "text-5xl" : tilesPerColumn <= 6 ? "text-4xl" : "text-2xl"}`}>{tile.emoji}</span>
+                              : <span className="leading-none" style={{ fontSize: "calc(var(--tile) * 0.42)" }}>{tile.emoji}</span>
                             }
                           </div>
-                          <span className="shrink-0 text-[10px] font-semibold text-slate-700 text-center leading-tight w-full truncate px-0.5">
+                          <span
+                            className="shrink-0 font-semibold text-slate-700 text-center leading-tight w-full px-0.5 line-clamp-2 break-words"
+                            style={{ fontSize: "clamp(10px, calc(var(--tile) * 0.1), 15px)" }}
+                          >
                             {isRTL ? tile.ar : tile.en}
                           </span>
                         </button>
@@ -2605,10 +2614,12 @@ export default function AACApp() {
                   <div
                     className="gap-1.5"
                     style={{
+                      "--tile": `calc((100cqw - ${(visibleCategories.length - 1) * 6}px) / ${Math.max(visibleCategories.length, 1)})`,
                       display: "grid",
-                      gridTemplateColumns: `repeat(${visibleCategories.length}, minmax(0, 1fr))`,
+                      gridTemplateColumns: `repeat(${visibleCategories.length}, var(--tile))`,
+                      justifyContent: "center",
                       direction: isRTL ? "rtl" : "ltr",
-                    }}
+                    } as CSSProperties}
                   >
                     {getTilesForCategory(expandedCategory).map((tile, i) => {
                       const colors = CATEGORY_COLORS[expandedCategory] ?? "bg-slate-50 border-slate-200";
@@ -2626,15 +2637,18 @@ export default function AACApp() {
                           <div className="flex-1 flex items-center justify-center min-h-0 relative w-full">
                             {tile.imageUrl
                               ? <>
-                                  <img src={tile.imageUrl} className="w-full h-full object-cover rounded-lg" alt={tile.en} />
+                                  <img src={tile.imageUrl} className="w-full h-full object-contain rounded-lg" alt={tile.en} />
                                   {tile.storyImages?.length && (
                                     <span className="absolute top-0.5 right-0.5 bg-white/80 rounded-full text-[9px] leading-none px-1 py-0.5 font-bold text-slate-600 shadow-sm">📚</span>
                                   )}
                                 </>
-                              : <span className="text-5xl leading-none">{tile.emoji}</span>
+                              : <span className="leading-none" style={{ fontSize: "calc(var(--tile) * 0.42)" }}>{tile.emoji}</span>
                             }
                           </div>
-                          <span className="shrink-0 text-[10px] font-semibold text-slate-700 text-center leading-tight w-full truncate px-0.5">
+                          <span
+                            className="shrink-0 font-semibold text-slate-700 text-center leading-tight w-full px-0.5 line-clamp-2 break-words"
+                            style={{ fontSize: "clamp(10px, calc(var(--tile) * 0.1), 15px)" }}
+                          >
                             {isRTL ? tile.ar : tile.en}
                           </span>
                         </button>

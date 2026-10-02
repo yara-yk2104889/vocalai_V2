@@ -33,7 +33,8 @@ ALIASES = {
 
 
 def slug(label: str) -> str:
-    s = re.sub(r"[^a-z0-9]+", "-", label.lower())
+    s = re.sub(r"['’]", "", label.lower())  # "can't" and "cant" match the same file
+    s = re.sub(r"[^a-z0-9]+", "-", s)
     return s.strip("-")
 
 
@@ -93,13 +94,19 @@ for folder, cat in FOLDER_TO_CAT.items():
         im.save(OUT / cat / f"{s}.webp", "WEBP", quality=85)
         entries.append(f"{cat}/{s}")
 
+# Drop outputs whose source image was renamed or removed.
+for old in OUT.glob("*/*.webp"):
+    if f"{old.parent.name}/{old.stem}" not in entries:
+        old.unlink()
+        print("removed stale", old.relative_to(OUT))
+
 ts = (
     "// Generated from \"VocalAI Generated/\" by scripts/convert_tiles.py — images live in public/tiles/.\n"
     "export const TILE_IMAGES = new Set<string>([\n"
     + "".join(f'  "{e}",\n' for e in sorted(entries))
     + "]);\n\n"
     "export function tileSlug(label: string): string {\n"
-    "  return label.toLowerCase().replace(/[^a-z0-9]+/g, \"-\").replace(/^-+|-+$/g, \"\");\n"
+    "  return label.toLowerCase().replace(/['’]/g, \"\").replace(/[^a-z0-9]+/g, \"-\").replace(/^-+|-+$/g, \"\");\n"
     "}\n\n"
     "export function tileImageFor(cat: string, enLabel: string): string | undefined {\n"
     "  const key = `${cat}/${tileSlug(enLabel)}`;\n"
