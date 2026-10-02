@@ -8,6 +8,7 @@ import {
   CameraOff,
   ChevronLeft,
   ChevronRight,
+  History as HistoryIcon,
   Home,
   Lock,
   Plus,
@@ -340,6 +341,8 @@ const CONNECTORS: { en: string; ar: string }[] = [
 
 const DEFAULT_PIN = "1234";
 
+const PARENT_TABS = ["profile", "people", "history"] as const;
+
 // ─── In-app keyboard layouts ───────────────────────────────────────────────────
 const KBD_EN = [
   ['q','w','e','r','t','y','u','i','o','p'],
@@ -476,6 +479,8 @@ export default function AACApp() {
   const [imageMode, setImageMode]             = useState<"single" | "story">("single");
   const [hideCharacter, setHideCharacter]     = useState(false);
   const [isGenerating, setIsGenerating]       = useState(false);
+  const [genFailed, setGenFailed]             = useState(false);
+  const [genStatus, setGenStatus]             = useState(""); // screen-reader announcement
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [caption, setCaption]                 = useState("");
   const [storyIndex, setStoryIndex]           = useState(0);
@@ -788,6 +793,7 @@ export default function AACApp() {
 
   useEffect(() => {
     localStorage.setItem("vocalai_language", language);
+    document.documentElement.lang = language;
   }, [language]);
 
   useEffect(() => {
@@ -1113,6 +1119,7 @@ export default function AACApp() {
     if (typed) setFreeText("");
     setGeneratedImages([]);
     setCaption("");
+    setGenFailed(false);
   }
 
   const COMBO_ITEM_H  = 52;
@@ -1166,6 +1173,7 @@ export default function AACApp() {
     setSelectedTiles(prev => prev.filter((_, i) => i !== index));
     setGeneratedImages([]);
     setCaption("");
+    setGenFailed(false);
   }
 
   function clearAll() {
@@ -1173,6 +1181,7 @@ export default function AACApp() {
     setFreeText("");
     setGeneratedImages([]);
     setCaption("");
+    setGenFailed(false);
   }
 
   function handleKbdKey(key: string) {
@@ -1229,9 +1238,13 @@ export default function AACApp() {
     const hasInput = selectedTiles.length > 0 || !!freeText.trim();
     if (!hasInput || isGenerating) return;
     setIsGenerating(true);
+    setGenFailed(false);
     setGeneratedImages([]);
     setCaption("");
     setShowAddStoryPicker(false);
+    setGenStatus(imageMode === "story"
+      ? (isRTL ? "جارٍ توليد القصة…" : "Generating story…")
+      : (isRTL ? "جارٍ توليد الصورة…" : "Generating image…"));
 
     const words = [...selectedTiles.map(t => isRTL ? t.ar : t.en), freeText.trim()].filter(Boolean).join(" ");
 
@@ -1260,8 +1273,10 @@ export default function AACApp() {
         ]);
 
         const urls: string[] = imagesRes.urls ?? (imagesRes.url ? [imagesRes.url] : []);
+        if (urls.length === 0) throw new Error(imagesRes.error ?? "No image returned");
         const cap: string = captionRes.caption ?? "";
         setGeneratedImages(urls.map(url => ({ url })));
+        setGenStatus(isRTL ? "الصورة جاهزة" : "Image ready");
         setStoryIndex(0);
         setCaption(cap);
         setRecentGenerations(prev => [{
@@ -1305,8 +1320,14 @@ export default function AACApp() {
           )
         );
 
+        const readyImages = storyImages.filter(img => img.url);
+        if (readyImages.length === 0) throw new Error("No story images returned");
         const cap: string = (captionRes as { caption?: string }).caption ?? "";
-        setGeneratedImages(storyImages.filter(img => img.url));
+        setGeneratedImages(readyImages);
+        const n = readyImages.length;
+        setGenStatus(isRTL
+          ? `القصة جاهزة، ${n === 1 ? "صورة واحدة" : n === 2 ? "صورتان" : `${n} صور`}`
+          : `Story ready, ${n} ${n === 1 ? "picture" : "pictures"}`);
         setStoryIndex(0);
         setCaption(cap);
         setRecentGenerations(prev => [{
@@ -1317,6 +1338,11 @@ export default function AACApp() {
       }
     } catch (err) {
       console.error("Generate error:", err);
+      setCaption("");
+      setGenFailed(true);
+      setGenStatus(isRTL
+        ? "تعذّر توليد الصورة. يرجى المحاولة مرة أخرى."
+        : "Couldn't generate the image. Please try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -1505,13 +1531,14 @@ export default function AACApp() {
                 )}
 
                 {/* Destination */}
-                <div className="flex rounded-xl overflow-hidden border border-slate-200">
+                <div role="group" aria-label={isRTL ? "حفظ في" : "Save to"} className="flex rounded-xl overflow-hidden border border-slate-200">
                   {[
                     { id: "board",   en: "Add to Board",  ar: "إضافة إلى اللوحة" },
                     { id: "library", en: "Add to Library", ar: "إضافة إلى المكتبة" },
                   ].map(opt => (
                     <button
                       key={opt.id}
+                      aria-pressed={addToBoardDest === opt.id}
                       onClick={() => setAddToBoardDest(opt.id as "board" | "library")}
                       className={`flex-1 py-2 text-xs font-bold transition-colors ${
                         addToBoardDest === opt.id
@@ -1530,10 +1557,11 @@ export default function AACApp() {
                     <p className="text-xs font-semibold text-slate-600">
                       {isRTL ? "الفئة" : "Category"}
                     </p>
-                    <div className="flex flex-wrap gap-2">
+                    <div role="group" aria-label={isRTL ? "الفئة" : "Category"} className="flex flex-wrap gap-2">
                       {CATEGORIES.map(cat => (
                         <button
                           key={cat.id}
+                          aria-pressed={addToBoardCategory === cat.id}
                           onClick={() => setAddToBoardCategory(cat.id)}
                           className={`px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${CATEGORY_COLORS[cat.id] ?? ""} ${addToBoardCategory === cat.id ? "ring-2 ring-blue-500 ring-offset-1" : ""} text-slate-700`}
                         >
@@ -1551,6 +1579,7 @@ export default function AACApp() {
                       {isRTL ? "الاسم (EN) *" : "Label (EN) *"}
                     </label>
                     <input
+                      lang="en"
                       value={addToBoardLabelEn}
                       onChange={e => setAddToBoardLabelEn(e.target.value)}
                       placeholder="e.g. Playing"
@@ -1563,6 +1592,7 @@ export default function AACApp() {
                     </label>
                     <input
                       dir="rtl"
+                      lang="ar"
                       value={addToBoardLabelAr}
                       onChange={e => setAddToBoardLabelAr(e.target.value)}
                       placeholder="مثال: يلعب"
@@ -1677,8 +1707,9 @@ export default function AACApp() {
 
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-600">Name (EN)</label>
+                  <label lang="en" className="text-xs font-semibold text-slate-600">Name (EN)</label>
                   <input
+                    lang="en"
                     value={renameDraftEn}
                     onChange={e => setRenameDraftEn(e.target.value)}
                     placeholder="e.g. Food"
@@ -1686,9 +1717,10 @@ export default function AACApp() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-600">الاسم (AR)</label>
+                  <label lang="ar" className="text-xs font-semibold text-slate-600">الاسم (AR)</label>
                   <input
                     dir="rtl"
+                    lang="ar"
                     value={renameDraftAr}
                     onChange={e => setRenameDraftAr(e.target.value)}
                     placeholder="مثال: طعام"
@@ -2004,9 +2036,9 @@ export default function AACApp() {
                   {/* Grid size — always accessible from menu */}
                   <div className="space-y-2 pt-1 border-t border-slate-100">
                     <p className="text-sm font-semibold text-slate-700">{isRTL ? "عدد البطاقات في العمود" : "Tiles per column"}</p>
-                    <div className="flex gap-2">
+                    <div role="group" aria-label={isRTL ? "عدد البطاقات في العمود" : "Tiles per column"} className="flex gap-2">
                       {[3, 4, 5, 6, 8].map(n => (
-                        <button key={n} onClick={() => setTilesPerColumn(n)}
+                        <button key={n} aria-pressed={tilesPerColumn === n} onClick={() => setTilesPerColumn(n)}
                           className={`flex-1 py-2 rounded-xl border-2 text-sm font-bold transition-all ${tilesPerColumn === n ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"}`}>
                           {n}
                         </button>
@@ -2021,9 +2053,9 @@ export default function AACApp() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <p className="text-sm font-semibold text-slate-700">{isRTL ? "عدد البطاقات في العمود" : "Tiles per column"}</p>
-                    <div className="flex gap-2">
+                    <div role="group" aria-label={isRTL ? "عدد البطاقات في العمود" : "Tiles per column"} className="flex gap-2">
                       {[3, 4, 5, 6, 8].map(n => (
-                        <button key={n} onClick={() => setTilesPerColumn(n)}
+                        <button key={n} aria-pressed={tilesPerColumn === n} onClick={() => setTilesPerColumn(n)}
                           className={`flex-1 py-2 rounded-xl border-2 text-sm font-bold transition-all ${tilesPerColumn === n ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"}`}>
                           {n}
                         </button>
@@ -2040,9 +2072,9 @@ export default function AACApp() {
                 {/* 1. Category */}
                 <div className="space-y-2">
                   <p className="text-sm font-semibold text-slate-700">{isRTL ? "الفئة" : "Category"}</p>
-                  <div className="flex flex-wrap gap-2">
+                  <div role="group" aria-label={isRTL ? "الفئة" : "Category"} className="flex flex-wrap gap-2">
                     {CATEGORIES.map(cat => (
-                      <button key={cat.id} onClick={() => setCustomCategory(cat.id)}
+                      <button key={cat.id} aria-pressed={customCategory === cat.id} onClick={() => setCustomCategory(cat.id)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${CATEGORY_COLORS[cat.id] ?? ""} ${customCategory === cat.id ? "ring-2 ring-blue-500 ring-offset-1" : ""} text-slate-700`}>
                         {getCatLabel(cat.id)}
                       </button>
@@ -2053,13 +2085,13 @@ export default function AACApp() {
                 {/* 2. Icon type */}
                 <div className="space-y-2">
                   <p className="text-sm font-semibold text-slate-700">{isRTL ? "نوع الأيقونة" : "Icon type"}</p>
-                  <div className="flex rounded-2xl overflow-hidden border border-slate-200">
+                  <div role="group" aria-label={isRTL ? "نوع الأيقونة" : "Icon type"} className="flex rounded-2xl overflow-hidden border border-slate-200">
                     {([
                       { id: "emoji",     en: "🔤 Emoji",     ar: "🔤 رمز"      },
                       { id: "photo",     en: "📷 Photo",     ar: "📷 صورة"     },
                       { id: "generated", en: "🖼️ Generated", ar: "🖼️ مُولَّد" },
                     ] as const).map(opt => (
-                      <button key={opt.id} onClick={() => { setCustomIconType(opt.id); setCustomImageUrl(""); stopCustomCamera(); }}
+                      <button key={opt.id} aria-pressed={customIconType === opt.id} onClick={() => { setCustomIconType(opt.id); setCustomImageUrl(""); stopCustomCamera(); }}
                         className={`flex-1 py-2 text-xs font-semibold transition-colors ${customIconType === opt.id ? "bg-blue-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>
                         {isRTL ? opt.ar : opt.en}
                       </button>
@@ -2170,12 +2202,12 @@ export default function AACApp() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-xs">{isRTL ? "الاسم (EN) *" : "Label (EN) *"}</Label>
-                    <Input value={customLabelEn} onChange={e => setCustomLabelEn(e.target.value)}
+                    <Input lang="en" value={customLabelEn} onChange={e => setCustomLabelEn(e.target.value)}
                       placeholder={isRTL ? "مثال: نجمة" : "e.g. Star"} className="rounded-xl" />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">{isRTL ? "الاسم (AR)" : "Label (AR)"}</Label>
-                    <Input dir="rtl" value={customLabelAr} onChange={e => setCustomLabelAr(e.target.value)}
+                    <Input dir="rtl" lang="ar" value={customLabelAr} onChange={e => setCustomLabelAr(e.target.value)}
                       placeholder="مثال: نجمة" className="rounded-xl" />
                   </div>
                 </div>
@@ -2229,6 +2261,7 @@ export default function AACApp() {
 
             {/* Context — CENTER */}
             <div className="flex-1 flex items-center justify-center gap-2 text-sm font-medium text-slate-600 min-w-0">
+              {/* Location display hidden for now — locationLabel is still fetched and sent as image-generation context.
               {locationLabel && (
                 <span className="flex items-center gap-1 truncate">
                   <span>📍</span>
@@ -2236,13 +2269,14 @@ export default function AACApp() {
                 </span>
               )}
               {locationLabel && timeLabel && <span className="text-slate-300 shrink-0">·</span>}
+              */}
               {timeLabel && (
                 <span className="flex items-center gap-1 shrink-0">
                   <span>🕐</span>
                   <span>{timeLabel}</span>
                 </span>
               )}
-              {!locationLabel && !timeLabel && (
+              {!timeLabel && (
                 <span className="text-slate-400 text-xs">
                   {isRTL ? "مساعد التواصل" : "AAC Communication"}
                 </span>
@@ -2261,20 +2295,21 @@ export default function AACApp() {
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => setShowHistoryGallery(true)}
-                  className="w-10 h-10 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 flex items-center justify-center text-lg transition-colors shadow-sm"
-                  aria-label="Generation history"
+                  className="h-10 px-3 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 flex items-center justify-center gap-1.5 text-white text-sm font-semibold transition-colors shadow-sm"
                 >
-                  🕐
+                  <HistoryIcon className="h-5 w-5" aria-hidden="true" />
+                  {isRTL ? "السجل" : "History"}
                 </button>
                 <button
                   onClick={() => setShowLibraryGallery(true)}
-                  className="w-10 h-10 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 flex items-center justify-center text-lg transition-colors shadow-sm"
-                  aria-label="Library"
+                  className="h-10 px-3 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 flex items-center justify-center gap-1.5 text-white text-sm font-semibold transition-colors shadow-sm"
                 >
-                  📁
+                  <span className="text-lg leading-none" aria-hidden="true">📁</span>
+                  {isRTL ? "المكتبة" : "Library"}
                 </button>
                 <button
                   onClick={() => setLanguage(isRTL ? "en" : "ar")}
+                  lang={isRTL ? "en" : "ar"}
                   className="px-4 py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-bold transition-colors shadow-sm"
                 >
                   {isRTL ? "EN" : "عربي"}
@@ -2303,7 +2338,7 @@ export default function AACApp() {
             {/* Word strip — always shows tile chips; inline text input appended when keyboard is on */}
             <div
               onClick={e => { if ((e.target as HTMLElement).closest("span[data-tile],button[data-tile],input") === null) speakSentence(); }}
-              className={`flex-1 min-h-[56px] rounded-2xl border-2 px-3 py-2 flex items-center gap-1.5 flex-wrap overflow-hidden cursor-pointer transition-all
+              className={`flex-1 min-h-[56px] rounded-2xl border-2 px-3 py-2 flex items-center gap-2.5 flex-wrap overflow-hidden cursor-pointer transition-all
                 ${textMode
                   ? "bg-orange-50 border-orange-200 hover:border-orange-300"
                   : "bg-slate-50 border-slate-200 hover:bg-blue-50 hover:border-blue-300"}`}
@@ -2322,28 +2357,40 @@ export default function AACApp() {
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ type: "spring", stiffness: 400, damping: 20 }}
                   onClick={e => { e.stopPropagation(); removeTileAt(i); }}
-                  className="inline-flex flex-col items-center rounded-xl bg-white border border-blue-200 shadow-sm px-2 py-1 shrink-0 cursor-pointer hover:bg-red-50 hover:border-red-300 active:scale-90 transition-all"
+                  className="relative inline-flex flex-col items-center rounded-xl bg-white border border-blue-200 shadow-sm px-2 py-1 shrink-0 cursor-pointer hover:bg-red-50 hover:border-red-300 active:scale-90 transition-all"
                 >
                   {tile.imageUrl
-                    ? <img src={tile.imageUrl} className="w-7 h-7 object-cover rounded-md" alt={tile.en} />
-                    : tile.emoji && <span className="text-lg leading-none">{tile.emoji}</span>
+                    ? <img src={tile.imageUrl} className="w-7 h-7 object-contain rounded-md" alt="" />
+                    : tile.emoji && <span className="text-lg leading-none" aria-hidden="true">{tile.emoji}</span>
                   }
                   <span className="text-[10px] text-slate-700 font-semibold leading-tight mt-0.5">
                     {isRTL ? tile.ar : tile.en}
                   </span>
+                  <button
+                    type="button"
+                    onClick={e => { e.stopPropagation(); removeTileAt(i); }}
+                    aria-label={isRTL ? `إزالة ${tile.ar}` : `Remove ${tile.en}`}
+                    className="absolute -top-1.5 -end-1.5 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow ring-2 ring-white"
+                  >
+                    <X className="h-3.5 w-3.5" aria-hidden="true" strokeWidth={3} />
+                  </button>
                 </motion.span>
               ))}
               {/* Typed text shown as a chip when keyboard is hidden but freeText exists */}
               {!textMode && freeText.trim() && (
                 <span
                   data-tile
-                  className="inline-flex items-center gap-1 rounded-xl bg-orange-50 border border-orange-200 shadow-sm px-2 py-1 shrink-0 text-[11px] font-semibold text-orange-700"
+                  className="relative inline-flex items-center gap-1 rounded-xl bg-orange-50 border border-orange-200 shadow-sm px-2 py-1 shrink-0 text-[11px] font-semibold text-orange-700"
                 >
-                  ⌨️ {freeText.trim()}
+                  <span aria-hidden="true">⌨️</span> {freeText.trim()}
                   <button
+                    type="button"
                     onClick={e => { e.stopPropagation(); setFreeText(""); }}
-                    className="ml-0.5 text-orange-400 hover:text-red-500 leading-none"
-                  >×</button>
+                    aria-label={isRTL ? `إزالة ${freeText.trim()}` : `Remove ${freeText.trim()}`}
+                    className="absolute -top-1.5 -end-1.5 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow ring-2 ring-white"
+                  >
+                    <X className="h-3.5 w-3.5" aria-hidden="true" strokeWidth={3} />
+                  </button>
                 </span>
               )}
               {/* Inline text input when keyboard is on */}
@@ -2457,10 +2504,10 @@ export default function AACApp() {
                       {isRTL ? "اسحب للترتيب · اضغط 👁 للإخفاء" : "Drag to reorder · tap 👁 to show/hide"}
                     </p>
                     {/* Grid size inline picker */}
-                    <div className="flex gap-1 items-center">
+                    <div role="group" aria-label={isRTL ? "عدد البطاقات في العمود" : "Tiles per column"} className="flex gap-1 items-center">
                       <span className="text-[9px] text-slate-400 font-medium">{isRTL ? "صفوف:" : "Rows:"}</span>
                       {[3, 4, 5, 6, 8].map(n => (
-                        <button key={n} onClick={() => setTilesPerColumn(n)}
+                        <button key={n} aria-pressed={tilesPerColumn === n} onClick={() => setTilesPerColumn(n)}
                           className={`w-6 h-6 rounded-lg text-[9px] font-bold border transition-all ${tilesPerColumn === n ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-500 border-slate-200"}`}>
                           {n}
                         </button>
@@ -2683,13 +2730,14 @@ export default function AACApp() {
             <div className={`flex flex-col border-x border-slate-100 bg-slate-50 overflow-hidden transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`} style={{ flex: 3 }}>
               {/* Mode + style selectors */}
               <div className="shrink-0 p-2 border-b border-slate-100 bg-white space-y-1.5">
-                <div className="flex rounded-xl overflow-hidden border border-slate-200">
+                <div role="group" aria-label={isRTL ? "نوع الصورة" : "Image mode"} className="flex rounded-xl overflow-hidden border border-slate-200">
                   {[
                     { id: "single", en: "Single", ar: "واحدة" },
                     { id: "story",  en: "Story",  ar: "قصة"   },
                   ].map(opt => (
                     <button
                       key={opt.id}
+                      aria-pressed={imageMode === opt.id}
                       onClick={() => setImageMode(opt.id as "single" | "story")}
                       className={`flex-1 py-1.5 text-xs font-semibold transition-colors ${
                         imageMode === opt.id
@@ -2701,10 +2749,11 @@ export default function AACApp() {
                     </button>
                   ))}
                 </div>
-                <div className="flex rounded-xl overflow-hidden border border-slate-200">
+                <div role="group" aria-label={isRTL ? "نمط الصورة" : "Image style"} className="flex rounded-xl overflow-hidden border border-slate-200">
                   {STYLE_OPTIONS.map(opt => (
                     <button
                       key={opt.id}
+                      aria-pressed={imageStyle === opt.id}
                       onClick={() => setImageStyle(opt.id)}
                       className={`flex-1 py-1.5 text-[10px] font-semibold transition-colors ${
                         imageStyle === opt.id
@@ -2717,6 +2766,7 @@ export default function AACApp() {
                   ))}
                 </div>
                 <button
+                  aria-pressed={hideCharacter}
                   onClick={() => setHideCharacter(v => !v)}
                   className={`w-full flex items-center justify-center gap-1.5 rounded-xl border py-1.5 text-[10px] font-semibold transition-colors ${
                     hideCharacter
@@ -2724,15 +2774,33 @@ export default function AACApp() {
                       : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
                   }`}
                 >
-                  <span>🚫</span>
+                  <span aria-hidden="true">🚫</span>
                   {isRTL ? "عدم تضمين المستخدم في الصورة" : "Don't include user in image"}
                 </button>
               </div>
 
+              {/* Always mounted so screen readers announce each change in generation status */}
+              <div role="status" aria-live="polite" className="sr-only">{genStatus}</div>
+
               {/* Image display */}
               <div className="flex-1 overflow-y-auto p-2 space-y-2" style={{ scrollbarWidth: "none" } as CSSProperties}>
+                {/* Error state */}
+                {!isGenerating && genFailed && (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-3 gap-3">
+                    <div aria-hidden="true" className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center text-3xl">
+                      ⚠️
+                    </div>
+                    <p className="text-xs text-red-700 font-semibold leading-relaxed">
+                      {isRTL ? "تعذّر توليد الصورة" : "Couldn't generate the image"}
+                    </p>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      {isRTL ? "اضغط ✨ للمحاولة مرة أخرى" : "Tap ✨ to try again"}
+                    </p>
+                  </div>
+                )}
+
                 {/* Empty state */}
-                {!isGenerating && generatedImages.length === 0 && (
+                {!isGenerating && !genFailed && generatedImages.length === 0 && (
                   <div className="h-full flex flex-col items-center justify-center text-center p-3 gap-3">
                     <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-3xl">
                       🖼️
@@ -2748,7 +2816,7 @@ export default function AACApp() {
                 {/* Loading */}
                 {isGenerating && (
                   imageMode === "story" ? (
-                    <div className="grid grid-cols-2 gap-1.5">
+                    <div aria-hidden="true" className="grid grid-cols-2 gap-1.5">
                       {[0, 1, 2, 3].map(i => (
                         <div
                           key={i}
@@ -2764,6 +2832,7 @@ export default function AACApp() {
                     </div>
                   ) : (
                     <div
+                      aria-hidden="true"
                       className="rounded-2xl aspect-square flex flex-col items-center justify-center gap-2"
                       style={{ background: "linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%)" }}
                     >
@@ -3018,17 +3087,39 @@ export default function AACApp() {
             {/* Language — always RIGHT */}
             <button
               onClick={() => setLanguage(isRTL ? "en" : "ar")}
+              lang={isRTL ? "en" : "ar"}
               className="shrink-0 px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 transition-colors text-sm font-bold"
             >
               {isRTL ? "EN" : "عربي"}
             </button>
           </header>
 
-          <div className={`flex bg-white/90 backdrop-blur-sm border-b sticky top-[58px] z-10 ${isRTL ? "flex-row-reverse" : ""}`}>
-            {(["profile", "people", "history"] as const).map(tab => (
+          <div
+            role="tablist"
+            aria-label={isRTL ? "إعدادات مقدم الرعاية" : "Carer settings"}
+            className={`flex bg-white/90 backdrop-blur-sm border-b sticky top-[58px] z-10 ${isRTL ? "flex-row-reverse" : ""}`}
+          >
+            {PARENT_TABS.map((tab, i) => (
               <button
                 key={tab}
+                id={`parent-tab-${tab}`}
+                role="tab"
+                aria-selected={parentTab === tab}
+                aria-controls={`parent-panel-${tab}`}
+                tabIndex={parentTab === tab ? 0 : -1}
                 onClick={() => setParentTab(tab)}
+                onKeyDown={e => {
+                  // RTL + flex-row-reverse keeps the visual order left-to-right, so Right is always "next"
+                  const next =
+                    e.key === "ArrowRight" ? (i + 1) % PARENT_TABS.length :
+                    e.key === "ArrowLeft"  ? (i - 1 + PARENT_TABS.length) % PARENT_TABS.length :
+                    e.key === "Home"       ? 0 :
+                    e.key === "End"        ? PARENT_TABS.length - 1 : -1;
+                  if (next < 0) return;
+                  e.preventDefault();
+                  setParentTab(PARENT_TABS[next]);
+                  document.getElementById(`parent-tab-${PARENT_TABS[next]}`)?.focus();
+                }}
                 className={`flex-1 py-3 text-sm font-semibold transition-colors ${
                   parentTab === tab
                     ? "border-b-2 border-blue-700 text-blue-700"
@@ -3039,7 +3130,12 @@ export default function AACApp() {
                   ? (isRTL ? "👤 الملف" : "👤 Profile")
                   : tab === "people"
                   ? (isRTL ? "👨 الأشخاص" : "👨 People")
-                  : (isRTL ? "🕐 السجل" : "🕐 History")}
+                  : (
+                    <span className="inline-flex items-center gap-1">
+                      <HistoryIcon className="h-4 w-4" aria-hidden="true" />
+                      {isRTL ? "السجل" : "History"}
+                    </span>
+                  )}
               </button>
             ))}
           </div>
@@ -3048,7 +3144,7 @@ export default function AACApp() {
 
             {/* ── Profile tab ── */}
             {parentTab === "profile" && (
-              <div className="space-y-4">
+              <div role="tabpanel" id="parent-panel-profile" aria-labelledby="parent-tab-profile" className="space-y-4">
                 <div className="bg-white rounded-3xl p-5 shadow-sm space-y-5">
                   <h2 className={`font-bold text-lg text-slate-800 ${isRTL ? "text-right" : ""}`}>
                     {isRTL ? "الملف الشخصي للمستخدم" : "User Profile"}
@@ -3087,13 +3183,14 @@ export default function AACApp() {
                       <Label className={`text-sm ${isRTL ? "block text-right" : ""}`}>
                         {isRTL ? "الجنس" : "Gender"}
                       </Label>
-                      <div className={`flex gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
+                      <div role="group" aria-label={isRTL ? "الجنس" : "Gender"} className={`flex gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
                         {[
                           { v: "male",   en: "Male",   ar: "ذكر"  },
                           { v: "female", en: "Female", ar: "أنثى" },
                         ].map(g => (
                           <button
                             key={g.v}
+                            aria-pressed={profile.gender === g.v}
                             onClick={() => setProfile(p => ({ ...p, gender: g.v }))}
                             className={`flex-1 py-2 rounded-xl border text-sm font-medium transition-colors ${
                               profile.gender === g.v
@@ -3110,13 +3207,15 @@ export default function AACApp() {
                       <Label className={`text-sm ${isRTL ? "block text-right" : ""}`}>
                         {isRTL ? "اللغة المفضلة" : "Language"}
                       </Label>
-                      <div className={`flex gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
+                      <div role="group" aria-label={isRTL ? "اللغة المفضلة" : "Language"} className={`flex gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
                         {[
                           { v: "en", label: "English" },
                           { v: "ar", label: "عربي"    },
                         ].map(l => (
                           <button
                             key={l.v}
+                            lang={l.v}
+                            aria-pressed={profile.language === l.v}
                             onClick={() => setProfile(p => ({ ...p, language: l.v as "en" | "ar" }))}
                             className={`flex-1 py-2 rounded-xl border text-sm font-medium transition-colors ${
                               profile.language === l.v
@@ -3135,7 +3234,7 @@ export default function AACApp() {
                     <Label className={`text-sm ${isRTL ? "block text-right" : ""}`}>
                       {isRTL ? "التشخيص (اختياري)" : "Diagnosis (optional)"}
                     </Label>
-                    <div className={`flex flex-wrap gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
+                    <div role="group" aria-label={isRTL ? "التشخيص" : "Diagnosis"} className={`flex flex-wrap gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
                       {[
                         { v: "autism",         en: "Autism",         ar: "توحد"         },
                         { v: "cerebral-palsy", en: "Cerebral Palsy", ar: "شلل دماغي"    },
@@ -3146,6 +3245,7 @@ export default function AACApp() {
                       ].map(c => (
                         <button
                           key={c.v}
+                          aria-pressed={c.v === "other" ? isOtherCondition : profile.condition === c.v}
                           onClick={() => {
                             if (c.v === "other") {
                               setProfile(p => ({ ...p, condition: isOtherCondition ? "" : "other" }));
@@ -3266,6 +3366,8 @@ export default function AACApp() {
                   </h2>
 
                   <button
+                    role="switch"
+                    aria-checked={culturalGrounding}
                     onClick={() => setCulturalGrounding(v => !v)}
                     className={`w-full flex items-center justify-between gap-4 p-4 rounded-2xl border-2 transition-all text-left ${culturalGrounding ? "bg-blue-50 border-blue-300" : "bg-slate-50 border-slate-200"}`}
                   >
@@ -3279,7 +3381,7 @@ export default function AACApp() {
                           : "Gulf foods, traditional clothing, familiar regional settings"}
                       </p>
                     </div>
-                    <div className={`shrink-0 w-12 h-7 rounded-full flex items-center transition-all duration-200 ${culturalGrounding ? "bg-blue-600 justify-end" : "bg-slate-200 justify-start"}`}>
+                    <div aria-hidden="true" className={`shrink-0 w-12 h-7 rounded-full flex items-center transition-all duration-200 ${culturalGrounding ? "bg-blue-600 justify-end" : "bg-slate-200 justify-start"}`}>
                       <div className="w-5 h-5 rounded-full bg-white shadow mx-1" />
                     </div>
                   </button>
@@ -3289,7 +3391,7 @@ export default function AACApp() {
 
             {/* ── People tab ── */}
             {parentTab === "people" && (
-              <div className="space-y-4">
+              <div role="tabpanel" id="parent-panel-people" aria-labelledby="parent-tab-people" className="space-y-4">
                 {importantPeople.length > 0 && (
                   <div className="space-y-3">
                     {importantPeople.map(person => (
@@ -3435,7 +3537,7 @@ export default function AACApp() {
 
             {/* ── History tab ── */}
             {parentTab === "history" && (
-              <div className="space-y-4">
+              <div role="tabpanel" id="parent-panel-history" aria-labelledby="parent-tab-history" className="space-y-4">
                 {recentGenerations.length === 0 ? (
                   <div className="text-center py-16 text-slate-400">
                     <div className="text-4xl mb-3">🖼️</div>
