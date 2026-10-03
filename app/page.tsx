@@ -6,6 +6,10 @@ import {
   ArrowRight,
   Camera,
   CameraOff,
+  Check,
+  Eye,
+  EyeOff,
+  Pencil,
   ChevronLeft,
   ChevronRight,
   History as HistoryIcon,
@@ -343,6 +347,11 @@ const DEFAULT_PIN = "1234";
 
 const PARENT_TABS = ["profile", "people", "history"] as const;
 
+// Non-color marker for the selected option in pick-one groups (WCAG 1.4.1).
+function SelectedTick({ on }: { on: boolean }) {
+  return on ? <Check className="h-3 w-3 shrink-0" strokeWidth={3} aria-hidden="true" /> : null;
+}
+
 // ─── In-app keyboard layouts ───────────────────────────────────────────────────
 const KBD_EN = [
   ['q','w','e','r','t','y','u','i','o','p'],
@@ -559,6 +568,7 @@ export default function AACApp() {
   const [kbdShift, setKbdShift]   = useState(false);
   const [kbdNumMode, setKbdNumMode] = useState(false);
   const freeTextRef = useRef<HTMLInputElement | null>(null);
+  const wordStripRef = useRef<HTMLDivElement | null>(null);
   const [longPressMenu, setLongPressMenu] = useState<{
     tile: AacTile; phrases: ComboPhrase[];
     popupLeft: number; popupTop: number; arrowLeft: number;
@@ -795,6 +805,12 @@ export default function AACApp() {
     localStorage.setItem("vocalai_language", language);
     document.documentElement.lang = language;
   }, [language]);
+
+  // Keep the newest word in view once the message bar overflows (RTL scrolls toward negative scrollLeft).
+  useEffect(() => {
+    const strip = wordStripRef.current;
+    if (strip) strip.scrollLeft = isRTL ? -strip.scrollWidth : strip.scrollWidth;
+  }, [selectedTiles.length, freeText, textMode, isRTL]);
 
   useEffect(() => {
     localStorage.setItem("vocalai_image_style", imageStyle);
@@ -1540,12 +1556,13 @@ export default function AACApp() {
                       key={opt.id}
                       aria-pressed={addToBoardDest === opt.id}
                       onClick={() => setAddToBoardDest(opt.id as "board" | "library")}
-                      className={`flex-1 py-2 text-xs font-bold transition-colors ${
+                      className={`inline-flex items-center justify-center gap-1 flex-1 py-2 text-xs font-bold transition-colors ${
                         addToBoardDest === opt.id
                           ? "bg-blue-600 text-white"
                           : "bg-white text-slate-500 hover:bg-slate-50"
                       }`}
                     >
+                      <SelectedTick on={addToBoardDest === opt.id} />
                       {isRTL ? opt.ar : opt.en}
                     </button>
                   ))}
@@ -1563,8 +1580,9 @@ export default function AACApp() {
                           key={cat.id}
                           aria-pressed={addToBoardCategory === cat.id}
                           onClick={() => setAddToBoardCategory(cat.id)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${CATEGORY_COLORS[cat.id] ?? ""} ${addToBoardCategory === cat.id ? "ring-2 ring-blue-500 ring-offset-1" : ""} text-slate-700`}
+                          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${CATEGORY_COLORS[cat.id] ?? ""} ${addToBoardCategory === cat.id ? "ring-2 ring-blue-500 ring-offset-1" : ""} text-slate-700`}
                         >
+                          <SelectedTick on={addToBoardCategory === cat.id} />
                           {getCatLabel(cat.id)}
                         </button>
                       ))}
@@ -1636,7 +1654,7 @@ export default function AACApp() {
             >
               {/* Header */}
               <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100 shrink-0">
-                <h2 className="text-base font-bold text-slate-800 truncate">{viewingStory.en}</h2>
+                <h2 className="text-base font-bold text-slate-800 break-words min-w-0">{viewingStory.en}</h2>
                 <button
                   onClick={() => setViewingStory(null)}
                   className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 shrink-0"
@@ -1658,7 +1676,7 @@ export default function AACApp() {
                   {viewingStory.storyImages?.map((src, idx) => (
                     <div key={idx} className="relative rounded-2xl overflow-hidden border border-slate-200 aspect-square bg-slate-50">
                       <img src={src} alt={`Scene ${idx + 1}`} className="w-full h-full object-cover" />
-                      <span className="absolute bottom-1.5 left-1.5 bg-black/50 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5">
+                      <span className="absolute bottom-1.5 left-1.5 bg-black/50 text-white text-xs font-bold rounded-full px-1.5 py-0.5">
                         {idx + 1}
                       </span>
                     </div>
@@ -1816,7 +1834,7 @@ export default function AACApp() {
                           <div className="w-full aspect-square rounded-2xl overflow-hidden border-2 border-slate-100 group-hover:border-blue-400 group-active:border-blue-600 transition-all shadow-sm">
                             <img src={url} alt="" className="w-full h-full object-cover" />
                           </div>
-                          <p className="text-[9px] text-slate-400 leading-tight text-center line-clamp-1 w-full px-0.5">
+                          <p className="text-xs text-slate-500 leading-tight text-center line-clamp-2 break-words w-full px-0.5">
                             {gen.tiles.map(t => isRTL ? t.ar : t.en).join(" ")}
                           </p>
                         </button>
@@ -1891,12 +1909,12 @@ export default function AACApp() {
                             )}
                           </div>
                           {item.images.length > 1 && (
-                            <span className="absolute top-1 right-1 bg-white/85 rounded-full text-[9px] leading-none px-1.5 py-0.5 font-bold text-slate-600 shadow-sm">
+                            <span className="absolute top-1 right-1 bg-white/85 rounded-full text-xs leading-none px-1.5 py-0.5 font-bold text-slate-600 shadow-sm">
                               📚 {item.images.length}
                             </span>
                           )}
                         </button>
-                        <p className="text-[9px] text-slate-400 leading-tight text-center line-clamp-1 w-full px-0.5">
+                        <p className="text-xs text-slate-500 leading-tight text-center line-clamp-2 break-words w-full px-0.5">
                           {isRTL ? item.ar : item.en}
                         </p>
                         <button
@@ -2019,7 +2037,9 @@ export default function AACApp() {
                     <span className="text-3xl">🗂️</span>
                     <div>
                       <p className="font-bold text-slate-800 text-sm">{isRTL ? "ترتيب اللوحة" : "Arrange Board"}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{isRTL ? "اسحب الفئات وأخفِ أو أظهر" : "Drag to reorder · tap 👁 to show/hide"}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{isRTL
+                        ? <>اسحب الفئات · اضغط <Eye className="inline h-3 w-3 align-[-2px]" role="img" aria-label={isRTL ? "العين" : "eye"} /> للإخفاء أو الإظهار</>
+                        : <>Drag to reorder · tap <Eye className="inline h-3 w-3 align-[-2px]" role="img" aria-label={isRTL ? "العين" : "eye"} /> to show/hide</>}</p>
                     </div>
                   </button>
                   <button
@@ -2039,7 +2059,7 @@ export default function AACApp() {
                     <div role="group" aria-label={isRTL ? "عدد البطاقات في العمود" : "Tiles per column"} className="flex gap-2">
                       {[3, 4, 5, 6, 8].map(n => (
                         <button key={n} aria-pressed={tilesPerColumn === n} onClick={() => setTilesPerColumn(n)}
-                          className={`flex-1 py-2 rounded-xl border-2 text-sm font-bold transition-all ${tilesPerColumn === n ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"}`}>
+                          className={`flex-1 py-2 rounded-xl border-2 text-sm font-bold transition-all ${tilesPerColumn === n ? "bg-blue-600 text-white border-blue-600 shadow-[inset_0_0_0_3px_#fff]" : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"}`}>
                           {n}
                         </button>
                       ))}
@@ -2056,7 +2076,7 @@ export default function AACApp() {
                     <div role="group" aria-label={isRTL ? "عدد البطاقات في العمود" : "Tiles per column"} className="flex gap-2">
                       {[3, 4, 5, 6, 8].map(n => (
                         <button key={n} aria-pressed={tilesPerColumn === n} onClick={() => setTilesPerColumn(n)}
-                          className={`flex-1 py-2 rounded-xl border-2 text-sm font-bold transition-all ${tilesPerColumn === n ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"}`}>
+                          className={`flex-1 py-2 rounded-xl border-2 text-sm font-bold transition-all ${tilesPerColumn === n ? "bg-blue-600 text-white border-blue-600 shadow-[inset_0_0_0_3px_#fff]" : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"}`}>
                           {n}
                         </button>
                       ))}
@@ -2075,7 +2095,8 @@ export default function AACApp() {
                   <div role="group" aria-label={isRTL ? "الفئة" : "Category"} className="flex flex-wrap gap-2">
                     {CATEGORIES.map(cat => (
                       <button key={cat.id} aria-pressed={customCategory === cat.id} onClick={() => setCustomCategory(cat.id)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${CATEGORY_COLORS[cat.id] ?? ""} ${customCategory === cat.id ? "ring-2 ring-blue-500 ring-offset-1" : ""} text-slate-700`}>
+                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${CATEGORY_COLORS[cat.id] ?? ""} ${customCategory === cat.id ? "ring-2 ring-blue-500 ring-offset-1" : ""} text-slate-700`}>
+                        <SelectedTick on={customCategory === cat.id} />
                         {getCatLabel(cat.id)}
                       </button>
                     ))}
@@ -2092,7 +2113,8 @@ export default function AACApp() {
                       { id: "generated", en: "🖼️ Generated", ar: "🖼️ مُولَّد" },
                     ] as const).map(opt => (
                       <button key={opt.id} aria-pressed={customIconType === opt.id} onClick={() => { setCustomIconType(opt.id); setCustomImageUrl(""); stopCustomCamera(); }}
-                        className={`flex-1 py-2 text-xs font-semibold transition-colors ${customIconType === opt.id ? "bg-blue-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>
+                        className={`inline-flex items-center justify-center gap-1 flex-1 py-2 text-xs font-semibold transition-colors ${customIconType === opt.id ? "bg-blue-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>
+                        <SelectedTick on={customIconType === opt.id} />
                         {isRTL ? opt.ar : opt.en}
                       </button>
                     ))}
@@ -2221,7 +2243,7 @@ export default function AACApp() {
                         ? <img src={customImageUrl} className="w-10 h-10 object-cover rounded-lg" alt="" />
                         : <span className="text-3xl">{customEmoji}</span>
                       }
-                      <span className="text-[9px] font-semibold text-slate-700 text-center leading-tight mt-1 w-full truncate px-0.5">
+                      <span className="text-xs font-semibold text-slate-700 text-center leading-tight mt-1 w-full line-clamp-2 break-words px-0.5">
                         {customLabelEn}
                       </span>
                     </div>
@@ -2247,6 +2269,7 @@ export default function AACApp() {
       {/* ══════════════════ CHILD MODE ══════════════════ */}
       {mode === "child" && (
         <div className="flex flex-col h-screen overflow-hidden">
+          <h1 className="sr-only">{isRTL ? "لوحة التواصل VocalAI" : "VocalAI AAC board"}</h1>
 
           {/* ── Top nav bar ── */}
           <header dir="ltr" className="shrink-0 bg-white border-b border-slate-100 px-4 py-3 flex items-center gap-3 shadow-sm z-10">
@@ -2322,6 +2345,7 @@ export default function AACApp() {
           <div
             className={`shrink-0 bg-white border-b border-slate-100 px-3 py-2.5 flex items-stretch gap-2 shadow-sm transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}
           >
+            <h2 className="sr-only">{isRTL ? "الرسالة" : "Message"}</h2>
             {/* Text mode toggle button */}
             <button
               onClick={() => {
@@ -2337,8 +2361,10 @@ export default function AACApp() {
 
             {/* Word strip — always shows tile chips; inline text input appended when keyboard is on */}
             <div
+              ref={wordStripRef}
               onClick={e => { if ((e.target as HTMLElement).closest("span[data-tile],button[data-tile],input") === null) speakSentence(); }}
-              className={`flex-1 min-h-[56px] rounded-2xl border-2 px-3 py-2 flex items-center gap-2.5 flex-wrap overflow-hidden cursor-pointer transition-all
+              style={{ scrollbarWidth: "none" } as CSSProperties}
+              className={`flex-1 min-w-0 h-[76px] rounded-2xl border-2 px-3 py-2 flex items-center gap-2.5 flex-nowrap overflow-x-auto overflow-y-hidden cursor-pointer transition-all
                 ${textMode
                   ? "bg-orange-50 border-orange-200 hover:border-orange-300"
                   : "bg-slate-50 border-slate-200 hover:bg-blue-50 hover:border-blue-300"}`}
@@ -2363,7 +2389,7 @@ export default function AACApp() {
                     ? <img src={tile.imageUrl} className="w-7 h-7 object-contain rounded-md" alt="" />
                     : tile.emoji && <span className="text-lg leading-none" aria-hidden="true">{tile.emoji}</span>
                   }
-                  <span className="text-[10px] text-slate-700 font-semibold leading-tight mt-0.5">
+                  <span className="text-[13px] text-slate-700 font-semibold leading-tight mt-0.5">
                     {isRTL ? tile.ar : tile.en}
                   </span>
                   <button
@@ -2380,7 +2406,7 @@ export default function AACApp() {
               {!textMode && freeText.trim() && (
                 <span
                   data-tile
-                  className="relative inline-flex items-center gap-1 rounded-xl bg-orange-50 border border-orange-200 shadow-sm px-2 py-1 shrink-0 text-[11px] font-semibold text-orange-700"
+                  className="relative inline-flex items-center gap-1 rounded-xl bg-orange-50 border border-orange-200 shadow-sm px-2 py-1 shrink-0 text-[13px] font-semibold text-orange-700"
                 >
                   <span aria-hidden="true">⌨️</span> {freeText.trim()}
                   <button
@@ -2463,6 +2489,7 @@ export default function AACApp() {
 
             {/* Left: emoji board or text-mode placeholder — ~70% of area */}
             <div className="flex flex-col overflow-hidden min-w-0" style={{ flex: 7 }}>
+              <h2 className="sr-only">{isRTL ? "اللوحة" : "Board"}</h2>
               {textMode && (
                 <div className="flex-1 min-h-0 bg-slate-300 p-1.5 flex flex-col gap-1 select-none">
                   {(kbdNumMode ? KBD_NUM : isRTL ? KBD_AR : KBD_EN).map((row, ri) => (
@@ -2500,15 +2527,17 @@ export default function AACApp() {
                 {/* Arrange mode instruction strip */}
                 {isArrangingCategories && (
                   <div className="flex items-center justify-between px-1">
-                    <p className="text-[10px] text-slate-500 font-medium">
-                      {isRTL ? "اسحب للترتيب · اضغط 👁 للإخفاء" : "Drag to reorder · tap 👁 to show/hide"}
+                    <p className="text-xs text-slate-500 font-medium">
+                      {isRTL
+                        ? <>اسحب للترتيب · اضغط <Eye className="inline h-3 w-3 align-[-2px]" role="img" aria-label={isRTL ? "العين" : "eye"} /> للإخفاء أو الإظهار</>
+                        : <>Drag to reorder · tap <Eye className="inline h-3 w-3 align-[-2px]" role="img" aria-label={isRTL ? "العين" : "eye"} /> to show/hide</>}
                     </p>
                     {/* Grid size inline picker */}
                     <div role="group" aria-label={isRTL ? "عدد البطاقات في العمود" : "Tiles per column"} className="flex gap-1 items-center">
-                      <span className="text-[9px] text-slate-400 font-medium">{isRTL ? "صفوف:" : "Rows:"}</span>
+                      <span className="text-xs text-slate-500 font-medium">{isRTL ? "صفوف:" : "Rows:"}</span>
                       {[3, 4, 5, 6, 8].map(n => (
                         <button key={n} aria-pressed={tilesPerColumn === n} onClick={() => setTilesPerColumn(n)}
-                          className={`w-6 h-6 rounded-lg text-[9px] font-bold border transition-all ${tilesPerColumn === n ? "bg-blue-600 text-white border-blue-600" : "bg-white text-slate-500 border-slate-200"}`}>
+                          className={`w-7 h-7 rounded-lg text-xs font-bold border transition-all ${tilesPerColumn === n ? "bg-blue-600 text-white border-blue-600 shadow-[inset_0_0_0_2px_#fff]" : "bg-white text-slate-500 border-slate-200"}`}>
                           {n}
                         </button>
                       ))}
@@ -2517,7 +2546,7 @@ export default function AACApp() {
                 )}
 
                 {/* Chips row */}
-                <div className="flex gap-1.5 p-2 pt-0">
+                <div className={`flex gap-1.5 px-2 pb-2 ${isArrangingCategories ? "pt-0" : "pt-2"}`}>
                   {(isArrangingCategories ? categoryOrder : visibleCategories.map(c => c.id)).map(id => {
                     const cat = CATEGORIES.find(c => c.id === id);
                     if (!cat) return null;
@@ -2556,10 +2585,15 @@ export default function AACApp() {
                           <div className="flex gap-1">
                             <button
                               onClick={e => { e.stopPropagation(); toggleHideCategory(id); }}
-                              className="text-[10px] leading-none"
+                              className="w-6 h-6 rounded-lg bg-white/80 hover:bg-white border border-slate-300 flex items-center justify-center text-slate-700"
                               onMouseDown={e => e.stopPropagation()}
+                              aria-label={isHidden
+                                ? (isRTL ? `إظهار ${getCatLabel(id)}` : `Show ${getCatLabel(id)}`)
+                                : (isRTL ? `إخفاء ${getCatLabel(id)}` : `Hide ${getCatLabel(id)}`)}
                             >
-                              {isHidden ? "🙈" : "👁️"}
+                              {isHidden
+                                ? <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
+                                : <Eye className="h-3.5 w-3.5" aria-hidden="true" />}
                             </button>
                             <button
                               onClick={e => {
@@ -2569,13 +2603,14 @@ export default function AACApp() {
                                 setRenameDraftAr(categoryLabels[id]?.ar || base?.arLabel || "");
                                 setRenamingCatId(id);
                               }}
-                              className="text-[10px] leading-none"
+                              className="w-6 h-6 rounded-lg bg-white/80 hover:bg-white border border-slate-300 flex items-center justify-center text-slate-700"
                               onMouseDown={e => e.stopPropagation()}
+                              aria-label={isRTL ? `إعادة تسمية ${getCatLabel(id)}` : `Rename ${getCatLabel(id)}`}
                             >
-                              ✏️
+                              <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                             </button>
                           </div>
-                          <span className="text-[9px] font-bold text-slate-700 text-center leading-tight truncate w-full text-center">
+                          <span className="text-xs font-bold text-slate-700 text-center leading-tight break-words w-full">
                             {getCatLabel(cat.id)}
                           </span>
                         </div>
@@ -2587,7 +2622,7 @@ export default function AACApp() {
                         key={id}
                         onClick={() => setExpandedCategory(isSelected ? null : cat.id)}
                         aria-pressed={isSelected}
-                        className={`flex-1 min-w-0 rounded-2xl px-1 text-[11px] font-bold text-center transition-all active:scale-95 text-slate-700 ${
+                        className={`flex-1 min-w-0 rounded-2xl px-1 text-[13px] leading-tight break-words font-bold text-center transition-all active:scale-95 text-slate-700 ${
                           isSelected
                             ? `${colors.replace(/\S*border-\S+/g, "")} border-[3px] border-blue-600 py-[7px] shadow-md`
                             : `${colors} border-2 py-2`
@@ -2610,17 +2645,26 @@ export default function AACApp() {
                   <div
                     style={{
                       "--tile": `min((100cqw - ${(visibleCategories.length - 1) * 6}px) / ${Math.max(visibleCategories.length, 1)}, (100cqh - ${(tilesPerColumn - 1) * 6}px) / ${tilesPerColumn})`,
-                      display: "grid",
-                      gridTemplateRows: `repeat(${tilesPerColumn}, var(--tile))`,
-                      gridAutoColumns: "var(--tile)",
-                      gridAutoFlow: "column",
+                      display: "flex",
                       justifyContent: "center",
                       gap: "6px",
                     } as CSSProperties}
                   >
-                    {visibleCategories.flatMap(cat => {
+                    {visibleCategories.map(cat => {
                       const colors = CATEGORY_COLORS[cat.id] ?? "bg-slate-50 hover:bg-slate-100 border-slate-200";
-                      return getTilesForCategory(cat.id).slice(0, tilesPerColumn).map((tile, i) => (
+                      return (
+                      <div
+                        key={cat.id}
+                        role="group"
+                        aria-label={getCatLabel(cat.id)}
+                        style={{
+                          display: "grid",
+                          gridTemplateRows: `repeat(${tilesPerColumn}, var(--tile))`,
+                          width: "var(--tile)",
+                          gap: "6px",
+                        }}
+                      >
+                      {getTilesForCategory(cat.id).slice(0, tilesPerColumn).map((tile, i) => (
                         <button
                           key={`${cat.id}-${i}`}
                           onClick={() => {
@@ -2634,9 +2678,9 @@ export default function AACApp() {
                           <div className="flex-1 flex items-center justify-center min-h-0 relative w-full">
                             {tile.imageUrl
                               ? <>
-                                  <img src={tile.imageUrl} className="w-full h-full object-contain rounded-lg" alt={tile.en} />
+                                  <img src={tile.imageUrl} className="w-full h-full object-contain rounded-lg" alt="" />
                                   {tile.storyImages?.length && (
-                                    <span className="absolute top-0.5 right-0.5 bg-white/80 rounded-full text-[9px] leading-none px-1 py-0.5 font-bold text-slate-600 shadow-sm">📚</span>
+                                    <span className="absolute top-0.5 right-0.5 bg-white/80 rounded-full text-xs leading-none px-1 py-0.5 font-bold text-slate-600 shadow-sm">📚</span>
                                   )}
                                 </>
                               : <span className="leading-none" style={{ fontSize: "calc(var(--tile) * 0.42)" }}>{tile.emoji}</span>
@@ -2644,12 +2688,14 @@ export default function AACApp() {
                           </div>
                           <span
                             className="shrink-0 font-semibold text-slate-700 text-center leading-tight w-full px-0.5 line-clamp-2 break-words"
-                            style={{ fontSize: "clamp(10px, calc(var(--tile) * 0.1), 15px)" }}
+                            style={{ fontSize: "clamp(12px, calc(var(--tile) * 0.11), 16px)" }}
                           >
                             {isRTL ? tile.ar : tile.en}
                           </span>
                         </button>
-                      ));
+                      ))}
+                      </div>
+                      );
                     })}
                   </div>
                 ) : (
@@ -2658,6 +2704,7 @@ export default function AACApp() {
                     className="h-full overflow-y-auto"
                     style={{ scrollbarWidth: "none" } as CSSProperties}
                   >
+                  <h2 className="sr-only">{getCatLabel(expandedCategory)}</h2>
                   <div
                     className="gap-1.5"
                     style={{
@@ -2684,9 +2731,9 @@ export default function AACApp() {
                           <div className="flex-1 flex items-center justify-center min-h-0 relative w-full">
                             {tile.imageUrl
                               ? <>
-                                  <img src={tile.imageUrl} className="w-full h-full object-contain rounded-lg" alt={tile.en} />
+                                  <img src={tile.imageUrl} className="w-full h-full object-contain rounded-lg" alt="" />
                                   {tile.storyImages?.length && (
-                                    <span className="absolute top-0.5 right-0.5 bg-white/80 rounded-full text-[9px] leading-none px-1 py-0.5 font-bold text-slate-600 shadow-sm">📚</span>
+                                    <span className="absolute top-0.5 right-0.5 bg-white/80 rounded-full text-xs leading-none px-1 py-0.5 font-bold text-slate-600 shadow-sm">📚</span>
                                   )}
                                 </>
                               : <span className="leading-none" style={{ fontSize: "calc(var(--tile) * 0.42)" }}>{tile.emoji}</span>
@@ -2694,7 +2741,7 @@ export default function AACApp() {
                           </div>
                           <span
                             className="shrink-0 font-semibold text-slate-700 text-center leading-tight w-full px-0.5 line-clamp-2 break-words"
-                            style={{ fontSize: "clamp(10px, calc(var(--tile) * 0.1), 15px)" }}
+                            style={{ fontSize: "clamp(12px, calc(var(--tile) * 0.11), 16px)" }}
                           >
                             {isRTL ? tile.ar : tile.en}
                           </span>
@@ -2710,16 +2757,16 @@ export default function AACApp() {
 
             {/* Middle: connector word sidebar */}
             <div
-              className={`shrink-0 w-14 border-x border-slate-100 bg-white overflow-y-auto flex flex-col gap-1.5 p-1.5 transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}
+              className={`shrink-0 w-16 border-x border-slate-100 bg-white overflow-y-auto flex flex-col gap-1.5 p-1.5 transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}
               style={{ scrollbarWidth: "none" } as CSSProperties}
             >
               {CONNECTORS.map(word => (
                 <button
                   key={word.en}
                   onClick={() => addTile({ emoji: "", en: word.en, ar: word.ar })}
-                  className="w-full rounded-xl bg-slate-50 hover:bg-blue-50 hover:border-blue-300 active:scale-90 border border-slate-200 transition-all py-2 px-1 text-center"
+                  className="w-full rounded-xl bg-slate-50 hover:bg-blue-50 hover:border-blue-300 active:scale-90 border border-slate-200 transition-all py-2 px-0.5 text-center"
                 >
-                  <span className="block text-[11px] font-bold text-slate-700 leading-tight">
+                  <span className="block text-xs font-bold text-slate-700 leading-tight break-words">
                     {isRTL ? word.ar : word.en}
                   </span>
                 </button>
@@ -2728,6 +2775,7 @@ export default function AACApp() {
 
             {/* Right: image panel — ~30% of area */}
             <div className={`flex flex-col border-x border-slate-100 bg-slate-50 overflow-hidden transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`} style={{ flex: 3 }}>
+              <h2 className="sr-only">{isRTL ? "الصورة" : "Image"}</h2>
               {/* Mode + style selectors */}
               <div className="shrink-0 p-2 border-b border-slate-100 bg-white space-y-1.5">
                 <div role="group" aria-label={isRTL ? "نوع الصورة" : "Image mode"} className="flex rounded-xl overflow-hidden border border-slate-200">
@@ -2739,12 +2787,13 @@ export default function AACApp() {
                       key={opt.id}
                       aria-pressed={imageMode === opt.id}
                       onClick={() => setImageMode(opt.id as "single" | "story")}
-                      className={`flex-1 py-1.5 text-xs font-semibold transition-colors ${
+                      className={`inline-flex items-center justify-center gap-1 flex-1 py-1.5 text-xs font-semibold transition-colors ${
                         imageMode === opt.id
                           ? "bg-blue-600 text-white"
                           : "bg-white text-slate-500 hover:bg-slate-50"
                       }`}
                     >
+                      <SelectedTick on={imageMode === opt.id} />
                       {isRTL ? opt.ar : opt.en}
                     </button>
                   ))}
@@ -2755,12 +2804,13 @@ export default function AACApp() {
                       key={opt.id}
                       aria-pressed={imageStyle === opt.id}
                       onClick={() => setImageStyle(opt.id)}
-                      className={`flex-1 py-1.5 text-[10px] font-semibold transition-colors ${
+                      className={`inline-flex items-center justify-center gap-1 flex-1 py-1.5 text-xs font-semibold transition-colors ${
                         imageStyle === opt.id
                           ? "bg-blue-600 text-white"
                           : "bg-white text-slate-500 hover:bg-slate-50"
                       }`}
                     >
+                      <SelectedTick on={imageStyle === opt.id} />
                       {isRTL ? opt.ar : opt.en}
                     </button>
                   ))}
@@ -2768,12 +2818,13 @@ export default function AACApp() {
                 <button
                   aria-pressed={hideCharacter}
                   onClick={() => setHideCharacter(v => !v)}
-                  className={`w-full flex items-center justify-center gap-1.5 rounded-xl border py-1.5 text-[10px] font-semibold transition-colors ${
+                  className={`w-full flex items-center justify-center gap-1.5 rounded-xl border py-1.5 px-1 text-xs font-semibold transition-colors ${
                     hideCharacter
                       ? "bg-blue-600 text-white border-blue-600"
                       : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
                   }`}
                 >
+                  <SelectedTick on={hideCharacter} />
                   <span aria-hidden="true">🚫</span>
                   {isRTL ? "عدم تضمين المستخدم في الصورة" : "Don't include user in image"}
                 </button>
@@ -2793,7 +2844,7 @@ export default function AACApp() {
                     <p className="text-xs text-red-700 font-semibold leading-relaxed">
                       {isRTL ? "تعذّر توليد الصورة" : "Couldn't generate the image"}
                     </p>
-                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                    <p className="text-xs text-slate-500 leading-relaxed">
                       {isRTL ? "اضغط ✨ للمحاولة مرة أخرى" : "Tap ✨ to try again"}
                     </p>
                   </div>
@@ -2805,7 +2856,7 @@ export default function AACApp() {
                     <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-3xl">
                       🖼️
                     </div>
-                    <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
+                    <p className="text-xs text-slate-500 font-medium leading-relaxed">
                       {isRTL
                         ? "اختر كلمات واضغط ✨ لتوليد صورة"
                         : "Select words and tap ✨ to generate"}
@@ -2824,7 +2875,7 @@ export default function AACApp() {
                           style={{ background: "linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%)" }}
                         >
                           <RefreshCw className="h-5 w-5 text-blue-400 animate-spin" />
-                          <span className="text-[9px] text-blue-400 font-semibold">
+                          <span className="text-xs text-blue-500 font-semibold">
                             {isRTL ? "جارٍ التوليد…" : "Generating…"}
                           </span>
                         </div>
@@ -2837,7 +2888,7 @@ export default function AACApp() {
                       style={{ background: "linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%)" }}
                     >
                       <RefreshCw className="h-6 w-6 text-blue-400 animate-spin" />
-                      <span className="text-[10px] text-blue-400 font-semibold">
+                      <span className="text-xs text-blue-500 font-semibold">
                         {isRTL ? "جارٍ التوليد…" : "Generating…"}
                       </span>
                     </div>
@@ -2847,7 +2898,7 @@ export default function AACApp() {
                 {/* Caption */}
                 {!isGenerating && caption && (
                   <p
-                    className="shrink-0 text-[11px] font-semibold text-slate-700 text-center px-1 leading-snug"
+                    className="shrink-0 text-sm font-semibold text-slate-700 text-center px-1 leading-snug"
                     dir={isRTL ? "rtl" : "ltr"}
                   >
                     {caption}
@@ -2874,13 +2925,13 @@ export default function AACApp() {
                               className="w-full h-auto block"
                             />
                             {img.label && (
-                              <p className="absolute bottom-0 inset-x-0 text-[8px] font-semibold text-white bg-black/30 text-center px-1 py-0.5 leading-tight truncate">
+                              <p className="absolute top-0 inset-x-0 text-xs font-semibold text-white bg-black/50 text-center px-1 py-0.5 leading-tight line-clamp-2 break-words">
                                 {img.label}
                               </p>
                             )}
                             <button
                               onClick={() => openAddToBoard(img.url, img.label ?? selectedTiles.map(t => isRTL ? t.ar : t.en).join(" "))}
-                              className="absolute bottom-1 right-1 bg-white/90 hover:bg-white active:bg-blue-50 border border-slate-200 rounded-lg px-1.5 py-0.5 text-[8px] font-bold text-blue-600 shadow-sm transition-all"
+                              className="absolute bottom-1 right-1 bg-white/90 hover:bg-white active:bg-blue-50 border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-blue-600 shadow-sm transition-all"
                             >
                               💾 {isRTL ? "حفظ" : "Save"}
                             </button>
@@ -3025,7 +3076,7 @@ export default function AACApp() {
                     ? <span className="text-xl shrink-0">{longPressMenu.tile.emoji}</span>
                     : null
                 }
-                <span className="text-sm font-bold text-slate-700 truncate">
+                <span className="text-sm font-bold text-slate-700 leading-tight line-clamp-2 break-words">
                   {isRTL ? longPressMenu.tile.ar : longPressMenu.tile.en}
                 </span>
               </div>
@@ -3192,12 +3243,13 @@ export default function AACApp() {
                             key={g.v}
                             aria-pressed={profile.gender === g.v}
                             onClick={() => setProfile(p => ({ ...p, gender: g.v }))}
-                            className={`flex-1 py-2 rounded-xl border text-sm font-medium transition-colors ${
+                            className={`inline-flex items-center justify-center gap-1 flex-1 py-2 rounded-xl border text-sm font-medium transition-colors ${
                               profile.gender === g.v
                                 ? "bg-blue-700 text-white border-blue-700"
                                 : "bg-white text-slate-600 hover:bg-blue-50 border-slate-200"
                             }`}
                           >
+                            <SelectedTick on={profile.gender === g.v} />
                             {isRTL ? g.ar : g.en}
                           </button>
                         ))}
@@ -3217,12 +3269,13 @@ export default function AACApp() {
                             lang={l.v}
                             aria-pressed={profile.language === l.v}
                             onClick={() => setProfile(p => ({ ...p, language: l.v as "en" | "ar" }))}
-                            className={`flex-1 py-2 rounded-xl border text-sm font-medium transition-colors ${
+                            className={`inline-flex items-center justify-center gap-1 flex-1 py-2 rounded-xl border text-sm font-medium transition-colors ${
                               profile.language === l.v
                                 ? "bg-blue-700 text-white border-blue-700"
                                 : "bg-white text-slate-600 hover:bg-blue-50 border-slate-200"
                             }`}
                           >
+                            <SelectedTick on={profile.language === l.v} />
                             {l.label}
                           </button>
                         ))}
@@ -3253,12 +3306,13 @@ export default function AACApp() {
                               setProfile(p => ({ ...p, condition: p.condition === c.v ? "" : c.v }));
                             }
                           }}
-                          className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors ${
+                          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors ${
                             (c.v === "other" ? isOtherCondition : profile.condition === c.v)
                               ? "bg-blue-700 text-white border-blue-700"
                               : "bg-white text-slate-600 hover:bg-blue-50 border-slate-200"
                           }`}
                         >
+                          <SelectedTick on={c.v === "other" ? isOtherCondition : profile.condition === c.v} />
                           {isRTL ? c.ar : c.en}
                         </button>
                       ))}
@@ -3551,7 +3605,7 @@ export default function AACApp() {
                           {gen.tiles.map((t, i) => (
                             <span key={i} className="inline-flex flex-col items-center bg-blue-50 rounded-xl px-2 py-1">
                               <span className="text-lg leading-none">{t.emoji}</span>
-                              <span className="text-[9px] text-slate-500 leading-tight">{t.en}</span>
+                              <span className="text-xs text-slate-500 leading-tight">{t.en}</span>
                             </span>
                           ))}
                         </div>
