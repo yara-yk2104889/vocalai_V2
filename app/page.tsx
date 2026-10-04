@@ -3,10 +3,10 @@ import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
-  ArrowRight,
   Camera,
   CameraOff,
   Check,
+  Delete as BackspaceIcon,
   Eye,
   EyeOff,
   Pencil,
@@ -2269,6 +2269,13 @@ export default function AACApp() {
       {/* ══════════════════ CHILD MODE ══════════════════ */}
       {mode === "child" && (
         <div className="flex flex-col h-screen overflow-hidden">
+          <a
+            href="#board"
+            onClick={e => { e.preventDefault(); document.getElementById("board")?.focus(); }}
+            className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:start-2 focus:z-50 focus:px-4 focus:py-2 focus:rounded-xl focus:bg-blue-700 focus:text-white focus:font-bold focus:shadow-lg"
+          >
+            {isRTL ? "تخطَّ إلى اللوحة" : "Skip to board"}
+          </a>
           <h1 className="sr-only">{isRTL ? "لوحة التواصل VocalAI" : "VocalAI AAC board"}</h1>
 
           {/* ── Top nav bar ── */}
@@ -2276,10 +2283,10 @@ export default function AACApp() {
             {/* Lock — LEFT */}
             <button
               onClick={() => { setShowPinModal(true); setPinInput(""); setPinError(false); }}
-              className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-semibold transition-colors shadow-sm"
-              aria-label={isRTL ? "وضع مقدم الرعاية" : "Carer mode"}
+              className="shrink-0 h-10 flex items-center gap-1.5 px-3 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-semibold transition-colors shadow-sm"
             >
-              <Lock className="h-4 w-4" />
+              <Lock className="h-5 w-5" aria-hidden="true" />
+              {isRTL ? "مقدم الرعاية" : "Carer"}
             </button>
 
             {/* Context — CENTER */}
@@ -2343,6 +2350,8 @@ export default function AACApp() {
 
           {/* ── Sentence builder bar ── */}
           <div
+            role="region"
+            aria-label={isRTL ? "الرسالة" : "Message"}
             className={`shrink-0 bg-white border-b border-slate-100 px-3 py-2.5 flex items-stretch gap-2 shadow-sm transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}
           >
             <h2 className="sr-only">{isRTL ? "الرسالة" : "Message"}</h2>
@@ -2353,10 +2362,12 @@ export default function AACApp() {
                 setTextMode(next);
                 if (next) setTimeout(() => freeTextRef.current?.focus(), 50);
               }}
-              className={`shrink-0 w-12 min-h-[56px] rounded-2xl border-2 flex items-center justify-center transition-all text-xl ${textMode ? "bg-orange-50 border-orange-300" : "bg-slate-50 border-slate-200 hover:bg-orange-50 hover:border-orange-200"}`}
-              aria-label={textMode ? (isRTL ? "وضع البطاقات" : "Switch to tiles") : (isRTL ? "وضع الكتابة" : "Switch to keyboard")}
+              className={`shrink-0 w-14 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 transition-all text-slate-700 ${textMode ? "bg-orange-50 border-orange-300" : "bg-slate-50 border-slate-200 hover:bg-orange-50 hover:border-orange-200"}`}
             >
-              {textMode ? "😊" : "⌨️"}
+              <span className="text-2xl leading-none" aria-hidden="true">{textMode ? "😊" : "⌨️"}</span>
+              <span className="text-xs font-semibold leading-none">
+                {textMode ? (isRTL ? "البطاقات" : "Tiles") : (isRTL ? "اكتب" : "Type")}
+              </span>
             </button>
 
             {/* Word strip — always shows tile chips; inline text input appended when keyboard is on */}
@@ -2440,10 +2451,10 @@ export default function AACApp() {
               <button
                 onClick={speakSentence}
                 disabled={selectedTiles.length === 0 && !freeText.trim()}
-                className="w-12 h-full min-h-[56px] rounded-2xl bg-slate-100 hover:bg-blue-100 active:bg-blue-200 disabled:opacity-30 flex items-center justify-center transition-colors group"
-                aria-label={isRTL ? "نطق الرسالة" : "Speak message"}
+                className="w-14 h-full rounded-2xl bg-slate-100 hover:bg-blue-100 active:bg-blue-200 disabled:opacity-30 flex flex-col items-center justify-center gap-1 transition-colors group text-slate-700"
               >
-                <Volume2 className="h-5 w-5 text-slate-600 group-hover:text-blue-600 transition-colors" />
+                <Volume2 className="h-6 w-6 text-slate-600 group-hover:text-blue-600 transition-colors" aria-hidden="true" />
+                <span className="text-xs font-semibold leading-none">{isRTL ? "انطق" : "Speak"}</span>
               </button>
               <button
                 onClick={() => {
@@ -2454,32 +2465,29 @@ export default function AACApp() {
                   }
                 }}
                 disabled={selectedTiles.length === 0 && !freeText.trim()}
-                className="w-12 h-full min-h-[56px] rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 disabled:opacity-30 flex items-center justify-center transition-colors"
-                aria-label={isRTL ? "حذف آخر كلمة" : "Delete last"}
+                className="w-14 h-full rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 disabled:opacity-30 flex flex-col items-center justify-center gap-1 transition-colors text-slate-700"
               >
-                {isRTL
-                  ? <ArrowRight className="h-5 w-5 text-slate-600" />
-                  : <ArrowLeft className="h-5 w-5 text-slate-600" />
-                }
+                <BackspaceIcon className={`h-6 w-6 text-slate-600 ${isRTL ? "-scale-x-100" : ""}`} aria-hidden="true" />
+                <span className="text-xs font-semibold leading-none">{isRTL ? "حذف" : "Delete"}</span>
               </button>
               <button
                 onClick={clearAll}
                 disabled={selectedTiles.length === 0 && !freeText.trim()}
-                className="w-12 h-full min-h-[56px] rounded-2xl bg-slate-100 hover:bg-red-100 active:bg-red-200 disabled:opacity-30 flex items-center justify-center transition-colors group"
-                aria-label={isRTL ? "مسح الكل" : "Clear all"}
+                className="w-14 h-full rounded-2xl bg-slate-100 hover:bg-red-100 active:bg-red-200 disabled:opacity-30 flex flex-col items-center justify-center gap-1 transition-colors group text-slate-700"
               >
-                <X className="h-5 w-5 text-slate-600 group-hover:text-red-500 transition-colors" />
+                <X className="h-6 w-6 text-slate-600 group-hover:text-red-500 transition-colors" aria-hidden="true" />
+                <span className="text-xs font-semibold leading-none">{isRTL ? "مسح" : "Clear"}</span>
               </button>
               <button
                 onClick={handleGenerate}
                 disabled={(selectedTiles.length === 0 && !freeText.trim()) || isGenerating}
-                className="w-12 h-full min-h-[56px] rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-30 flex items-center justify-center transition-colors shadow-md shadow-blue-200"
-                aria-label={isRTL ? "توليد صورة" : "Generate image"}
+                className="w-14 h-full rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-30 flex flex-col items-center justify-center gap-1 transition-colors shadow-md shadow-blue-200 text-white"
               >
                 {isGenerating
-                  ? <RefreshCw className="h-5 w-5 text-white animate-spin" />
-                  : <span className="text-xl">✨</span>
+                  ? <RefreshCw className="h-6 w-6 animate-spin" aria-hidden="true" />
+                  : <span className="text-2xl leading-none" aria-hidden="true">✨</span>
                 }
+                <span className="text-xs font-semibold leading-none">{isRTL ? "صورة" : "Picture"}</span>
               </button>
             </div>
           </div>
@@ -2488,7 +2496,7 @@ export default function AACApp() {
           <div className="flex-1 flex overflow-hidden min-h-0">
 
             {/* Left: emoji board or text-mode placeholder — ~70% of area */}
-            <div className="flex flex-col overflow-hidden min-w-0" style={{ flex: 7 }}>
+            <div id="board" role="main" tabIndex={-1} className="flex flex-col overflow-hidden min-w-0 outline-none" style={{ flex: 7 }}>
               <h2 className="sr-only">{isRTL ? "اللوحة" : "Board"}</h2>
               {textMode && (
                 <div className="flex-1 min-h-0 bg-slate-300 p-1.5 flex flex-col gap-1 select-none">
@@ -2774,7 +2782,7 @@ export default function AACApp() {
             </div>
 
             {/* Right: image panel — ~30% of area */}
-            <div className={`flex flex-col border-x border-slate-100 bg-slate-50 overflow-hidden transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`} style={{ flex: 3 }}>
+            <div role="complementary" aria-label={isRTL ? "الصورة" : "Image"} className={`flex flex-col border-x border-slate-100 bg-slate-50 overflow-hidden transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`} style={{ flex: 3 }}>
               <h2 className="sr-only">{isRTL ? "الصورة" : "Image"}</h2>
               {/* Mode + style selectors */}
               <div className="shrink-0 p-2 border-b border-slate-100 bg-white space-y-1.5">
@@ -3191,7 +3199,7 @@ export default function AACApp() {
             ))}
           </div>
 
-          <div className="flex-1 p-4 max-w-2xl mx-auto w-full space-y-4 pb-24">
+          <div role="main" className="flex-1 p-4 max-w-2xl mx-auto w-full space-y-4 pb-24">
 
             {/* ── Profile tab ── */}
             {parentTab === "profile" && (
