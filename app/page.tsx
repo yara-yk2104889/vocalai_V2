@@ -1,5 +1,6 @@
 "use client";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -323,17 +324,13 @@ const STYLE_OPTIONS: { id: "symbolic" | "cartoon" | "realistic"; en: string; ar:
 ];
 
 const CONNECTORS: { en: string; ar: string }[] = [
-  { en: "Yes",    ar: "نعم"   },
-  { en: "No",     ar: "لا"    },
   { en: "I",      ar: "أنا"   },
-  { en: "want",   ar: "أريد"  },
   { en: "the",    ar: "الـ"   },
   { en: "a",      ar: "يوجد"  },
   { en: "my",     ar: "لدي"   },
   { en: "and",    ar: "و"     },
   { en: "then",   ar: "ثم"    },
   { en: "with",   ar: "مع"    },
-  { en: "more",   ar: "أكثر"  },
   { en: "not",    ar: "لا"    },
   { en: "to",     ar: "إلى"   },
   { en: "go",     ar: "أذهب"  },
@@ -367,29 +364,6 @@ type GenBlockedReason = "busy" | "empty" | "filler";
 function SelectedTick({ on }: { on: boolean }) {
   return on ? <Check className="h-3 w-3 shrink-0" strokeWidth={3} aria-hidden="true" /> : null;
 }
-
-// ─── In-app keyboard layouts ───────────────────────────────────────────────────
-const KBD_EN = [
-  ['q','w','e','r','t','y','u','i','o','p'],
-  ['a','s','d','f','g','h','j','k','l'],
-  ['SHIFT','z','x','c','v','b','n','m','⌫'],
-  ['123',' '],
-];
-const KBD_AR = [
-  ['ض','ص','ث','ق','ف','غ','ع','ه','خ','ح'],
-  ['ش','س','ي','ب','ل','ا','ت','ن','م','ك'],
-  ['ئ','ء','ؤ','ر','لا','ى','ة','و','ز','ظ'],
-  ['⌫',' '],
-];
-const KBD_NUM = [
-  ['1','2','3','4','5','6','7','8','9','0'],
-  ['-','/','.',',','?','!','@','#','%','*'],
-  ["'",'(',')','+','=',';',':','~','_','⌫'],
-  ['ABC',' '],
-];
-const KBD_FLEX: Record<string, number> = {
-  SHIFT: 1.5, '⌫': 1.5, '123': 1.5, ABC: 1.5, ' ': 5,
-};
 
 type ComboPhrase = { en: (t: string) => string; ar: (t: string) => string };
 const COMBO_PHRASES_BY_CAT: Record<string, ComboPhrase[]> = {
@@ -582,8 +556,6 @@ export default function AACApp() {
   const [dragOverCatId, setDragOverCatId] = useState<string | null>(null);
   const [textMode, setTextMode]   = useState(false);
   const [freeText, setFreeText]   = useState("");
-  const [kbdShift, setKbdShift]   = useState(false);
-  const [kbdNumMode, setKbdNumMode] = useState(false);
   const freeTextRef = useRef<HTMLInputElement | null>(null);
   const wordStripRef = useRef<HTMLDivElement | null>(null);
   const [longPressMenu, setLongPressMenu] = useState<{
@@ -1215,17 +1187,6 @@ export default function AACApp() {
     setGeneratedImages([]);
     setCaption("");
     setGenFailed(false);
-  }
-
-  function handleKbdKey(key: string) {
-    if (key === '⌫')   { setFreeText(p => p.slice(0, -1)); return; }
-    if (key === ' ')   { setFreeText(p => p + ' '); return; }
-    if (key === 'SHIFT') { setKbdShift(v => !v); return; }
-    if (key === '123') { setKbdNumMode(true); return; }
-    if (key === 'ABC') { setKbdNumMode(false); return; }
-    const ch = kbdShift && key.length === 1 ? key.toUpperCase() : key;
-    setFreeText(p => p + ch);
-    if (kbdShift && key.length === 1) setKbdShift(false);
   }
 
   async function speakSentence() {
@@ -2399,9 +2360,10 @@ export default function AACApp() {
             {/* Text mode toggle button */}
             <button
               onClick={() => {
-                const next = !textMode;
-                setTextMode(next);
-                if (next) setTimeout(() => freeTextRef.current?.focus(), 50);
+                if (textMode) { setTextMode(false); return; }
+                // Render the input synchronously and focus it within the tap — iPadOS only opens its keyboard on a gesture-driven focus.
+                flushSync(() => setTextMode(true));
+                freeTextRef.current?.focus();
               }}
               className={`shrink-0 w-14 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 transition-all text-slate-700 ${textMode ? "bg-orange-50 border-orange-300" : "bg-slate-50 border-slate-200 hover:bg-orange-50 hover:border-orange-200"}`}
             >
@@ -2416,7 +2378,7 @@ export default function AACApp() {
               ref={wordStripRef}
               onClick={e => { if ((e.target as HTMLElement).closest("span[data-tile],button[data-tile],input") === null) speakSentence(); }}
               style={{ scrollbarWidth: "none" } as CSSProperties}
-              className={`flex-1 min-w-0 h-[76px] rounded-2xl border-2 px-3 py-2 flex items-center gap-2.5 flex-nowrap overflow-x-auto overflow-y-hidden cursor-pointer transition-all
+              className={`flex-1 min-w-0 h-[80px] rounded-2xl border-2 px-3 py-2 flex items-center gap-2.5 flex-nowrap overflow-x-auto overflow-y-hidden cursor-pointer transition-all
                 ${textMode
                   ? "bg-orange-50 border-orange-200 hover:border-orange-300"
                   : "bg-slate-50 border-slate-200 hover:bg-blue-50 hover:border-blue-300"}`}
@@ -2435,13 +2397,13 @@ export default function AACApp() {
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ type: "spring", stiffness: 400, damping: 20 }}
                   onClick={e => { e.stopPropagation(); removeTileAt(i); }}
-                  className="relative inline-flex flex-col items-center rounded-xl bg-white border border-blue-200 shadow-sm px-2 py-1 shrink-0 cursor-pointer hover:bg-red-50 hover:border-red-300 active:scale-90 transition-all"
+                  className="relative inline-flex flex-col items-center justify-center min-w-[52px] min-h-[44px] rounded-xl bg-white border border-blue-200 shadow-sm ps-2 pe-4 py-1 shrink-0 cursor-pointer hover:bg-red-50 hover:border-red-300 active:scale-90 transition-all"
                 >
                   {tile.imageUrl
                     ? <img src={tile.imageUrl} className="w-7 h-7 object-contain rounded-md" alt="" />
                     : tile.emoji && <span className="text-lg leading-none" aria-hidden="true">{tile.emoji}</span>
                   }
-                  <span className="text-[13px] text-slate-700 font-semibold leading-tight mt-0.5">
+                  <span className="text-base text-slate-700 font-semibold leading-none whitespace-nowrap mt-0.5">
                     {isRTL ? tile.ar : tile.en}
                   </span>
                   <button
@@ -2458,7 +2420,7 @@ export default function AACApp() {
               {!textMode && freeText.trim() && (
                 <span
                   data-tile
-                  className="relative inline-flex items-center gap-1 rounded-xl bg-orange-50 border border-orange-200 shadow-sm px-2 py-1 shrink-0 text-[13px] font-semibold text-orange-700"
+                  className="relative inline-flex items-center gap-1 min-w-[52px] min-h-[44px] rounded-xl bg-orange-50 border border-orange-200 shadow-sm ps-2 pe-5 py-1 shrink-0 text-base font-semibold text-orange-700"
                 >
                   <span aria-hidden="true">⌨️</span> {freeText.trim()}
                   <button
@@ -2540,42 +2502,10 @@ export default function AACApp() {
           {/* ── Main 3-column area ── */}
           <div className="flex-1 flex overflow-hidden min-h-0">
 
-            {/* Left: emoji board or text-mode placeholder — ~70% of area */}
+            {/* Left: tile board — ~70% of area */}
             <div id="board" role="main" tabIndex={-1} className="flex flex-col overflow-hidden min-w-0 outline-none" style={{ flex: 7 }}>
               <h2 className="sr-only">{isRTL ? "اللوحة" : "Board"}</h2>
-              {textMode && (
-                <div className="flex-1 min-h-0 bg-slate-300 p-1.5 flex flex-col gap-1 select-none">
-                  {(kbdNumMode ? KBD_NUM : isRTL ? KBD_AR : KBD_EN).map((row, ri) => (
-                    <div key={ri} className="flex gap-1 flex-1 min-h-0">
-                      {row.map(key => {
-                        const flex = KBD_FLEX[key] ?? 1;
-                        const isAction = key in KBD_FLEX;
-                        const isShiftOn = key === 'SHIFT' && kbdShift;
-                        const label =
-                          key === 'SHIFT' ? (kbdShift ? '⬆' : '⇧') :
-                          key === ' '     ? (isRTL ? 'مسافة' : 'space') :
-                          (kbdShift && key.length === 1) ? key.toUpperCase() :
-                          key;
-                        return (
-                          <button
-                            key={key}
-                            onPointerDown={e => { e.preventDefault(); handleKbdKey(key); }}
-                            style={{ flex }}
-                            className={`rounded-xl flex items-center justify-center font-semibold text-sm shadow-sm border transition-all active:scale-95 active:brightness-90 min-h-0
-                              ${isShiftOn ? 'bg-blue-100 border-blue-300 text-blue-700' :
-                                isAction  ? 'bg-slate-400 border-slate-500 text-slate-800' :
-                                            'bg-white border-slate-300 text-slate-900'}`}
-                          >
-                            {label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {!textMode && <> {/* Category headers */}
+              <> {/* Category headers */}
               <div className={`shrink-0 border-b border-slate-100 bg-white ${isArrangingCategories ? "p-2 space-y-2" : ""}`}>
                 {/* Arrange mode instruction strip */}
                 {isArrangingCategories && (
@@ -2805,7 +2735,7 @@ export default function AACApp() {
                   </div>
                 )}
               </div>
-            </>}
+            </>
             </div>
 
             {/* Middle: connector word sidebar */}
