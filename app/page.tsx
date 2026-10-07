@@ -347,6 +347,22 @@ const DEFAULT_PIN = "1234";
 
 const PARENT_TABS = ["profile", "people", "history"] as const;
 
+// Function words that can't be pictured on their own, so a message of only these gets a hint instead of an image.
+const FILLER_WORDS = new Set([
+  "the", "a", "an", "my", "and", "then", "with", "to", "in", "at", "on", "of", "for",
+  "after", "before", "not", "i", "me", "is", "it",
+  "و", "ثم", "مع", "إلى", "الى", "في", "عند", "بعد", "قبل", "أنا", "لدي", "الـ", "يوجد", "من", "على",
+]);
+
+function hasContentWord(words: string[]): boolean {
+  return words.some(w => {
+    const n = w.toLowerCase().replace(/[?!.,؟،]/g, "");
+    return n !== "" && !FILLER_WORDS.has(n);
+  });
+}
+
+type GenBlockedReason = "busy" | "empty" | "filler";
+
 // Non-color marker for the selected option in pick-one groups (WCAG 1.4.1).
 function SelectedTick({ on }: { on: boolean }) {
   return on ? <Check className="h-3 w-3 shrink-0" strokeWidth={3} aria-hidden="true" /> : null;
@@ -490,6 +506,7 @@ export default function AACApp() {
   const [isGenerating, setIsGenerating]       = useState(false);
   const [genFailed, setGenFailed]             = useState(false);
   const [genStatus, setGenStatus]             = useState(""); // screen-reader announcement
+  const [genHint, setGenHint]                 = useState<{ reason: "empty" | "filler"; n: number } | null>(null);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [caption, setCaption]                 = useState("");
   const [storyIndex, setStoryIndex]           = useState(0);
@@ -1250,9 +1267,33 @@ export default function AACApp() {
     noCharacter:      hideCharacter,
   };
 
+  function genHintText(reason: GenBlockedReason): string {
+    if (reason === "busy")  return isRTL ? "لا تزال الصورة قيد الإنشاء…" : "Still making the picture…";
+    if (reason === "empty") return isRTL ? "اختر كلمات أولاً، ثم اضغط ✨ صورة" : "Pick some words first, then tap ✨ Picture";
+    return isRTL ? "أضف كلمة تُظهر شيئاً، مثل ماء أو العب" : "Add a word that shows something, like water or play";
+  }
+
+  const messageWords = [
+    ...selectedTiles.flatMap(t => t.en.split(/\s+/)),
+    ...freeText.trim().split(/\s+/),
+  ].filter(Boolean);
+  const genBlockedReason: GenBlockedReason | null =
+    isGenerating ? "busy" :
+    messageWords.length === 0 ? "empty" :
+    !hasContentWord(messageWords) ? "filler" : null;
+  const activeGenHint = genHint && genHint.reason === genBlockedReason ? genHint : null;
+
   async function handleGenerate() {
-    const hasInput = selectedTiles.length > 0 || !!freeText.trim();
-    if (!hasInput || isGenerating) return;
+    if (genBlockedReason) {
+      const reason = genBlockedReason;
+      const text = genHintText(reason);
+      // Clear first so the live region re-announces even when the same hint repeats.
+      setGenStatus("");
+      setTimeout(() => setGenStatus(text), 50);
+      if (reason !== "busy") setGenHint(h => ({ reason, n: (h?.n ?? 0) + 1 }));
+      return;
+    }
+    setGenHint(null);
     setIsGenerating(true);
     setGenFailed(false);
     setGeneratedImages([]);
@@ -2480,8 +2521,9 @@ export default function AACApp() {
               </button>
               <button
                 onClick={handleGenerate}
-                disabled={(selectedTiles.length === 0 && !freeText.trim()) || isGenerating}
-                className="w-14 h-full rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-30 flex flex-col items-center justify-center gap-1 transition-colors shadow-md shadow-blue-200 text-white"
+                aria-disabled={genBlockedReason !== null}
+                aria-describedby={genBlockedReason ? "gen-blocked-reason" : undefined}
+                className={`w-14 h-full rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 flex flex-col items-center justify-center gap-1 transition-colors shadow-md shadow-blue-200 text-white ${genBlockedReason ? "opacity-30" : ""}`}
               >
                 {isGenerating
                   ? <RefreshCw className="h-6 w-6 animate-spin" aria-hidden="true" />
@@ -2489,6 +2531,9 @@ export default function AACApp() {
                 }
                 <span className="text-xs font-semibold leading-none">{isRTL ? "صورة" : "Picture"}</span>
               </button>
+              <span id="gen-blocked-reason" className="sr-only">
+                {genBlockedReason ? genHintText(genBlockedReason) : ""}
+              </span>
             </div>
           </div>
 
@@ -2864,11 +2909,23 @@ export default function AACApp() {
                     <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-3xl">
                       🖼️
                     </div>
-                    <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                      {isRTL
-                        ? "اختر كلمات واضغط ✨ لتوليد صورة"
-                        : "Select words and tap ✨ to generate"}
-                    </p>
+                    {activeGenHint ? (
+                      <motion.p
+                        key={activeGenHint.n}
+                        initial={{ scale: 0.92 }}
+                        animate={{ scale: [1.08, 1] }}
+                        transition={{ duration: 0.35 }}
+                        className="text-sm text-amber-900 font-semibold leading-relaxed bg-amber-50 border-2 border-amber-300 rounded-xl px-3 py-2"
+                      >
+                        {genHintText(activeGenHint.reason)}
+                      </motion.p>
+                    ) : (
+                      <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                        {isRTL
+                          ? "اختر كلمات واضغط ✨ صورة"
+                          : "Select words and tap ✨ Picture"}
+                      </p>
+                    )}
                   </div>
                 )}
 
