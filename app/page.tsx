@@ -1,5 +1,5 @@
 "use client";
-import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -360,6 +360,24 @@ function hasContentWord(words: string[]): boolean {
 
 type GenBlockedReason = "busy" | "empty" | "filler";
 
+// wide = laptop / landscape tablet (original layout), stacked = tablet in portrait, phone = phone in either orientation.
+type LayoutMode = "wide" | "stacked" | "phone";
+
+function subscribeResize(cb: () => void) {
+  window.addEventListener("resize", cb);
+  return () => window.removeEventListener("resize", cb);
+}
+
+function getLayoutMode(): LayoutMode {
+  const w = window.innerWidth, h = window.innerHeight;
+  if (w < 640 || (h < 500 && w < 1000)) return "phone";
+  return h > w ? "stacked" : "wide";
+}
+
+function getServerLayoutMode(): LayoutMode {
+  return "wide";
+}
+
 // Non-color marker for the selected option in pick-one groups (WCAG 1.4.1).
 function SelectedTick({ on }: { on: boolean }) {
   return on ? <Check className="h-3 w-3 shrink-0" strokeWidth={3} aria-hidden="true" /> : null;
@@ -555,6 +573,10 @@ export default function AACApp() {
   const [draggedCatId, setDraggedCatId]   = useState<string | null>(null);
   const [dragOverCatId, setDragOverCatId] = useState<string | null>(null);
   const [textMode, setTextMode]   = useState(false);
+  const layoutMode = useSyncExternalStore(subscribeResize, getLayoutMode, getServerLayoutMode);
+  const isPhone   = layoutMode === "phone";
+  const isStacked = layoutMode === "stacked";
+  const [phoneImageOpen, setPhoneImageOpen] = useState(false);
   const [freeText, setFreeText]   = useState("");
   const freeTextRef = useRef<HTMLInputElement | null>(null);
   const wordStripRef = useRef<HTMLDivElement | null>(null);
@@ -1013,6 +1035,12 @@ export default function AACApp() {
     .map(id => CATEGORIES.find(c => c.id === id))
     .filter((c): c is typeof CATEGORIES[0] => !!c && !hiddenCategories.includes(c.id));
 
+  // Phones show one category at a time, so a category is always selected there.
+  const shownCategory = isPhone ? (expandedCategory ?? visibleCategories[0]?.id ?? null) : expandedCategory;
+  const boardCols = Math.max(visibleCategories.length, 1);
+  // Tablet portrait: size the board to its width-limited square tiles so the image panel gets the remaining height.
+  const stackedBoardHeight = `calc(72px + ${tilesPerColumn} * ((100vw - ${16 + (boardCols - 1) * 6}px) / ${boardCols}) + ${(tilesPerColumn - 1) * 6}px)`;
+
   function moveCategoryUp(id: string) {
     setCategoryOrder(prev => {
       const idx = prev.indexOf(id);
@@ -1245,6 +1273,7 @@ export default function AACApp() {
   const activeGenHint = genHint && genHint.reason === genBlockedReason ? genHint : null;
 
   async function handleGenerate() {
+    if (isPhone) setPhoneImageOpen(true);
     if (genBlockedReason) {
       const reason = genBlockedReason;
       const text = genHintText(reason);
@@ -1830,6 +1859,7 @@ export default function AACApp() {
                             setCaption(gen.caption);
                             setImageMode(gen.images.length > 1 ? "story" : "single");
                             setShowHistoryGallery(false);
+                            setPhoneImageOpen(true);
                           }}
                           className="flex flex-col items-center gap-1 group"
                         >
@@ -1896,6 +1926,7 @@ export default function AACApp() {
                             setCaption(isRTL ? item.ar : item.en);
                             setImageMode(item.images.length > 1 ? "story" : "single");
                             setShowLibraryGallery(false);
+                            setPhoneImageOpen(true);
                           }}
                           className="relative block w-full"
                         >
@@ -2270,7 +2301,9 @@ export default function AACApp() {
 
       {/* ══════════════════ CHILD MODE ══════════════════ */}
       {mode === "child" && (
-        <div className="flex flex-col h-screen overflow-hidden">
+        <div className="flex flex-col h-dvh overflow-hidden">
+          {/* Always mounted so screen readers announce each change in generation status */}
+          <div role="status" aria-live="polite" className="sr-only">{genStatus}</div>
           <a
             href="#board"
             onClick={e => { e.preventDefault(); document.getElementById("board")?.focus(); }}
@@ -2281,18 +2314,18 @@ export default function AACApp() {
           <h1 className="sr-only">{isRTL ? "لوحة التواصل VocalAI" : "VocalAI AAC board"}</h1>
 
           {/* ── Top nav bar ── */}
-          <header dir="ltr" className="shrink-0 bg-white border-b border-slate-100 px-4 py-3 flex items-center gap-3 shadow-sm z-10">
+          <header dir="ltr" className={`shrink-0 bg-white border-b border-slate-100 py-3 flex items-center shadow-sm z-10 ${isPhone ? "px-2 gap-1.5" : "px-4 gap-3"}`}>
             {/* Lock — LEFT */}
             <button
               onClick={() => { setShowPinModal(true); setPinInput(""); setPinError(false); }}
-              className="shrink-0 h-10 flex items-center gap-1.5 px-3 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-semibold transition-colors shadow-sm"
+              className={`shrink-0 h-10 flex items-center gap-1.5 ${isPhone ? "px-2" : "px-3"} rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-semibold transition-colors shadow-sm`}
             >
               <Lock className="h-5 w-5" aria-hidden="true" />
               {isRTL ? "مقدم الرعاية" : "Carer"}
             </button>
 
             {/* Context — CENTER */}
-            <div className="flex-1 flex items-center justify-center gap-2 text-sm font-medium text-slate-600 min-w-0">
+            <div className={`flex-1 flex items-center justify-center gap-2 text-sm font-medium text-slate-600 min-w-0 ${isPhone ? "invisible" : ""}`}>
               {/* Location display hidden for now — locationLabel is still fetched and sent as image-generation context.
               {locationLabel && (
                 <span className="flex items-center gap-1 truncate">
@@ -2324,17 +2357,17 @@ export default function AACApp() {
                 {isRTL ? "✓ تم" : "✓ Done"}
               </button>
             ) : (
-              <div className="flex items-center gap-2 shrink-0">
+              <div className={`flex items-center shrink-0 ${isPhone ? "gap-1.5" : "gap-2"}`}>
                 <button
                   onClick={() => setShowHistoryGallery(true)}
-                  className="h-10 px-3 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 flex items-center justify-center gap-1.5 text-white text-sm font-semibold transition-colors shadow-sm"
+                  className={`h-10 ${isPhone ? "px-2" : "px-3"} rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 flex items-center justify-center gap-1.5 text-white text-sm font-semibold transition-colors shadow-sm`}
                 >
                   <HistoryIcon className="h-5 w-5" aria-hidden="true" />
                   {isRTL ? "السجل" : "History"}
                 </button>
                 <button
                   onClick={() => setShowLibraryGallery(true)}
-                  className="h-10 px-3 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 flex items-center justify-center gap-1.5 text-white text-sm font-semibold transition-colors shadow-sm"
+                  className={`h-10 ${isPhone ? "px-2" : "px-3"} rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 flex items-center justify-center gap-1.5 text-white text-sm font-semibold transition-colors shadow-sm`}
                 >
                   <span className="text-lg leading-none" aria-hidden="true">📁</span>
                   {isRTL ? "المكتبة" : "Library"}
@@ -2342,7 +2375,7 @@ export default function AACApp() {
                 <button
                   onClick={() => setLanguage(isRTL ? "en" : "ar")}
                   lang={isRTL ? "en" : "ar"}
-                  className="px-4 py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-bold transition-colors shadow-sm"
+                  className={`${isPhone ? "px-3" : "px-4"} py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-bold transition-colors shadow-sm`}
                 >
                   {isRTL ? "EN" : "عربي"}
                 </button>
@@ -2354,7 +2387,7 @@ export default function AACApp() {
           <div
             role="region"
             aria-label={isRTL ? "الرسالة" : "Message"}
-            className={`shrink-0 bg-white border-b border-slate-100 px-3 py-2.5 flex items-stretch gap-2 shadow-sm transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}
+            className={`shrink-0 bg-white border-b border-slate-100 flex items-stretch shadow-sm transition-opacity ${isPhone ? "flex-wrap px-2 py-2 gap-1.5" : "px-3 py-2.5 gap-2"} ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}
           >
             <h2 className="sr-only">{isRTL ? "الرسالة" : "Message"}</h2>
             {/* Text mode toggle button */}
@@ -2365,7 +2398,7 @@ export default function AACApp() {
                 flushSync(() => setTextMode(true));
                 freeTextRef.current?.focus();
               }}
-              className={`shrink-0 w-14 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 transition-all text-slate-700 ${textMode ? "bg-orange-50 border-orange-300" : "bg-slate-50 border-slate-200 hover:bg-orange-50 hover:border-orange-200"}`}
+              className={`${isPhone ? "flex-1 h-14" : "shrink-0 w-14"} rounded-2xl border-2 flex flex-col items-center justify-center gap-1 transition-all text-slate-700 ${textMode ? "bg-orange-50 border-orange-300" : "bg-slate-50 border-slate-200 hover:bg-orange-50 hover:border-orange-200"}`}
             >
               <span className="text-2xl leading-none" aria-hidden="true">{textMode ? "😊" : "⌨️"}</span>
               <span className="text-xs font-semibold leading-none">
@@ -2378,7 +2411,7 @@ export default function AACApp() {
               ref={wordStripRef}
               onClick={e => { if ((e.target as HTMLElement).closest("span[data-tile],button[data-tile],input") === null) speakSentence(); }}
               style={{ scrollbarWidth: "none" } as CSSProperties}
-              className={`flex-1 min-w-0 h-[80px] rounded-2xl border-2 px-3 py-2 flex items-center gap-2.5 flex-nowrap overflow-x-auto overflow-y-hidden cursor-pointer transition-all
+              className={`${isPhone ? "basis-full order-first" : "flex-1"} min-w-0 h-[80px] rounded-2xl border-2 px-3 py-2 flex items-center gap-2.5 flex-nowrap overflow-x-auto overflow-y-hidden cursor-pointer transition-all
                 ${textMode
                   ? "bg-orange-50 border-orange-200 hover:border-orange-300"
                   : "bg-slate-50 border-slate-200 hover:bg-blue-50 hover:border-blue-300"}`}
@@ -2450,11 +2483,11 @@ export default function AACApp() {
             </div>
 
             {/* Action buttons: speak, delete last, clear all, generate */}
-            <div className="flex gap-1.5 items-center shrink-0">
+            <div className={`flex gap-1.5 ${isPhone ? "flex-[4] items-stretch" : "items-center shrink-0"}`}>
               <button
                 onClick={speakSentence}
                 disabled={selectedTiles.length === 0 && !freeText.trim()}
-                className="w-14 h-full rounded-2xl bg-slate-100 hover:bg-blue-100 active:bg-blue-200 disabled:opacity-30 flex flex-col items-center justify-center gap-1 transition-colors group text-slate-700"
+                className={`${isPhone ? "flex-1 h-14" : "w-14 h-full"} rounded-2xl bg-slate-100 hover:bg-blue-100 active:bg-blue-200 disabled:opacity-30 flex flex-col items-center justify-center gap-1 transition-colors group text-slate-700`}
               >
                 <Volume2 className="h-6 w-6 text-slate-600 group-hover:text-blue-600 transition-colors" aria-hidden="true" />
                 <span className="text-xs font-semibold leading-none">{isRTL ? "انطق" : "Speak"}</span>
@@ -2468,7 +2501,7 @@ export default function AACApp() {
                   }
                 }}
                 disabled={selectedTiles.length === 0 && !freeText.trim()}
-                className="w-14 h-full rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 disabled:opacity-30 flex flex-col items-center justify-center gap-1 transition-colors text-slate-700"
+                className={`${isPhone ? "flex-1 h-14" : "w-14 h-full"} rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 disabled:opacity-30 flex flex-col items-center justify-center gap-1 transition-colors text-slate-700`}
               >
                 <BackspaceIcon className={`h-6 w-6 text-slate-600 ${isRTL ? "-scale-x-100" : ""}`} aria-hidden="true" />
                 <span className="text-xs font-semibold leading-none">{isRTL ? "حذف" : "Delete"}</span>
@@ -2476,7 +2509,7 @@ export default function AACApp() {
               <button
                 onClick={clearAll}
                 disabled={selectedTiles.length === 0 && !freeText.trim()}
-                className="w-14 h-full rounded-2xl bg-slate-100 hover:bg-red-100 active:bg-red-200 disabled:opacity-30 flex flex-col items-center justify-center gap-1 transition-colors group text-slate-700"
+                className={`${isPhone ? "flex-1 h-14" : "w-14 h-full"} rounded-2xl bg-slate-100 hover:bg-red-100 active:bg-red-200 disabled:opacity-30 flex flex-col items-center justify-center gap-1 transition-colors group text-slate-700`}
               >
                 <X className="h-6 w-6 text-slate-600 group-hover:text-red-500 transition-colors" aria-hidden="true" />
                 <span className="text-xs font-semibold leading-none">{isRTL ? "مسح" : "Clear"}</span>
@@ -2485,7 +2518,7 @@ export default function AACApp() {
                 onClick={handleGenerate}
                 aria-disabled={genBlockedReason !== null}
                 aria-describedby={genBlockedReason ? "gen-blocked-reason" : undefined}
-                className={`w-14 h-full rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 flex flex-col items-center justify-center gap-1 transition-colors shadow-md shadow-blue-200 text-white ${genBlockedReason ? "opacity-30" : ""}`}
+                className={`${isPhone ? "flex-1 h-14" : "w-14 h-full"} rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 flex flex-col items-center justify-center gap-1 transition-colors shadow-md shadow-blue-200 text-white ${genBlockedReason ? "opacity-30" : ""}`}
               >
                 {isGenerating
                   ? <RefreshCw className="h-6 w-6 animate-spin" aria-hidden="true" />
@@ -2500,10 +2533,10 @@ export default function AACApp() {
           </div>
 
           {/* ── Main 3-column area ── */}
-          <div className="flex-1 flex overflow-hidden min-h-0">
+          <div className={`flex-1 flex overflow-hidden min-h-0 ${isPhone || isStacked ? "flex-col" : ""}`}>
 
             {/* Left: tile board — ~70% of area */}
-            <div id="board" role="main" tabIndex={-1} className="flex flex-col overflow-hidden min-w-0 outline-none" style={{ flex: 7 }}>
+            <div id="board" role="main" tabIndex={-1} className="flex flex-col overflow-hidden min-w-0 min-h-0 outline-none" style={isStacked ? { flex: "none", height: stackedBoardHeight, maxHeight: "65%" } : { flex: isPhone ? 1 : 7 }}>
               <h2 className="sr-only">{isRTL ? "اللوحة" : "Board"}</h2>
               <> {/* Category headers */}
               <div className={`shrink-0 border-b border-slate-100 bg-white ${isArrangingCategories ? "p-2 space-y-2" : ""}`}>
@@ -2529,13 +2562,13 @@ export default function AACApp() {
                 )}
 
                 {/* Chips row */}
-                <div className={`flex gap-1.5 px-2 pb-2 ${isArrangingCategories ? "pt-0" : "pt-2"}`}>
+                <div className={`flex gap-1.5 px-2 pb-2 ${isArrangingCategories ? "pt-0" : "pt-2"} ${isPhone ? "overflow-x-auto [scrollbar-width:none]" : ""}`}>
                   {(isArrangingCategories ? categoryOrder : visibleCategories.map(c => c.id)).map(id => {
                     const cat = CATEGORIES.find(c => c.id === id);
                     if (!cat) return null;
                     const colors = CATEGORY_COLORS[cat.id] ?? "bg-slate-50 border-slate-200";
                     const isHidden = hiddenCategories.includes(id);
-                    const isSelected = expandedCategory === cat.id;
+                    const isSelected = shownCategory === cat.id;
                     const isDragOver = dragOverCatId === id;
 
                     if (isArrangingCategories) {
@@ -2559,7 +2592,7 @@ export default function AACApp() {
                             setDragOverCatId(null);
                           }}
                           onDragEnd={() => { setDraggedCatId(null); setDragOverCatId(null); }}
-                          className={`flex-1 min-w-0 flex flex-col items-center gap-0.5 rounded-2xl py-1.5 px-1 border-2 cursor-grab active:cursor-grabbing transition-all select-none
+                          className={`${isPhone ? "shrink-0 w-24" : "flex-1 min-w-0"} flex flex-col items-center gap-0.5 rounded-2xl py-1.5 px-1 border-2 cursor-grab active:cursor-grabbing transition-all select-none
                             ${isHidden ? "opacity-40" : ""}
                             ${isDragOver ? "ring-2 ring-blue-500 scale-105" : ""}
                             ${draggedCatId === id ? "opacity-50 scale-95" : ""}
@@ -2603,9 +2636,9 @@ export default function AACApp() {
                     return (
                       <button
                         key={id}
-                        onClick={() => setExpandedCategory(isSelected ? null : cat.id)}
+                        onClick={() => setExpandedCategory(isSelected && !isPhone ? null : cat.id)}
                         aria-pressed={isSelected}
-                        className={`flex-1 min-w-0 rounded-2xl px-1 text-[13px] leading-tight break-words font-bold text-center transition-all active:scale-95 text-slate-700 ${
+                        className={`${isPhone ? "shrink-0 px-4 whitespace-nowrap" : "flex-1 min-w-0 px-1"} rounded-2xl text-[13px] leading-tight break-words font-bold text-center transition-all active:scale-95 text-slate-700 ${
                           isSelected
                             ? `${colors.replace(/\S*border-\S+/g, "")} border-[3px] border-blue-600 py-[7px] shadow-md`
                             : `${colors} border-2 py-2`
@@ -2623,7 +2656,7 @@ export default function AACApp() {
                 className={`flex-1 min-h-0 overflow-hidden p-2 transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}
                 style={{ containerType: "size" } as CSSProperties}
               >
-                {expandedCategory === null ? (
+                {shownCategory === null ? (
                   /* Home: square tiles shrink to fit the board so it never scrolls */
                   <div
                     style={{
@@ -2687,19 +2720,19 @@ export default function AACApp() {
                     className="h-full overflow-y-auto"
                     style={{ scrollbarWidth: "none" } as CSSProperties}
                   >
-                  <h2 className="sr-only">{getCatLabel(expandedCategory)}</h2>
+                  <h2 className="sr-only">{getCatLabel(shownCategory)}</h2>
                   <div
                     className="gap-1.5"
                     style={{
-                      "--tile": `calc((100cqw - ${(visibleCategories.length - 1) * 6}px) / ${Math.max(visibleCategories.length, 1)})`,
+                      "--tile": isPhone ? "104px" : `calc((100cqw - ${(visibleCategories.length - 1) * 6}px) / ${Math.max(visibleCategories.length, 1)})`,
                       display: "grid",
-                      gridTemplateColumns: `repeat(${visibleCategories.length}, var(--tile))`,
+                      gridTemplateColumns: isPhone ? "repeat(auto-fill, minmax(96px, 1fr))" : `repeat(${visibleCategories.length}, var(--tile))`,
                       justifyContent: "center",
                       direction: isRTL ? "rtl" : "ltr",
                     } as CSSProperties}
                   >
-                    {getTilesForCategory(expandedCategory).map((tile, i) => {
-                      const colors = CATEGORY_COLORS[expandedCategory] ?? "bg-slate-50 border-slate-200";
+                    {getTilesForCategory(shownCategory).map((tile, i) => {
+                      const colors = CATEGORY_COLORS[shownCategory] ?? "bg-slate-50 border-slate-200";
                       return (
                         <button
                           key={i}
@@ -2708,7 +2741,7 @@ export default function AACApp() {
                             if (tile.storyImages?.length) { setViewingStory(tile); return; }
                             addTile(tile);
                           }}
-                          {...tilePointerProps(tile, expandedCategory)}
+                          {...tilePointerProps(tile, shownCategory)}
                           className={`w-full aspect-square rounded-2xl border-2 ${colors} flex flex-col items-center justify-between p-1 active:scale-90 transition-all shadow-sm overflow-hidden`}
                         >
                           <div className="flex-1 flex items-center justify-center min-h-0 relative w-full">
@@ -2740,14 +2773,14 @@ export default function AACApp() {
 
             {/* Middle: connector word sidebar */}
             <div
-              className={`shrink-0 w-16 border-x border-slate-100 bg-white overflow-y-auto flex flex-col gap-1.5 p-1.5 transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}
+              className={`shrink-0 border-slate-100 bg-white flex gap-1.5 p-1.5 transition-opacity ${isPhone || isStacked ? "w-full h-14 border-y flex-row overflow-x-auto" : "w-16 border-x flex-col overflow-y-auto"} ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}
               style={{ scrollbarWidth: "none" } as CSSProperties}
             >
               {CONNECTORS.map(word => (
                 <button
                   key={word.en}
                   onClick={() => addTile({ emoji: "", en: word.en, ar: word.ar })}
-                  className="w-full rounded-xl bg-slate-50 hover:bg-blue-50 hover:border-blue-300 active:scale-90 border border-slate-200 transition-all py-2 px-0.5 text-center"
+                  className={`${isPhone || isStacked ? "shrink-0 px-3" : "w-full px-0.5"} rounded-xl bg-slate-50 hover:bg-blue-50 hover:border-blue-300 active:scale-90 border border-slate-200 transition-all py-2 text-center`}
                 >
                   <span className="block text-xs font-bold text-slate-700 leading-tight break-words">
                     {isRTL ? word.ar : word.en}
@@ -2757,8 +2790,25 @@ export default function AACApp() {
             </div>
 
             {/* Right: image panel — ~30% of area */}
-            <div role="complementary" aria-label={isRTL ? "الصورة" : "Image"} className={`flex flex-col border-x border-slate-100 bg-slate-50 overflow-hidden transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`} style={{ flex: 3 }}>
+            <div
+              role="complementary"
+              aria-label={isRTL ? "الصورة" : "Image"}
+              className={`flex flex-col bg-slate-50 overflow-hidden transition-opacity ${isPhone ? "fixed inset-0 z-40" : isStacked ? "border-t border-slate-100" : "border-x border-slate-100"} ${isPhone && !phoneImageOpen ? "hidden" : ""} ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}
+              style={isPhone ? undefined : { flex: isStacked ? 1 : 3, minHeight: 0 }}
+            >
               <h2 className="sr-only">{isRTL ? "الصورة" : "Image"}</h2>
+              {isPhone && (
+                <div className="shrink-0 flex items-center justify-between px-3 py-2 bg-white border-b border-slate-100">
+                  <span className="font-bold text-slate-800">{isRTL ? "الصورة" : "Picture"}</span>
+                  <button
+                    onClick={() => setPhoneImageOpen(false)}
+                    className="h-11 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 flex items-center gap-1.5 text-sm font-semibold text-slate-700"
+                  >
+                    <X className="h-5 w-5" aria-hidden="true" />
+                    {isRTL ? "إغلاق" : "Close"}
+                  </button>
+                </div>
+              )}
               {/* Mode + style selectors */}
               <div className="shrink-0 p-2 border-b border-slate-100 bg-white space-y-1.5">
                 <div role="group" aria-label={isRTL ? "نوع الصورة" : "Image mode"} className="flex rounded-xl overflow-hidden border border-slate-200">
@@ -2813,8 +2863,6 @@ export default function AACApp() {
                 </button>
               </div>
 
-              {/* Always mounted so screen readers announce each change in generation status */}
-              <div role="status" aria-live="polite" className="sr-only">{genStatus}</div>
 
               {/* Image display */}
               <div className="flex-1 overflow-y-auto p-2 space-y-2" style={{ scrollbarWidth: "none" } as CSSProperties}>
@@ -2905,7 +2953,7 @@ export default function AACApp() {
                   imageMode === "story" ? (
                     /* ── Story 2×2 grid + batch save ── */
                     <>
-                      <div className="grid grid-cols-2 gap-1.5">
+                      <div className={`grid gap-1.5 ${isStacked ? "grid-cols-4" : "grid-cols-2"}`}>
                         {generatedImages.map((img, i) => (
                           <motion.div
                             key={i}
@@ -2983,7 +3031,7 @@ export default function AACApp() {
                         <img
                           src={generatedImages[0].url}
                           alt={caption}
-                          className="w-full h-auto block"
+                          className={`block ${isStacked ? "max-h-[40dvh] w-auto mx-auto" : "w-full h-auto"}`}
                         />
                       </motion.div>
                       <button
@@ -3000,7 +3048,7 @@ export default function AACApp() {
           </div>
 
           {/* ── Bottom bar ── */}
-          <div className={`shrink-0 bg-white border-t border-slate-100 px-4 py-3 flex items-center justify-between gap-2 transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""} ${isRTL ? "flex-row-reverse" : ""}`}>
+          <div className={`shrink-0 bg-white border-t border-slate-100 ${isPhone ? "px-2 py-2" : "px-4 py-3"} flex items-center justify-between gap-2 transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""} ${isRTL ? "flex-row-reverse" : ""}`}>
             <button
               onClick={() => {
                 setBoardType(prev => prev === "general" ? "hospital" : "general");
