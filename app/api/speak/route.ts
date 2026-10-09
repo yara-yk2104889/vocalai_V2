@@ -1,33 +1,28 @@
 import { GoogleGenAI } from "@google/genai";
 
-function pcmToWav(pcmBuffer: Buffer): Buffer {
-  const sampleRate   = 24000;
-  const bitsPerSample = 16;
-  const channels     = 1;
-  const byteRate     = (sampleRate * channels * bitsPerSample) / 8;
-  const blockAlign   = (channels * bitsPerSample) / 8;
-  const header       = Buffer.alloc(44);
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
-  header.write("RIFF", 0);
-  header.writeUInt32LE(36 + pcmBuffer.length, 4);
-  header.write("WAVE", 8);
-  header.write("fmt ", 12);
-  header.writeUInt32LE(16, 16);
-  header.writeUInt16LE(1, 20);
-  header.writeUInt16LE(channels, 22);
-  header.writeUInt32LE(sampleRate, 24);
-  header.writeUInt32LE(byteRate, 28);
-  header.writeUInt16LE(blockAlign, 32);
-  header.writeUInt16LE(bitsPerSample, 34);
-  header.write("data", 36);
-  header.writeUInt32LE(pcmBuffer.length, 40);
+// Streams raw PCM (16-bit little-endian, 24 kHz, mono) to the browser as Gemini
+// generates it, so playback starts after ~0.5 s instead of waiting ~3 s for the
+// whole clip. Flash-Lite TTS was the fastest Gemini TTS model in test-latency.mjs.
+const TTS_MODEL = "gemini-3.8-flash-lite-tts";
 
-  return Buffer.concat([header, pcmBuffer]);
+type AudioStream = AsyncIterator<{ candidates?: { content?: { parts?: { inlineData?: { data?: string } }[] } }[] }>;
+
+// Next chunk of audio bytes from the Gemini stream, or null when it has ended.
+async function nextAudio(stream: AudioStream): Promise<Uint8Array | null> {
+  for (;;) {
+    const { value, done } = await stream.next();
+    if (done) return null;
+    const parts = value.candidates?.[0]?.content?.parts ?? [];
+    const audio = parts.flatMap(p => (p.inlineData?.data ? [Buffer.from(p.inlineData.data, "base64")] : []));
+    if (audio.length) return new Uint8Array(Buffer.concat(audio));
+  }
 }
 
 export async function POST(req: Request) {
   try {
-    const { text, gender, language } = await req.json();
+    const { text, gender } = await req.json();
 
     if (!text?.trim()) {
       return Response.json({ error: "No text provided" }, { status: 400 });
@@ -35,11 +30,11 @@ export async function POST(req: Request) {
 
     const voice = gender === "male" ? "Fenrir" : "Aoede";
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-preview-tts",
-      contents: [{ role: "user", parts: [{ text: `Read aloud exactly as written: ${text}` }] }],
+    // No "Read aloud…" instruction: TTS models speak the text as given, and the
+    // 3.8 models read such an instruction out loud as part of the sentence.
+    const response = await ai.models.generateContentStream({
+      model: TTS_MODEL,
+      contents: [{ role: "user", parts: [{ text }] }],
       config: {
         responseModalities: ["AUDIO"],
         speechConfig: {
@@ -47,20 +42,38 @@ export async function POST(req: Request) {
         },
       },
     });
+    const stream: AudioStream = response[Symbol.asyncIterator]();
 
-    const audioData =
-      response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-
-    if (!audioData) {
+    // Wait for the first chunk before replying, so a failure still returns a
+    // JSON error and the client can fall back to the browser voice.
+    const first = await nextAudio(stream);
+    if (!first) {
       return Response.json({ error: "No audio returned from Gemini" }, { status: 500 });
     }
 
-    const wav = pcmToWav(Buffer.from(audioData, "base64"));
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(first);
+      },
+      async pull(controller) {
+        try {
+          const chunk = await nextAudio(stream);
+          if (chunk) controller.enqueue(chunk);
+          else controller.close();
+        } catch (error) {
+          console.error("Speak route stream error:", error);
+          controller.error(error);
+        }
+      },
+      async cancel() {
+        await stream.return?.();
+      },
+    });
 
-    return new Response(wav, {
+    return new Response(body, {
       headers: {
-        "Content-Type": "audio/wav",
-        "Content-Length": String(wav.byteLength),
+        "Content-Type": "audio/L16; rate=24000; channels=1",
+        "Cache-Control": "no-store",
       },
     });
   } catch (error) {

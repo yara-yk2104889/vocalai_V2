@@ -44,3 +44,7 @@ next-env.d.ts
 /tts-samples
 /tts-samples-LONG
 /tts-samples-soniox
+
+# local TTS test scripts (need API keys; not part of the app)
+/test-latency.mjs
+/test-tts.mjs

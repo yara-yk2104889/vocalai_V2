@@ -59,6 +59,203 @@ async function idbGet(key: string): Promise<string | null> {
   });
 }
 
+// ─── TTS: streaming playback + cache ──────────────────────────────────────────
+// /api/speak streams raw PCM (16-bit little-endian, 24 kHz, mono) from Gemini.
+// Each sentence is a TtsJob that fills in as chunks arrive; playback starts on
+// the first chunk (~0.5 s) instead of waiting for the whole clip.
+// Jobs start while the sentence is still being built (see the prefetch effect in
+// AACApp) and are kept in memory, so Speak usually plays at once. Sentences that
+// are actually spoken are also saved to IDB, so repeated phrases are instant
+// after reloads.
+
+const TTS_SAMPLE_RATE = 24000;
+const TTS_MEMORY_MAX  = 40;  // recent sentences kept for this session
+const TTS_DB_MAX      = 300; // spoken phrases kept across reloads (~50–200 KB each)
+
+interface TtsJob {
+  chunks: Uint8Array[];                        // PCM received so far
+  listeners: Set<(chunk: Uint8Array) => void>; // called for each new chunk
+  started: Promise<void>;                      // first chunk arrived (rejects if none ever does)
+  done: Promise<Blob>;                         // the whole clip, once the stream ends
+}
+
+const ttsMemory = new Map<string, TtsJob>();
+
+function ttsKey(text: string, gender: string, language: string) {
+  // Must match the voice choice in /api/speak: "male" → Fenrir, anything else → Aoede.
+  return `${gender === "male" ? "male" : "female"}|${language}|${text}`;
+}
+
+function ttsDbOpen(): Promise<IDBDatabase> {
+  return new Promise((res, rej) => {
+    // v2 stores raw PCM; v1 stored WAV, so its entries are dropped on upgrade.
+    const req = indexedDB.open("vocalai_tts", 2);
+    req.onupgradeneeded = () => {
+      if (req.result.objectStoreNames.contains("audio")) req.result.deleteObjectStore("audio");
+      req.result.createObjectStore("audio");
+    };
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => rej(req.error);
+  });
+}
+async function ttsDbGet(key: string): Promise<Blob | null> {
+  const db = await ttsDbOpen();
+  return new Promise((res, rej) => {
+    const req = db.transaction("audio", "readonly").objectStore("audio").get(key);
+    req.onsuccess = () => res((req.result as { blob: Blob } | undefined)?.blob ?? null);
+    req.onerror   = () => rej(req.error);
+  });
+}
+async function ttsDbPut(key: string, blob: Blob): Promise<void> {
+  const db = await ttsDbOpen();
+  return new Promise((res, rej) => {
+    const tx    = db.transaction("audio", "readwrite");
+    const store = tx.objectStore("audio");
+    store.put({ blob, savedAt: Date.now() }, key);
+    // Once over the cap, drop the phrases spoken least recently.
+    const entries: { key: IDBValidKey; savedAt: number }[] = [];
+    const cursorReq = store.openCursor();
+    cursorReq.onsuccess = () => {
+      const cursor = cursorReq.result;
+      if (cursor) {
+        entries.push({ key: cursor.key, savedAt: cursor.value.savedAt });
+        cursor.continue();
+        return;
+      }
+      if (entries.length <= TTS_DB_MAX) return;
+      entries
+        .sort((a, b) => a.savedAt - b.savedAt)
+        .slice(0, entries.length - TTS_DB_MAX)
+        .forEach(e => store.delete(e.key));
+    };
+    tx.oncomplete = () => res();
+    tx.onerror    = () => rej(tx.error);
+  });
+}
+
+// Returns the job for a sentence: from memory, else a new one that reads IDB or
+// streams from Gemini. Concurrent calls for the same sentence share one job.
+function loadTtsAudio(text: string, gender: string, language: string): TtsJob {
+  const key = ttsKey(text, gender, language);
+  const hit = ttsMemory.get(key);
+  if (hit) {
+    ttsMemory.delete(key); // re-insert so it counts as recently used
+    ttsMemory.set(key, hit);
+    return hit;
+  }
+
+  const chunks: Uint8Array[] = [];
+  const listeners = new Set<(chunk: Uint8Array) => void>();
+  let markStarted!: () => void;
+  const firstChunk = new Promise<void>(res => { markStarted = res; });
+  const push = (chunk: Uint8Array) => {
+    chunks.push(chunk);
+    listeners.forEach(l => l(chunk));
+    markStarted();
+  };
+
+  const done = (async () => {
+    const saved = await ttsDbGet(key).catch(() => null);
+    if (saved) {
+      push(new Uint8Array(await saved.arrayBuffer()));
+      return saved;
+    }
+    const res = await fetch("/api/speak", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, gender, language }),
+    });
+    if (!res.ok || !res.body) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error ?? `HTTP ${res.status}`);
+    }
+    const reader = res.body.getReader();
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (value.length) push(value);
+    }
+    return new Blob(chunks as BlobPart[], { type: "audio/L16" });
+  })();
+
+  const job: TtsJob = {
+    chunks,
+    listeners,
+    started: Promise.race([firstChunk, done.then(() => { throw new Error("No audio received"); })]),
+    done,
+  };
+  // Prefetches never await these; keep failures from surfacing as unhandled rejections.
+  job.started.catch(() => {});
+  // Forget failures so the next attempt retries instead of replaying the error.
+  done.catch(() => { if (ttsMemory.get(key) === job) ttsMemory.delete(key); });
+
+  ttsMemory.set(key, job);
+  if (ttsMemory.size > TTS_MEMORY_MAX) ttsMemory.delete(ttsMemory.keys().next().value as string);
+  return job;
+}
+
+let ttsCtx: AudioContext | null = null;
+let ttsStopCurrent: (() => void) | null = null;
+
+// Call while still handling the tap: browsers only let audio start from a user gesture.
+function ttsAudioContext(): AudioContext {
+  if (!ttsCtx) {
+    // On iPhone/iPad, Web Audio is silenced by the mute switch unless the session is "playback".
+    const nav = navigator as Navigator & { audioSession?: { type: string } };
+    if (nav.audioSession) nav.audioSession.type = "playback";
+    ttsCtx = new AudioContext();
+  }
+  if (ttsCtx.state === "suspended") void ttsCtx.resume();
+  return ttsCtx;
+}
+
+// Plays a job through Web Audio, scheduling each chunk straight after the previous
+// one so the stream sounds like one continuous clip. Stops whatever was playing.
+function playTtsJob(job: TtsJob, ctx: AudioContext) {
+  ttsStopCurrent?.();
+  const sources: AudioBufferSourceNode[] = [];
+  let nextTime = 0;
+  let leftover: Uint8Array | null = null; // odd trailing byte split across network chunks
+
+  const play = (chunk: Uint8Array) => {
+    let bytes = chunk;
+    if (leftover) {
+      bytes = new Uint8Array(leftover.length + chunk.length);
+      bytes.set(leftover);
+      bytes.set(chunk, leftover.length);
+      leftover = null;
+    }
+    if (bytes.length % 2) {
+      leftover = bytes.slice(-1);
+      bytes = bytes.subarray(0, bytes.length - 1);
+    }
+    const samples = bytes.length / 2;
+    if (!samples) return;
+    const view   = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const buffer = ctx.createBuffer(1, samples, TTS_SAMPLE_RATE);
+    const out    = buffer.getChannelData(0);
+    for (let i = 0; i < samples; i++) out[i] = view.getInt16(i * 2, true) / 32768;
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    // A small lead absorbs network jitter; if the stream falls behind, resume after a short gap.
+    nextTime = Math.max(nextTime, ctx.currentTime + 0.03);
+    source.start(nextTime);
+    nextTime += buffer.duration;
+    sources.push(source);
+  };
+
+  job.chunks.forEach(play);
+  job.listeners.add(play);
+  job.done.catch(() => {}).finally(() => job.listeners.delete(play));
+  ttsStopCurrent = () => {
+    job.listeners.delete(play);
+    sources.forEach(s => { try { s.stop(); } catch { /* already stopped */ } });
+  };
+}
+
+let ttsSpeakId = 0; // latest Speak press; an older press that resolves later must not play
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AacTile {
@@ -66,6 +263,7 @@ interface AacTile {
   en: string;
   ar: string;
   imageUrl?: string;    // single custom photo or generated image
+  typed?: boolean;      // word typed on the keyboard (editable with Delete)
   storyImages?: string[]; // multiple scenes — makes this a story tile
 }
 
@@ -1146,7 +1344,7 @@ export default function AACApp() {
     const typed = freeText.trim();
     setSelectedTiles(prev => [
       ...prev,
-      ...(typed ? [{ emoji: "", en: typed, ar: typed }] : []),
+      ...(typed ? [{ emoji: "", en: typed, ar: typed, typed: true }] : []),
       tile,
     ]);
     if (typed) setFreeText("");
@@ -1217,26 +1415,36 @@ export default function AACApp() {
     setGenFailed(false);
   }
 
+  const sentenceText = [...selectedTiles.map(t => isRTL ? t.ar : t.en), freeText.trim()].filter(Boolean).join(" ");
+
+  // Prefetch: start generating audio once the sentence stops changing, so it is
+  // usually ready by the time Speak is pressed. Typing waits longer than tile
+  // taps so half-typed words don't each trigger a request.
+  useEffect(() => {
+    if (!sentenceText) return;
+    const id = setTimeout(
+      () => { loadTtsAudio(sentenceText, profile.gender, language); },
+      freeText.trim() ? 1000 : 400,
+    );
+    return () => clearTimeout(id);
+  }, [sentenceText, freeText, profile.gender, language]);
+
   async function speakSentence() {
-    const text = [...selectedTiles.map(t => isRTL ? t.ar : t.en), freeText.trim()].filter(Boolean).join(" ");
+    const text = sentenceText;
     if (!text || typeof window === "undefined") return;
+    const speakId = ++ttsSpeakId;
     try {
-      const res = await fetch("/api/speak", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, gender: profile.gender, language }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error ?? `HTTP ${res.status}`);
-      }
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audio.onended = () => URL.revokeObjectURL(url);
-      await audio.play();
+      const ctx = ttsAudioContext(); // before any await, while still inside the tap
+      const job = loadTtsAudio(text, profile.gender, language);
+      await job.started;
+      if (speakId !== ttsSpeakId) return; // a newer Speak press took over
+      playTtsJob(job, ctx);
+      const key = ttsKey(text, profile.gender, language);
+      job.done.then(blob => ttsDbPut(key, blob)).catch(() => {});
     } catch (e) {
+      if (speakId !== ttsSpeakId) return;
       console.error("[Gemini TTS] failed, falling back to Web Speech:", e);
+      ttsStopCurrent?.();
       try {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
@@ -2415,7 +2623,6 @@ export default function AACApp() {
                 ${textMode
                   ? "bg-orange-50 border-orange-200 hover:border-orange-300"
                   : "bg-slate-50 border-slate-200 hover:bg-blue-50 hover:border-blue-300"}`}
-              aria-label={isRTL ? "اضغط للنطق" : "Tap to speak"}
             >
               {selectedTiles.length === 0 && !freeText.trim() && !textMode && (
                 <span className="text-sm text-slate-400 select-none">
@@ -2494,11 +2701,14 @@ export default function AACApp() {
               </button>
               <button
                 onClick={() => {
-                  if (textMode && freeText.length > 0) {
+                  if (freeText.length > 0) {
                     setFreeText(prev => prev.slice(0, -1));
-                  } else {
-                    removeTileAt(selectedTiles.length - 1);
+                    return;
                   }
+                  const last = selectedTiles[selectedTiles.length - 1];
+                  removeTileAt(selectedTiles.length - 1);
+                  // A typed word goes back to the typing area minus one letter, so it can be corrected letter by letter.
+                  if (last?.typed) setFreeText(last.en.slice(0, -1));
                 }}
                 disabled={selectedTiles.length === 0 && !freeText.trim()}
                 className={`${isPhone ? "flex-1 h-14" : "w-14 h-full"} rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 disabled:opacity-30 flex flex-col items-center justify-center gap-1 transition-colors text-slate-700`}
@@ -2629,6 +2839,30 @@ export default function AACApp() {
                           <span className="text-xs font-bold text-slate-700 text-center leading-tight break-words w-full">
                             {getCatLabel(cat.id)}
                           </span>
+                          {/* dir="ltr" keeps the arrows in visual order; in Arabic the board runs right-to-left, so "left" means later. */}
+                          <div dir="ltr" className="flex gap-1">
+                            {(["left", "right"] as const).map(side => {
+                              const idx = categoryOrder.indexOf(id);
+                              const movesEarlier = (side === "left") !== isRTL;
+                              const atEnd = movesEarlier ? idx <= 0 : idx >= categoryOrder.length - 1;
+                              return (
+                                <button
+                                  key={side}
+                                  onClick={e => { e.stopPropagation(); if (movesEarlier) moveCategoryUp(id); else moveCategoryDown(id); }}
+                                  onMouseDown={e => e.stopPropagation()}
+                                  disabled={atEnd}
+                                  className="w-6 h-6 rounded-lg bg-white/80 hover:bg-white border border-slate-300 flex items-center justify-center text-slate-700 disabled:opacity-30"
+                                  aria-label={side === "left"
+                                    ? (isRTL ? `تحريك ${getCatLabel(id)} لليسار` : `Move ${getCatLabel(id)} left`)
+                                    : (isRTL ? `تحريك ${getCatLabel(id)} لليمين` : `Move ${getCatLabel(id)} right`)}
+                                >
+                                  {side === "left"
+                                    ? <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                                    : <ChevronRight className="h-4 w-4" aria-hidden="true" />}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
                       );
                     }
