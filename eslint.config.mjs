@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // iPad app wrapper (Expo project with its own lint config)
+    "mobile/**",
   ]),
 ]);
 
