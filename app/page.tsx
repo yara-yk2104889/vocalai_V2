@@ -501,8 +501,7 @@ const CATEGORIES_HOSPITAL: CategoryDef[] = [
   { id: "food_drink",  enLabel: "Food/Drink", arLabel: "طعام وشراب"   },
   { id: "feelings",    enLabel: "Feelings",   arLabel: "مشاعر",        sources: ["feelings", "sensory"] },
   { id: "people",      enLabel: "People",     arLabel: "أشخاص"        },
-  { id: "body_parts",  enLabel: "Body Parts", arLabel: "أجزاء الجسم"  },
-  { id: "pains",       enLabel: "Pain",       arLabel: "الألم"        },
+  { id: "pains",       enLabel: "Pain & Body", arLabel: "الألم والجسم", sources: ["pains", "body_parts"] },
   { id: "phrases",     enLabel: "Phrases",    arLabel: "جمل"          },
 ];
 
@@ -514,7 +513,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   phrases:    "bg-rose-50   hover:bg-rose-100   border-rose-200",
   food_drink: "bg-orange-50 hover:bg-orange-100 border-orange-200",
   body_parts: "bg-indigo-50 hover:bg-indigo-100 border-indigo-200",
-  pains:      "bg-red-50    hover:bg-red-100    border-red-200",
+  pains:      "bg-green-50  hover:bg-green-100  border-green-200",
 };
 
 // Full class strings (not built dynamically) so Tailwind keeps them in the build.
