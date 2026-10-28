@@ -125,7 +125,7 @@ ${styleInstructions}
     const results = await Promise.all(
       Array.from({ length: count }, () =>
         client.images.generate({
-          model: "gpt-image-1",
+          model: "gpt-image-2",
           prompt: fullPrompt,
           size: "1024x1024",
         })
