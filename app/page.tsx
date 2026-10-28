@@ -265,6 +265,7 @@ interface AacTile {
   imageUrl?: string;    // single custom photo or generated image
   typed?: boolean;      // word typed on the keyboard (editable with Delete)
   storyImages?: string[]; // multiple scenes — makes this a story tile
+  category?: string;    // built-in tile's original category, inside a merged category (picks its long-press phrases)
 }
 
 interface GeneratedImage {
@@ -398,7 +399,8 @@ const TILES: Record<string, AacTile[]> = {
     { emoji: "😤", en: "Feeling overwhelmed",  ar: "أشعر بضغط"             },
     { emoji: "💡", en: "Too bright",           ar: "الإضاءة قوية جداً"      },
     { emoji: "🤗", en: "Need a hug",           ar: "أريد عناقاً"           },
-    { emoji: "😴", en: "I am tired",           ar: "أنا متعب"              },
+    // Hidden for now: duplicates "Tired" since Sensory merged into Feelings.
+    // { emoji: "😴", en: "I am tired",           ar: "أنا متعب"              },
     { emoji: "😰", en: "I feel anxious",       ar: "أشعر بقلق"            },
     { emoji: "🧘", en: "Calm down please",     ar: "هدّئوني من فضلكم"      },
     { emoji: "🚪", en: "I want to leave",      ar: "أريد المغادرة"         },
@@ -480,26 +482,28 @@ const HOSPITAL_EXTRA_TILES: Record<string, AacTile[]> = {
   ],
 };
 
-const CATEGORIES_GENERAL = [
+// `sources` merges several TILES lists into one category, in order (e.g. Sensory
+// tiles appear after Feelings). Each tile keeps its own images and long-press phrases.
+type CategoryDef = { id: string; enLabel: string; arLabel: string; sources?: string[] };
+type CustomCategory = { id: string; enLabel: string; arLabel: string; color: string };
+
+const CATEGORIES_GENERAL: CategoryDef[] = [
   { id: "core",       enLabel: "Core",       arLabel: "أساسي"  },
   { id: "food_drink", enLabel: "Food/Drink", arLabel: "طعام وشراب" },
-  { id: "feelings",   enLabel: "Feelings",   arLabel: "مشاعر"  },
+  { id: "feelings",   enLabel: "Feelings",   arLabel: "مشاعر",  sources: ["feelings", "sensory"] },
   { id: "people",     enLabel: "People",     arLabel: "أشخاص"  },
   { id: "activities", enLabel: "Activities", arLabel: "أنشطة"  },
-  { id: "questions",  enLabel: "Questions",  arLabel: "أسئلة"  },
-  { id: "phrases",    enLabel: "Phrases",    arLabel: "جمل"    },
-  { id: "sensory",    enLabel: "Sensory",    arLabel: "حسي"    },
+  { id: "phrases",    enLabel: "Phrases",    arLabel: "جمل",    sources: ["phrases", "questions"] },
 ];
 
-const CATEGORIES_HOSPITAL = [
+const CATEGORIES_HOSPITAL: CategoryDef[] = [
   { id: "core",        enLabel: "Core",       arLabel: "أساسي"        },
   { id: "food_drink",  enLabel: "Food/Drink", arLabel: "طعام وشراب"   },
-  { id: "feelings",    enLabel: "Feelings",   arLabel: "مشاعر"        },
+  { id: "feelings",    enLabel: "Feelings",   arLabel: "مشاعر",        sources: ["feelings", "sensory"] },
   { id: "people",      enLabel: "People",     arLabel: "أشخاص"        },
   { id: "body_parts",  enLabel: "Body Parts", arLabel: "أجزاء الجسم"  },
   { id: "pains",       enLabel: "Pain",       arLabel: "الألم"        },
   { id: "phrases",     enLabel: "Phrases",    arLabel: "جمل"          },
-  { id: "sensory",     enLabel: "Sensory",    arLabel: "حسي"          },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -507,35 +511,28 @@ const CATEGORY_COLORS: Record<string, string> = {
   feelings:   "bg-pink-50   hover:bg-pink-100   border-pink-200",
   activities: "bg-green-50  hover:bg-green-100  border-green-200",
   people:     "bg-yellow-50 hover:bg-yellow-100 border-yellow-200",
-  questions:  "bg-purple-50 hover:bg-purple-100 border-purple-200",
   phrases:    "bg-rose-50   hover:bg-rose-100   border-rose-200",
-  sensory:    "bg-teal-50   hover:bg-teal-100   border-teal-200",
   food_drink: "bg-orange-50 hover:bg-orange-100 border-orange-200",
   body_parts: "bg-indigo-50 hover:bg-indigo-100 border-indigo-200",
   pains:      "bg-red-50    hover:bg-red-100    border-red-200",
 };
 
+// Full class strings (not built dynamically) so Tailwind keeps them in the build.
+const CUSTOM_CATEGORY_COLORS: { id: string; swatch: string; classes: string }[] = [
+  { id: "sky",     swatch: "bg-sky-300",     classes: "bg-sky-50     hover:bg-sky-100     border-sky-200"     },
+  { id: "lime",    swatch: "bg-lime-300",    classes: "bg-lime-50    hover:bg-lime-100    border-lime-200"    },
+  { id: "amber",   swatch: "bg-amber-300",   classes: "bg-amber-50   hover:bg-amber-100   border-amber-200"   },
+  { id: "violet",  swatch: "bg-violet-300",  classes: "bg-violet-50  hover:bg-violet-100  border-violet-200"  },
+  { id: "teal",    swatch: "bg-teal-300",    classes: "bg-teal-50    hover:bg-teal-100    border-teal-200"    },
+  { id: "fuchsia", swatch: "bg-fuchsia-300", classes: "bg-fuchsia-50 hover:bg-fuchsia-100 border-fuchsia-200" },
+  { id: "cyan",    swatch: "bg-cyan-300",    classes: "bg-cyan-50    hover:bg-cyan-100    border-cyan-200"    },
+  { id: "slate",   swatch: "bg-slate-300",   classes: "bg-slate-50   hover:bg-slate-100   border-slate-200"   },
+];
+
 const STYLE_OPTIONS: { id: "symbolic" | "cartoon" | "realistic"; en: string; ar: string }[] = [
   { id: "symbolic",  en: "Symbolic",  ar: "رمزي"   },
   { id: "cartoon",   en: "Cartoon",   ar: "كرتوني" },
   { id: "realistic", en: "Realistic", ar: "واقعي"  },
-];
-
-const CONNECTORS: { en: string; ar: string }[] = [
-  { en: "I",      ar: "أنا"   },
-  { en: "the",    ar: "الـ"   },
-  { en: "a",      ar: "يوجد"  },
-  { en: "my",     ar: "لدي"   },
-  { en: "and",    ar: "و"     },
-  { en: "then",   ar: "ثم"    },
-  { en: "with",   ar: "مع"    },
-  { en: "not",    ar: "لا"    },
-  { en: "to",     ar: "إلى"   },
-  { en: "go",     ar: "أذهب"  },
-  { en: "after",  ar: "بعد"   },
-  { en: "before", ar: "قبل"   },
-  { en: "in",     ar: "في"    },
-  { en: "at",     ar: "عند"   },
 ];
 
 const DEFAULT_PIN = "1234";
@@ -726,14 +723,30 @@ export default function AACApp() {
 
   // ── Customise Board modal
   const [showCustomiseModal, setShowCustomiseModal]   = useState(false);
-  const [customiseView, setCustomiseView]             = useState<"menu" | "arrange" | "add">("menu");
+  const [customiseView, setCustomiseView]             = useState<"menu" | "add" | "category">("menu");
+
+  // ── Custom categories (shown on both boards)
+  const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
+  const [newCatEn, setNewCatEn]       = useState("");
+  const [newCatAr, setNewCatAr]       = useState("");
+  const [newCatColor, setNewCatColor] = useState(CUSTOM_CATEGORY_COLORS[0].id);
 
   // ── Image generation preferences
   const [culturalGrounding, setCulturalGrounding] = useState(false);
 
   // ── Board type (general vs. hospital) ──────────────────────────────────────
   const [boardType, setBoardType] = useState<"general" | "hospital">("general");
-  const CATEGORIES = boardType === "hospital" ? CATEGORIES_HOSPITAL : CATEGORIES_GENERAL;
+  const CATEGORIES: CategoryDef[] = [
+    ...(boardType === "hospital" ? CATEGORIES_HOSPITAL : CATEGORIES_GENERAL),
+    ...customCategories,
+  ];
+  const categoryColors: Record<string, string> = {
+    ...CATEGORY_COLORS,
+    ...Object.fromEntries(customCategories.map(c => [
+      c.id,
+      (CUSTOM_CATEGORY_COLORS.find(col => col.id === c.color) ?? CUSTOM_CATEGORY_COLORS[0]).classes,
+    ])),
+  };
 
   // ── Board layout settings — kept separately per board type since each has a
   // different set of category ids
@@ -758,7 +771,7 @@ export default function AACApp() {
       [boardType]: typeof update === "function" ? (update as (p: string[]) => string[])(prev[boardType]) : update,
     }));
   }
-  const [tilesPerColumn, setTilesPerColumn]     = useState(4);
+  const tilesPerColumn = 4;
 
   // ── Category label overrides
   const [categoryLabels, setCategoryLabels] = useState<Record<string, { en: string; ar: string }>>({});
@@ -855,9 +868,13 @@ export default function AACApp() {
         const savedCultural    = localStorage.getItem("vocalai_cultural_grounding");
         const savedCatOrder    = localStorage.getItem("vocalai_category_order");
         const savedHidden      = localStorage.getItem("vocalai_hidden_categories");
-        const savedTilesPerCol = localStorage.getItem("vocalai_tiles_per_column");
         const savedCatLabels   = localStorage.getItem("vocalai_category_labels");
         const savedBoardType   = localStorage.getItem("vocalai_board_type");
+        const savedCustomCats  = localStorage.getItem("vocalai_custom_categories");
+        const customCats: CustomCategory[] = savedCustomCats ? JSON.parse(savedCustomCats) : [];
+        setCustomCategories(customCats);
+        const generalIds  = [...CATEGORIES_GENERAL.map(c => c.id),  ...customCats.map(c => c.id)];
+        const hospitalIds = [...CATEGORIES_HOSPITAL.map(c => c.id), ...customCats.map(c => c.id)];
         if (savedProfile)     setProfile(JSON.parse(savedProfile));
         if (savedPeople)      setImportantPeople(JSON.parse(savedPeople));
         if (savedLanguage)    setLanguage(savedLanguage as "en" | "ar");
@@ -878,22 +895,18 @@ export default function AACApp() {
         // (drop stale ids, append new ones) so manual "arrange" customization survives.
         const savedLayoutVersion = Number(localStorage.getItem("vocalai_category_layout_version") ?? "1");
         if (savedLayoutVersion < CATEGORY_LAYOUT_VERSION) {
-          setCategoryOrderByBoard({
-            general:  CATEGORIES_GENERAL.map(c => c.id),
-            hospital: CATEGORIES_HOSPITAL.map(c => c.id),
-          });
+          setCategoryOrderByBoard({ general: generalIds, hospital: hospitalIds });
         } else {
           setCategoryOrderByBoard(prev => ({
-            general:  reconcileOrder(prev.general,  CATEGORIES_GENERAL.map(c => c.id)),
-            hospital: reconcileOrder(prev.hospital, CATEGORIES_HOSPITAL.map(c => c.id)),
+            general:  reconcileOrder(prev.general,  generalIds),
+            hospital: reconcileOrder(prev.hospital, hospitalIds),
           }));
         }
         localStorage.setItem("vocalai_category_layout_version", String(CATEGORY_LAYOUT_VERSION));
         setHiddenCategoriesByBoard(prev => ({
-          general:  prev.general.filter(id => CATEGORIES_GENERAL.some(c => c.id === id)),
-          hospital: prev.hospital.filter(id => CATEGORIES_HOSPITAL.some(c => c.id === id)),
+          general:  prev.general.filter(id => generalIds.includes(id)),
+          hospital: prev.hospital.filter(id => hospitalIds.includes(id)),
         }));
-        if (savedTilesPerCol) setTilesPerColumn(Number(savedTilesPerCol));
         if (savedCatLabels)   setCategoryLabels(JSON.parse(savedCatLabels));
 
         if (savedTiles) {
@@ -1104,12 +1117,12 @@ export default function AACApp() {
   }, [boardType]);
 
   useEffect(() => {
-    localStorage.setItem("vocalai_tiles_per_column", String(tilesPerColumn));
-  }, [tilesPerColumn]);
-
-  useEffect(() => {
     localStorage.setItem("vocalai_category_labels", JSON.stringify(categoryLabels));
   }, [categoryLabels]);
+
+  useEffect(() => {
+    localStorage.setItem("vocalai_custom_categories", JSON.stringify(customCategories));
+  }, [customCategories]);
 
   useEffect(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) return;
@@ -1196,10 +1209,11 @@ export default function AACApp() {
   }
 
   function getTilesForCategory(cat: string): AacTile[] {
-    const builtIn = [
-      ...(TILES[cat] ?? []),
-      ...(boardType === "hospital" ? (HOSPITAL_EXTRA_TILES[cat] ?? []) : []),
-    ].map(t => ({ ...t, imageUrl: tileImageFor(cat, t.en) }));
+    const sources = CATEGORIES.find(c => c.id === cat)?.sources ?? [cat];
+    const builtIn = sources.flatMap(src => [
+      ...(TILES[src] ?? []),
+      ...(boardType === "hospital" ? (HOSPITAL_EXTRA_TILES[src] ?? []) : []),
+    ].map(t => ({ ...t, imageUrl: tileImageFor(src, t.en), category: src })));
 
     let base: AacTile[];
     if (cat === "people") {
@@ -1217,7 +1231,7 @@ export default function AACApp() {
     } else {
       base = builtIn;
     }
-    return [...base, ...(customTiles[cat] ?? [])];
+    return [...base, ...sources.flatMap(src => customTiles[src] ?? [])];
   }
 
   // ── Board layout helpers ───────────────────────────────────────────────────
@@ -1238,6 +1252,73 @@ export default function AACApp() {
   const boardCols = Math.max(visibleCategories.length, 1);
   // Tablet portrait: size the board to its width-limited square tiles so the image panel gets the remaining height.
   const stackedBoardHeight = `calc(72px + ${tilesPerColumn} * ((100vw - ${16 + (boardCols - 1) * 6}px) / ${boardCols}) + ${(tilesPerColumn - 1) * 6}px)`;
+
+  // Home tile size in px, measured from the tile area with the same formula as its CSS `--tile`,
+  // so the category chips (outside that area) can be exactly one tile wide and sit over their columns.
+  const [boardArea, setBoardArea] = useState<HTMLDivElement | null>(null);
+  const [boardTile, setBoardTile] = useState<number | null>(null);
+  useEffect(() => {
+    if (!boardArea) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setBoardTile(Math.min(
+        (width - (boardCols - 1) * 6) / boardCols,
+        (height - (tilesPerColumn - 1) * 6) / tilesPerColumn,
+      ));
+    });
+    observer.observe(boardArea);
+    return () => observer.disconnect();
+  }, [boardArea, boardCols, tilesPerColumn]);
+  const alignChips = !isPhone && !isArrangingCategories && boardTile !== null && boardTile > 0;
+
+  function addCustomCategory() {
+    const en = newCatEn.trim();
+    if (!en) return;
+    const id = `custom_${uid()}`;
+    setCustomCategories(prev => [...prev, { id, enLabel: en, arLabel: newCatAr.trim() || en, color: newCatColor }]);
+    setCategoryOrderByBoard(prev => ({ general: [...prev.general, id], hospital: [...prev.hospital, id] }));
+    setNewCatEn(""); setNewCatAr(""); setNewCatColor(CUSTOM_CATEGORY_COLORS[0].id);
+    // Straight into Add New Tile with the new category picked, so it can be filled.
+    setCustomCategory(id);
+    setCustomiseView("add");
+  }
+
+  function deleteCustomCategory(id: string) {
+    const label = getCatLabel(id);
+    if (!window.confirm(isRTL ? `حذف فئة "${label}" وكل بطاقاتها؟` : `Delete the "${label}" category and all its tiles?`)) return;
+    setCustomCategories(prev => prev.filter(c => c.id !== id));
+    setCategoryOrderByBoard(prev => ({ general: prev.general.filter(x => x !== id), hospital: prev.hospital.filter(x => x !== id) }));
+    setHiddenCategoriesByBoard(prev => ({ general: prev.general.filter(x => x !== id), hospital: prev.hospital.filter(x => x !== id) }));
+    setCustomTiles(prev => { const next = { ...prev }; delete next[id]; return next; });
+    setCategoryLabels(prev => { const next = { ...prev }; delete next[id]; return next; });
+    if (expandedCategory === id) setExpandedCategory(null);
+    if (customCategory === id) setCustomCategory(CATEGORIES[0].id);
+  }
+
+  function renderBoardActions(inPanel: boolean) {
+    return (
+      <>
+        <button
+          onClick={() => {
+            setBoardType(prev => prev === "general" ? "hospital" : "general");
+            setExpandedCategory(null);
+          }}
+          className={`${inPanel ? "flex-1 justify-center" : ""} flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-700 font-semibold text-sm transition-colors border border-blue-200`}
+        >
+          {boardType === "general"
+            ? <>🏥 {isRTL ? "المستشفى" : "Hospital"}</>
+            : <><Home className="h-4 w-4" /> {isRTL ? "الرئيسية" : "Home"}</>}
+        </button>
+        <button
+          onClick={() => { setShowCustomiseModal(true); setCustomiseView("menu"); setCustomImageUrl(""); setCustomEmoji(""); setCustomLabelEn(""); setCustomLabelAr(""); }}
+          className={`${inPanel ? "flex-1 justify-center" : ""} flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-600 font-semibold text-sm transition-colors border border-slate-200`}
+        >
+          <Settings className="h-4 w-4" />
+          {isRTL ? "تخصيص اللوحة" : "Customise Board"}
+        </button>
+      </>
+    );
+  }
 
   function moveCategoryUp(id: string) {
     setCategoryOrder(prev => {
@@ -1357,7 +1438,7 @@ export default function AACApp() {
   const COMBO_HEADER_H = 56;
 
   function tilePointerProps(tile: AacTile, catId: string) {
-    const phrases = COMBO_PHRASES_BY_CAT[catId] ?? [];
+    const phrases = COMBO_PHRASES_BY_CAT[tile.category ?? catId] ?? [];
     return {
       onPointerDown(e: React.PointerEvent) {
         longPressActiveRef.current = false;
@@ -1819,7 +1900,7 @@ export default function AACApp() {
                           key={cat.id}
                           aria-pressed={addToBoardCategory === cat.id}
                           onClick={() => setAddToBoardCategory(cat.id)}
-                          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${CATEGORY_COLORS[cat.id] ?? ""} ${addToBoardCategory === cat.id ? "ring-2 ring-blue-500 ring-offset-1" : ""} text-slate-700`}
+                          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${categoryColors[cat.id] ?? ""} ${addToBoardCategory === cat.id ? "ring-2 ring-blue-500 ring-offset-1" : ""} text-slate-700`}
                         >
                           <SelectedTick on={addToBoardCategory === cat.id} />
                           {getCatLabel(cat.id)}
@@ -2255,8 +2336,8 @@ export default function AACApp() {
                   <h2 className="font-bold text-lg text-slate-800">
                     {customiseView === "menu"
                       ? (isRTL ? "تخصيص اللوحة" : "Customise Board")
-                      : customiseView === "arrange"
-                      ? (isRTL ? "ترتيب اللوحة" : "Arrange Board")
+                      : customiseView === "category"
+                      ? (isRTL ? "إضافة فئة" : "Add New Category")
                       : (isRTL ? "إضافة بطاقة" : "Add New Tile")}
                   </h2>
                 </div>
@@ -2294,35 +2375,86 @@ export default function AACApp() {
                     </div>
                   </button>
 
-                  {/* Grid size — always accessible from menu */}
-                  <div className="space-y-2 pt-1 border-t border-slate-100">
-                    <p className="text-sm font-semibold text-slate-700">{isRTL ? "عدد البطاقات في العمود" : "Tiles per column"}</p>
-                    <div role="group" aria-label={isRTL ? "عدد البطاقات في العمود" : "Tiles per column"} className="flex gap-2">
-                      {[3, 4, 5, 6, 8].map(n => (
-                        <button key={n} aria-pressed={tilesPerColumn === n} onClick={() => setTilesPerColumn(n)}
-                          className={`flex-1 py-2 rounded-xl border-2 text-sm font-bold transition-all ${tilesPerColumn === n ? "bg-blue-600 text-white border-blue-600 shadow-[inset_0_0_0_3px_#fff]" : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"}`}>
-                          {n}
-                        </button>
-                      ))}
+                  <button
+                    onClick={() => setCustomiseView("category")}
+                    className="w-full flex items-center gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-blue-50 border-2 border-slate-200 hover:border-blue-300 transition-all text-left"
+                  >
+                    <span className="text-3xl">🗃️</span>
+                    <div>
+                      <p className="font-bold text-slate-800 text-sm">{isRTL ? "إضافة فئة جديدة" : "Add New Category"}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{isRTL ? "أضف عموداً جديداً إلى اللوحة" : "Add a new column to the board"}</p>
                     </div>
-                  </div>
+                  </button>
                 </div>
               )}
 
-              {/* ── Arrange view (grid size only — reorder/hide is on the board) ── */}
-              {customiseView === "arrange" && (
-                <div className="space-y-4">
+              {/* ── Add Category view ── */}
+              {customiseView === "category" && (
+                <div className="space-y-5">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">{isRTL ? "الاسم (EN) *" : "Name (EN) *"}</Label>
+                      <Input lang="en" value={newCatEn} onChange={e => setNewCatEn(e.target.value)}
+                        placeholder="e.g. School" className="rounded-xl" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">{isRTL ? "الاسم (AR)" : "Name (AR)"}</Label>
+                      <Input dir="rtl" lang="ar" value={newCatAr} onChange={e => setNewCatAr(e.target.value)}
+                        placeholder="مثال: المدرسة" className="rounded-xl" />
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
-                    <p className="text-sm font-semibold text-slate-700">{isRTL ? "عدد البطاقات في العمود" : "Tiles per column"}</p>
-                    <div role="group" aria-label={isRTL ? "عدد البطاقات في العمود" : "Tiles per column"} className="flex gap-2">
-                      {[3, 4, 5, 6, 8].map(n => (
-                        <button key={n} aria-pressed={tilesPerColumn === n} onClick={() => setTilesPerColumn(n)}
-                          className={`flex-1 py-2 rounded-xl border-2 text-sm font-bold transition-all ${tilesPerColumn === n ? "bg-blue-600 text-white border-blue-600 shadow-[inset_0_0_0_3px_#fff]" : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"}`}>
-                          {n}
+                    <p className="text-sm font-semibold text-slate-700">{isRTL ? "اللون" : "Colour"}</p>
+                    <div role="group" aria-label={isRTL ? "اللون" : "Colour"} className="flex flex-wrap gap-2">
+                      {CUSTOM_CATEGORY_COLORS.map(col => (
+                        <button
+                          key={col.id}
+                          aria-pressed={newCatColor === col.id}
+                          aria-label={col.id}
+                          onClick={() => setNewCatColor(col.id)}
+                          className={`w-10 h-10 rounded-full ${col.swatch} flex items-center justify-center border-2 ${newCatColor === col.id ? "border-slate-800" : "border-white"} shadow-sm`}
+                        >
+                          {newCatColor === col.id && <Check className="h-5 w-5 text-slate-800" strokeWidth={3} aria-hidden="true" />}
                         </button>
                       ))}
                     </div>
                   </div>
+
+                  {newCatEn.trim() && (
+                    <div className="space-y-1">
+                      <p className="text-xs text-slate-500">{isRTL ? "معاينة" : "Preview"}</p>
+                      <span className={`inline-block px-4 py-2 rounded-2xl border-2 text-[13px] font-bold text-slate-700 ${(CUSTOM_CATEGORY_COLORS.find(c => c.id === newCatColor) ?? CUSTOM_CATEGORY_COLORS[0]).classes}`}>
+                        {isRTL ? (newCatAr.trim() || newCatEn.trim()) : newCatEn.trim()}
+                      </span>
+                    </div>
+                  )}
+
+                  <Button
+                    className="w-full rounded-full bg-blue-600 hover:bg-blue-700 py-6 font-bold"
+                    disabled={!newCatEn.trim()}
+                    onClick={addCustomCategory}
+                  >
+                    {isRTL ? "إضافة الفئة ثم إضافة بطاقات" : "Add category, then add tiles"}
+                  </Button>
+
+                  {customCategories.length > 0 && (
+                    <div className="space-y-2 pt-1 border-t border-slate-100">
+                      <p className="text-sm font-semibold text-slate-700">{isRTL ? "فئاتك" : "Your categories"}</p>
+                      {customCategories.map(c => (
+                        <div key={c.id} className={`flex items-center justify-between gap-2 px-3 py-2 rounded-2xl border-2 ${categoryColors[c.id]}`}>
+                          <span className="text-sm font-bold text-slate-700">{getCatLabel(c.id)}</span>
+                          <button
+                            onClick={() => deleteCustomCategory(c.id)}
+                            className="w-9 h-9 rounded-xl bg-white/80 hover:bg-white flex items-center justify-center text-red-500"
+                            aria-label={isRTL ? `حذف ${getCatLabel(c.id)}` : `Delete ${getCatLabel(c.id)}`}
+                          >
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -2336,7 +2468,7 @@ export default function AACApp() {
                   <div role="group" aria-label={isRTL ? "الفئة" : "Category"} className="flex flex-wrap gap-2">
                     {CATEGORIES.map(cat => (
                       <button key={cat.id} aria-pressed={customCategory === cat.id} onClick={() => setCustomCategory(cat.id)}
-                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${CATEGORY_COLORS[cat.id] ?? ""} ${customCategory === cat.id ? "ring-2 ring-blue-500 ring-offset-1" : ""} text-slate-700`}>
+                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${categoryColors[cat.id] ?? ""} ${customCategory === cat.id ? "ring-2 ring-blue-500 ring-offset-1" : ""} text-slate-700`}>
                         <SelectedTick on={customCategory === cat.id} />
                         {getCatLabel(cat.id)}
                       </button>
@@ -2479,7 +2611,7 @@ export default function AACApp() {
                 {(customEmoji || customImageUrl) && customLabelEn && (
                   <div className="space-y-1">
                     <p className="text-xs text-slate-500">{isRTL ? "معاينة" : "Preview"}</p>
-                    <div className={`w-20 h-20 rounded-xl border-2 flex flex-col items-center justify-center p-1 ${CATEGORY_COLORS[customCategory] ?? "bg-slate-50 border-slate-200"}`}>
+                    <div className={`w-20 h-20 rounded-xl border-2 flex flex-col items-center justify-center p-1 ${categoryColors[customCategory] ?? "bg-slate-50 border-slate-200"}`}>
                       {customImageUrl
                         ? <img src={customImageUrl} className="w-10 h-10 object-cover rounded-lg" alt="" />
                         : <span className="text-3xl">{customEmoji}</span>
@@ -2758,25 +2890,15 @@ export default function AACApp() {
                         ? <>اسحب للترتيب · اضغط <Eye className="inline h-3 w-3 align-[-2px]" role="img" aria-label={isRTL ? "العين" : "eye"} /> للإخفاء أو الإظهار</>
                         : <>Drag to reorder · tap <Eye className="inline h-3 w-3 align-[-2px]" role="img" aria-label={isRTL ? "العين" : "eye"} /> to show/hide</>}
                     </p>
-                    {/* Grid size inline picker */}
-                    <div role="group" aria-label={isRTL ? "عدد البطاقات في العمود" : "Tiles per column"} className="flex gap-1 items-center">
-                      <span className="text-xs text-slate-500 font-medium">{isRTL ? "صفوف:" : "Rows:"}</span>
-                      {[3, 4, 5, 6, 8].map(n => (
-                        <button key={n} aria-pressed={tilesPerColumn === n} onClick={() => setTilesPerColumn(n)}
-                          className={`w-7 h-7 rounded-lg text-xs font-bold border transition-all ${tilesPerColumn === n ? "bg-blue-600 text-white border-blue-600 shadow-[inset_0_0_0_2px_#fff]" : "bg-white text-slate-500 border-slate-200"}`}>
-                          {n}
-                        </button>
-                      ))}
-                    </div>
                   </div>
                 )}
 
                 {/* Chips row */}
-                <div className={`flex gap-1.5 px-2 pb-2 ${isArrangingCategories ? "pt-0" : "pt-2"} ${isPhone ? "overflow-x-auto [scrollbar-width:none]" : ""}`}>
+                <div className={`flex gap-1.5 px-2 pb-2 ${isArrangingCategories ? "pt-0" : "pt-2"} ${isPhone ? "overflow-x-auto [scrollbar-width:none]" : ""} ${alignChips ? "justify-center" : ""}`}>
                   {(isArrangingCategories ? categoryOrder : visibleCategories.map(c => c.id)).map(id => {
                     const cat = CATEGORIES.find(c => c.id === id);
                     if (!cat) return null;
-                    const colors = CATEGORY_COLORS[cat.id] ?? "bg-slate-50 border-slate-200";
+                    const colors = categoryColors[cat.id] ?? "bg-slate-50 border-slate-200";
                     const isHidden = hiddenCategories.includes(id);
                     const isSelected = shownCategory === cat.id;
                     const isDragOver = dragOverCatId === id;
@@ -2835,6 +2957,16 @@ export default function AACApp() {
                             >
                               <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                             </button>
+                            {customCategories.some(c => c.id === id) && (
+                              <button
+                                onClick={e => { e.stopPropagation(); deleteCustomCategory(id); }}
+                                className="w-6 h-6 rounded-lg bg-white/80 hover:bg-white border border-slate-300 flex items-center justify-center text-red-500"
+                                onMouseDown={e => e.stopPropagation()}
+                                aria-label={isRTL ? `حذف ${getCatLabel(id)}` : `Delete ${getCatLabel(id)}`}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                              </button>
+                            )}
                           </div>
                           <span className="text-xs font-bold text-slate-700 text-center leading-tight break-words w-full">
                             {getCatLabel(cat.id)}
@@ -2872,7 +3004,8 @@ export default function AACApp() {
                         key={id}
                         onClick={() => setExpandedCategory(isSelected && !isPhone ? null : cat.id)}
                         aria-pressed={isSelected}
-                        className={`${isPhone ? "shrink-0 px-4 whitespace-nowrap" : "flex-1 min-w-0 px-1"} rounded-2xl text-[13px] leading-tight break-words font-bold text-center transition-all active:scale-95 text-slate-700 ${
+                        style={alignChips ? { width: boardTile! } : undefined}
+                        className={`${isPhone ? "shrink-0 px-4 whitespace-nowrap" : alignChips ? "shrink-0 min-w-0 px-1" : "flex-1 min-w-0 px-1"} rounded-2xl text-[13px] leading-tight break-words font-bold text-center transition-all active:scale-95 text-slate-700 ${
                           isSelected
                             ? `${colors.replace(/\S*border-\S+/g, "")} border-[3px] border-blue-600 py-[7px] shadow-md`
                             : `${colors} border-2 py-2`
@@ -2887,6 +3020,7 @@ export default function AACApp() {
 
               {/* Emoji area */}
               <div
+                ref={setBoardArea}
                 className={`flex-1 min-h-0 overflow-hidden p-2 transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}
                 style={{ containerType: "size" } as CSSProperties}
               >
@@ -2901,7 +3035,7 @@ export default function AACApp() {
                     } as CSSProperties}
                   >
                     {visibleCategories.map(cat => {
-                      const colors = CATEGORY_COLORS[cat.id] ?? "bg-slate-50 hover:bg-slate-100 border-slate-200";
+                      const colors = categoryColors[cat.id] ?? "bg-slate-50 hover:bg-slate-100 border-slate-200";
                       return (
                       <div
                         key={cat.id}
@@ -2958,7 +3092,8 @@ export default function AACApp() {
                   <div
                     className="gap-1.5"
                     style={{
-                      "--tile": isPhone ? "104px" : `calc((100cqw - ${(visibleCategories.length - 1) * 6}px) / ${Math.max(visibleCategories.length, 1)})`,
+                      // Same size as the home tiles, so the open category's columns stay under the chips.
+                      "--tile": isPhone ? "104px" : alignChips ? `${boardTile}px` : `calc((100cqw - ${(visibleCategories.length - 1) * 6}px) / ${Math.max(visibleCategories.length, 1)})`,
                       display: "grid",
                       gridTemplateColumns: isPhone ? "repeat(auto-fill, minmax(96px, 1fr))" : `repeat(${visibleCategories.length}, var(--tile))`,
                       justifyContent: "center",
@@ -2966,7 +3101,7 @@ export default function AACApp() {
                     } as CSSProperties}
                   >
                     {getTilesForCategory(shownCategory).map((tile, i) => {
-                      const colors = CATEGORY_COLORS[shownCategory] ?? "bg-slate-50 border-slate-200";
+                      const colors = categoryColors[shownCategory] ?? "bg-slate-50 border-slate-200";
                       return (
                         <button
                           key={i}
@@ -3003,24 +3138,6 @@ export default function AACApp() {
                 )}
               </div>
             </>
-            </div>
-
-            {/* Middle: connector word sidebar */}
-            <div
-              className={`shrink-0 border-slate-100 bg-white flex gap-1.5 p-1.5 transition-opacity ${isPhone || isStacked ? "w-full h-14 border-y flex-row overflow-x-auto" : "w-16 border-x flex-col overflow-y-auto"} ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""}`}
-              style={{ scrollbarWidth: "none" } as CSSProperties}
-            >
-              {CONNECTORS.map(word => (
-                <button
-                  key={word.en}
-                  onClick={() => addTile({ emoji: "", en: word.en, ar: word.ar })}
-                  className={`${isPhone || isStacked ? "shrink-0 px-3" : "w-full px-0.5"} rounded-xl bg-slate-50 hover:bg-blue-50 hover:border-blue-300 active:scale-90 border border-slate-200 transition-all py-2 text-center`}
-                >
-                  <span className="block text-xs font-bold text-slate-700 leading-tight break-words">
-                    {isRTL ? word.ar : word.en}
-                  </span>
-                </button>
-              ))}
             </div>
 
             {/* Right: image panel — ~30% of area */}
@@ -3278,30 +3395,20 @@ export default function AACApp() {
                   )
                 )}
               </div>
+              {!isPhone && !isStacked && (
+                <div className="shrink-0 p-2 border-t border-slate-100 bg-white flex gap-2">
+                  {renderBoardActions(true)}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* ── Bottom bar ── */}
-          <div className={`shrink-0 bg-white border-t border-slate-100 ${isPhone ? "px-2 py-2" : "px-4 py-3"} flex items-center justify-between gap-2 transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""} ${isRTL ? "flex-row-reverse" : ""}`}>
-            <button
-              onClick={() => {
-                setBoardType(prev => prev === "general" ? "hospital" : "general");
-                setExpandedCategory(null);
-              }}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-blue-50 hover:bg-blue-100 active:bg-blue-200 text-blue-700 font-semibold text-sm transition-colors border border-blue-200"
-            >
-              {boardType === "general"
-                ? <>🏥 {isRTL ? "المستشفى" : "Hospital"}</>
-                : <><Home className="h-4 w-4" /> {isRTL ? "الرئيسية" : "Home"}</>}
-            </button>
-            <button
-              onClick={() => { setShowCustomiseModal(true); setCustomiseView("menu"); setCustomImageUrl(""); setCustomEmoji(""); setCustomLabelEn(""); setCustomLabelAr(""); }}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-600 font-semibold text-sm transition-colors border border-slate-200"
-            >
-              <Settings className="h-4 w-4" />
-              {isRTL ? "تخصيص اللوحة" : "Customise Board"}
-            </button>
-          </div>
+          {/* ── Bottom bar (laptop / landscape tablet: these buttons sit under the image panel instead) ── */}
+          {(isPhone || isStacked) && (
+            <div className={`shrink-0 bg-white border-t border-slate-100 ${isPhone ? "px-2 py-2" : "px-4 py-3"} flex items-center justify-between gap-2 transition-opacity ${isArrangingCategories ? "opacity-20 pointer-events-none select-none" : ""} ${isRTL ? "flex-row-reverse" : ""}`}>
+              {renderBoardActions(false)}
+            </div>
+          )}
         {/* ── Long-press phrase combo overlay ── */}
         {longPressMenu && (
           <div
