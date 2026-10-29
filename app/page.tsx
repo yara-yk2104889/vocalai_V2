@@ -770,7 +770,7 @@ export default function AACApp() {
       [boardType]: typeof update === "function" ? (update as (p: string[]) => string[])(prev[boardType]) : update,
     }));
   }
-  const tilesPerColumn = 4;
+  const MIN_TILES_PER_COLUMN = 4; // more rows are added when categories make tiles narrow (see boardSize below)
 
   // ── Category label overrides
   const [categoryLabels, setCategoryLabels] = useState<Record<string, { en: string; ar: string }>>({});
@@ -1249,25 +1249,35 @@ export default function AACApp() {
   // Phones show one category at a time, so a category is always selected there.
   const shownCategory = isPhone ? (expandedCategory ?? visibleCategories[0]?.id ?? null) : expandedCategory;
   const boardCols = Math.max(visibleCategories.length, 1);
-  // Tablet portrait: size the board to its width-limited square tiles so the image panel gets the remaining height.
-  const stackedBoardHeight = `calc(72px + ${tilesPerColumn} * ((100vw - ${16 + (boardCols - 1) * 6}px) / ${boardCols}) + ${(tilesPerColumn - 1) * 6}px)`;
 
-  // Home tile size in px, measured from the tile area with the same formula as its CSS `--tile`,
-  // so the category chips (outside that area) can be exactly one tile wide and sit over their columns.
+  // Size of the home tile area, measured so the board can (1) add rows when extra
+  // categories make the square tiles narrow, and (2) size the category chips (outside
+  // that area) to exactly one tile wide so they sit over their columns.
   const [boardArea, setBoardArea] = useState<HTMLDivElement | null>(null);
-  const [boardTile, setBoardTile] = useState<number | null>(null);
+  const [boardSize, setBoardSize] = useState<{ width: number; height: number } | null>(null);
   useEffect(() => {
     if (!boardArea) return;
     const observer = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
-      setBoardTile(Math.min(
-        (width - (boardCols - 1) * 6) / boardCols,
-        (height - (tilesPerColumn - 1) * 6) / tilesPerColumn,
-      ));
+      setBoardSize({ width, height });
     });
     observer.observe(boardArea);
     return () => observer.disconnect();
-  }, [boardArea, boardCols, tilesPerColumn]);
+  }, [boardArea]);
+
+  // Width-limited tile size; when it leaves room below 4 rows, add as many whole rows as fit
+  // (never a partial row, so the board still never scrolls). Tablet portrait sizes the
+  // board's height from the row count instead, so it stays at the minimum there.
+  const widthTile = boardSize ? (boardSize.width - (boardCols - 1) * 6) / boardCols : null;
+  const tilesPerColumn = boardSize && widthTile && widthTile > 0 && !isStacked && !isPhone
+    ? Math.max(MIN_TILES_PER_COLUMN, Math.floor((boardSize.height + 6) / (widthTile + 6)))
+    : MIN_TILES_PER_COLUMN;
+  const boardTile = boardSize && widthTile !== null
+    ? Math.min(widthTile, (boardSize.height - (tilesPerColumn - 1) * 6) / tilesPerColumn)
+    : null;
+
+  // Tablet portrait: size the board to its width-limited square tiles so the image panel gets the remaining height.
+  const stackedBoardHeight = `calc(72px + ${tilesPerColumn} * ((100vw - ${16 + (boardCols - 1) * 6}px) / ${boardCols}) + ${(tilesPerColumn - 1) * 6}px)`;
   const alignChips = !isPhone && !isArrangingCategories && boardTile !== null && boardTile > 0;
 
   function addCustomCategory() {
