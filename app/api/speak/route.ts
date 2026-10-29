@@ -7,6 +7,12 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 // whole clip. Flash-Lite TTS was the fastest Gemini TTS model in test-latency.mjs.
 const TTS_MODEL = "gemini-3.8-flash-lite-tts";
 
+// Low temperature + a fixed seed keep the voice's tone consistent from one
+// sentence to the next. (Tone can't be set here: the 3.8 TTS models reject a
+// systemInstruction and read text-prompt instructions out loud.)
+const TTS_TEMPERATURE = 0.4;
+const TTS_SEED = 7;
+
 type AudioStream = AsyncIterator<{ candidates?: { content?: { parts?: { inlineData?: { data?: string } }[] } }[] }>;
 
 // Next chunk of audio bytes from the Gemini stream, or null when it has ended.
@@ -37,6 +43,8 @@ export async function POST(req: Request) {
       contents: [{ role: "user", parts: [{ text }] }],
       config: {
         responseModalities: ["AUDIO"],
+        temperature: TTS_TEMPERATURE,
+        seed: TTS_SEED,
         speechConfig: {
           voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } },
         },

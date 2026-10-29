@@ -88,8 +88,9 @@ function ttsKey(text: string, gender: string, language: string) {
 
 function ttsDbOpen(): Promise<IDBDatabase> {
   return new Promise((res, rej) => {
-    // v2 stores raw PCM; v1 stored WAV, so its entries are dropped on upgrade.
-    const req = indexedDB.open("vocalai_tts", 2);
+    // Bumping the version drops all saved audio on upgrade: v2 switched WAV → raw PCM,
+    // v3 lowered the temperature in /api/speak.
+    const req = indexedDB.open("vocalai_tts", 3);
     req.onupgradeneeded = () => {
       if (req.result.objectStoreNames.contains("audio")) req.result.deleteObjectStore("audio");
       req.result.createObjectStore("audio");
@@ -275,6 +276,12 @@ interface GeneratedImage {
 
 interface ChildProfile {
   name: string;
+  // Arabic spelling of the name, used on the Arabic board so the Arabic voice says
+  // it properly. Filled in automatically from `name` (nameArFrom = the name it was
+  // made from) unless a carer typed it themselves (nameArEdited).
+  nameAr?: string;
+  nameArFrom?: string;
+  nameArEdited?: boolean;
   age: string;
   gender: string;
   language: "en" | "ar";
@@ -982,6 +989,33 @@ export default function AACApp() {
     localStorage.setItem("vocalai_profile", JSON.stringify(profile));
   }, [profile]);
 
+  // In Arabic, write the child's name in Arabic script (Sara → سارة) so the Arabic
+  // voice doesn't read it with an English accent. Skipped if a carer typed it.
+  const nameArRequest = useRef("");
+  useEffect(() => {
+    const name = profile.name.trim();
+    if (language !== "ar" || !name || profile.nameArEdited) return;
+    if (profile.nameAr && profile.nameArFrom === name) return;
+    if (/[؀-ۿ]/.test(name)) {
+      setProfile(p => ({ ...p, nameAr: name, nameArFrom: name }));
+      return;
+    }
+    if (nameArRequest.current === name) return;
+    nameArRequest.current = name;
+    fetch("/api/transliterate-name", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    })
+      .then(res => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+      .then(({ arabic }: { arabic: string }) => {
+        // Only apply if the name hasn't changed or been typed in Arabic meanwhile.
+        setProfile(p => (p.name.trim() === name && !p.nameArEdited ? { ...p, nameAr: arabic, nameArFrom: name } : p));
+      })
+      .catch(e => console.warn("[transliterate-name] failed, using the English spelling:", e))
+      .finally(() => { if (nameArRequest.current === name) nameArRequest.current = ""; });
+  }, [language, profile.name, profile.nameAr, profile.nameArFrom, profile.nameArEdited]);
+
   useEffect(() => {
     localStorage.setItem("vocalai_people", JSON.stringify(importantPeople));
   }, [importantPeople]);
@@ -1221,10 +1255,12 @@ export default function AACApp() {
         ...importantPeople.map(p => ({ emoji: "👤", en: p.name, ar: p.name })),
       ];
     } else if (cat === "phrases") {
-      const name = profile.name.trim();
+      // Each board uses its own spelling, falling back to the other if only one is set.
+      const name   = profile.name.trim() || profile.nameAr?.trim() || "";
+      const nameAr = profile.nameAr?.trim() || name;
       base = builtIn.map(t =>
         t.en === "__my_name__"
-          ? { ...t, en: name ? `My name is ${name}` : "My name is…", ar: name ? `اسمي ${name}` : "اسمي…" }
+          ? { ...t, en: name ? `My name is ${name}` : "My name is…", ar: nameAr ? `اسمي ${nameAr}` : "اسمي…" }
           : t
       );
     } else {
@@ -3601,8 +3637,15 @@ export default function AACApp() {
                       </Label>
                       <Input
                         dir={isRTL ? "rtl" : undefined}
-                        value={profile.name}
-                        onChange={e => setProfile(p => ({ ...p, name: e.target.value }))}
+                        value={isRTL ? (profile.nameAr ?? "") : profile.name}
+                        onChange={e => {
+                          const value = e.target.value;
+                          // Editing the Arabic name keeps it as typed; changing the English
+                          // name means a new name, so the Arabic one is made again from it.
+                          setProfile(p => isRTL
+                            ? { ...p, nameAr: value, nameArEdited: true }
+                            : { ...p, name: value, nameArEdited: false });
+                        }}
                         placeholder={isRTL ? "مثال: سارة" : "e.g. Sara"}
                         className="rounded-xl"
                       />
