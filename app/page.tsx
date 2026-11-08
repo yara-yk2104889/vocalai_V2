@@ -2709,6 +2709,16 @@ export default function AACApp() {
               {isRTL ? "مقدم الرعاية" : "Carer"}
             </button>
 
+            {/* Logo — fits inside the bar's existing height; left out on phones, where the buttons already fill the bar */}
+            {!isPhone && (
+              <img
+                src="/brand/vocalai-logo.svg"
+                alt="vocalAI"
+                className="shrink-0 h-8 w-auto select-none"
+                draggable={false}
+              />
+            )}
+
             {/* Context — CENTER */}
             <div className={`flex-1 flex items-center justify-center gap-2 text-sm font-medium text-slate-600 min-w-0 ${isPhone ? "invisible" : ""}`}>
               {/* Location display hidden for now — locationLabel is still fetched and sent as image-generation context.
